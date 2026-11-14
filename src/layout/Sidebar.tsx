@@ -60,7 +60,7 @@ export function Sidebar() {
 
       <div className="nx-sb__foot">
         <SideItem screen={MAPS} active={pathname === MAPS.path} />
-        <NavItem icon="cmd" label="Comando" count="⌘K" {...cmdTip} onClick={() => { hide(); setPaletteOpen(true); }} className="nx-sb__cmd" />
+        <NavItem icon="cmd" label="Comando" trailing={<span className="nx-count">⌘K</span>} {...cmdTip} onClick={() => { hide(); setPaletteOpen(true); }} className="nx-sb__cmd" />
         <NavItem icon={theme === 'light' ? 'sun' : 'moon'} label={themeLabel} {...themeTip} onClick={toggleTheme} />
         <div className="nx-sb__div" />
         <div className="nx-sb__user-wrap">
