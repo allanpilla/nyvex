@@ -289,3 +289,7 @@
   50% { box-shadow: 0 0 0 4px rgba(223, 28, 65, .35), 0 0 8px 2px rgba(223, 28, 65, .55); }
 }
 @media (prefers-reduced-motion: reduce) { .mv-dot.is-offline { animation: none; box-shadow: 0 0 0 3px rgba(223, 28, 65, .3); } }
+/* cinza mais escuro no filtro ativo */
+.mv-rail__btn.is-on { background: var(--nx-bg-hover); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.mv-viewbar { background: rgba(255,255,255,.03); }
+[data-theme='light'] .mv-viewbar { background: var(--nx-bg-hover); }
