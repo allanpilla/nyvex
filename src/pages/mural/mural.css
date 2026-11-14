@@ -293,3 +293,43 @@
 .mv-rail__btn.is-on { background: var(--nx-bg-hover); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
 .mv-viewbar { background: rgba(255,255,255,.03); }
 [data-theme='light'] .mv-viewbar { background: var(--nx-bg-hover); }
+
+/* ---- Ajustes v6: modo híbrido (gravação no slot), salvar trecho e PTZ digital ---- */
+.mv-tile { container-type: inline-size; }
+.mv-tile__img { transition: transform .2s ease, filter .2s; transform-origin: center; }
+.mv-tile.is-hyb .mv-tile__img { filter: saturate(.75) brightness(.95); }
+.mv-tile.is-hyb { box-shadow: inset 0 0 0 2px rgba(55, 93, 251, .75); }
+.mv-pill.is-rec .nx-icon { width: 13px !important; height: 13px !important; }
+.mv-tile.has-bar .mv-tile__info { bottom: 40px; padding-bottom: 6px; background: linear-gradient(to top, rgba(4, 6, 10, .7), transparent); }
+.mv-tile.is-hyb .mv-tile__info { bottom: 50px; }
+.mv-tile.has-bar .mv-tools, .mv-tile.is-hyb .mv-tools { opacity: 1; transform: none; pointer-events: auto; }
+.mv-tile.has-bar:not(:hover):not(:focus-within):not(.is-menu) .mv-tools { opacity: 0; pointer-events: none; }
+
+.mv-sbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; align-items: center; flex-wrap: wrap; gap: 2px; padding: 4px 6px; min-height: 40px; background: rgba(6, 8, 13, .86); backdrop-filter: blur(8px); color: #fff; cursor: default; }
+.mv-sbar.is-hyb { padding-top: 14px; }
+.mv-sbar__scrub { position: absolute; left: 8px; right: 8px; top: 2px; height: 10px; display: flex; align-items: center; }
+.mv-sbar__scrub > span { display: none; }
+.mv-sbar__scrub input { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; margin: 0; border-radius: 99px; cursor: pointer;
+  background: linear-gradient(to right, #375dfb var(--p), rgba(255,255,255,.22) var(--p)); }
+.mv-sbar__scrub input::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 3px rgba(55, 93, 251, .45); }
+.mv-sbar__scrub input::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0; }
+.mv-sbtn.nx-icon-btn, .mv-sbtn { height: 28px; min-width: 28px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; border: 0; background: transparent; color: rgba(255,255,255,.88); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: 0 6px; }
+.mv-sbtn.nx-icon-btn { width: 28px; padding: 0; }
+.mv-sbtn .nx-icon { width: 16px !important; height: 16px !important; }
+.mv-sbtn:hover:not(:disabled) { background: rgba(255,255,255,.14); color: #fff; }
+.mv-sbtn:disabled { opacity: .35; cursor: default; }
+.mv-sbtn--play { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.12); padding: 0; }
+.mv-sbtn--play .nx-icon { width: 18px !important; height: 18px !important; }
+.mv-sbtn--txt { font-variant-numeric: tabular-nums; border: 1px solid rgba(255,255,255,.2); min-width: 40px; }
+.mv-sbtn--save { background: #375dfb; color: #fff; padding: 0 10px; }
+.mv-sbtn--save:hover:not(:disabled) { background: #4b6dff; }
+.mv-sbtn--live { border: 1px solid rgba(56, 199, 147, .5); color: #8ff0c4; }
+.mv-sbtn--live i { width: 6px; height: 6px; border-radius: 50%; background: #38c793; }
+.mv-sbar__sep { width: 1px; height: 16px; background: rgba(255,255,255,.18); margin: 0 4px; }
+.mv-sbar__lbl { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.6); margin: 0 4px 0 2px; white-space: nowrap; }
+.mv-sbar__val { font-size: 12px; font-variant-numeric: tabular-nums; min-width: 28px; text-align: center; color: rgba(255,255,255,.85); }
+
+/* Slots estreitos: esconde o que é secundário. */
+@container (max-width: 560px) { .mv-sbar .is-opt, .mv-sbar__lbl, .mv-sbar__sep { display: none; } }
+@container (max-width: 400px) { .mv-sbtn--live span:not(.nx-icon), .mv-sbar__val { display: none; } .mv-sbtn--live { padding: 0; width: 28px; } .mv-sbtn--live i { width: 8px; height: 8px; } }
+@container (max-width: 300px) { .mv-sbtn--save span:not(.nx-icon), .mv-sbar .mv-sbtn--txt { display: none; } .mv-sbtn--save { padding: 0 7px; } .mv-tools .mv-act.nx-icon-btn { width: 24px; height: 24px; } }

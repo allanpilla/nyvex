@@ -212,15 +212,86 @@ function TileAction({ icon, label, onClick, on }: { icon: IconName; label: strin
   return <IconButton icon={icon} label={label} tipPlace="bottom" className={`mv-act${on ? ' is-on' : ''}`} onClick={(e) => { e.stopPropagation(); onClick(e); }} />;
 }
 
+const SPEEDS = [0.5, 1, 2, 4];
+const WINDOW = 30 * 60000; // linha do tempo do slot: últimos 30 min
+const CLIPS: [string, number][] = [['Últimos 30 segundos', 30], ['Último 1 minuto', 60], ['Últimos 5 minutos', 300]];
+const stop = { onMouseDown: (e: React.MouseEvent) => e.stopPropagation(), onDoubleClick: (e: React.MouseEvent) => e.stopPropagation(), onDragStart: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); } };
+
+/** Barra de controles dentro do slot: reprodução (modo híbrido) e PTZ digital. */
+function SlotBar({ hyb, zoom, now, onHyb, onZoom, onLive, onClose, onSave }: {
+  hyb: Hyb | null; zoom: number; now: Date;
+  onHyb: (h: Hyb) => void; onZoom: (z: number) => void; onLive: () => void; onClose: () => void; onSave: () => void;
+}) {
+  const end = now.getTime();
+  const z = (d: number) => onZoom(Math.min(4, Math.max(1, Math.round((zoom + d) * 2) / 2)));
+  return (
+    <div className={`mv-sbar${hyb ? ' is-hyb' : ''}`} {...stop} draggable={false}>
+      {hyb && (
+        <>
+          <div className="mv-sbar__scrub">
+            <input type="range" min={end - WINDOW} max={end} step={1000} value={hyb.t} aria-label="Posição na gravação"
+              style={{ '--p': `${((hyb.t - (end - WINDOW)) / WINDOW) * 100}%` } as React.CSSProperties}
+              onChange={(e) => onHyb({ ...hyb, t: +e.target.value })} />
+            <span>{fmt(new Date(end - WINDOW)).slice(0, 5)}</span><span>agora</span>
+          </div>
+          <IconButton icon="arrowLeft" label="Voltar 10 s" tipPlace="top" className="mv-sbtn is-opt" onClick={() => onHyb({ ...hyb, t: Math.max(end - WINDOW, hyb.t - 10000) })} />
+          <button type="button" className="mv-sbtn mv-sbtn--play" aria-label={hyb.playing ? 'Pausar' : 'Reproduzir'} onClick={() => onHyb({ ...hyb, playing: !hyb.playing })}>
+            <Icon name={hyb.playing ? 'pause' : 'play'} size={18} />
+          </button>
+          <IconButton icon="arrowRight" label="Avançar 10 s" tipPlace="top" className="mv-sbtn is-opt" onClick={() => onHyb({ ...hyb, t: Math.min(end, hyb.t + 10000) })} />
+          <button type="button" className="mv-sbtn mv-sbtn--txt" title="Velocidade de reprodução" onClick={() => onHyb({ ...hyb, speed: SPEEDS[(SPEEDS.indexOf(hyb.speed) + 1) % SPEEDS.length] })}>
+            {hyb.speed.toFixed(1)}x
+          </button>
+          <span className="mv-sbar__sep" />
+        </>
+      )}
+      <span className="mv-sbar__lbl">PTZ digital</span>
+      <IconButton icon="zoomOut" label="Afastar" tipPlace="top" className="mv-sbtn" disabled={zoom <= 1} onClick={() => z(-0.5)} />
+      <span className="mv-sbar__val">{zoom.toFixed(1)}x</span>
+      <IconButton icon="zoomIn" label="Aproximar" tipPlace="top" className="mv-sbtn" disabled={zoom >= 4} onClick={() => z(0.5)} />
+      <span className="mv-grow" />
+      {hyb ? (
+        <>
+          <button type="button" className="mv-sbtn mv-sbtn--save" onClick={onSave}><Icon name="scissors" size={16} /><span>Salvar trecho</span></button>
+          <button type="button" className="mv-sbtn mv-sbtn--live" onClick={onLive}><i /><span>Ao vivo</span></button>
+        </>
+      ) : (
+        <IconButton icon="close" label="Fechar PTZ digital" tipPlace="top" className="mv-sbtn" onClick={onClose} />
+      )}
+    </div>
+  );
+}
+
+type Hyb = { t: number; playing: boolean; speed: number };
+
 function Tile({ cam, idx, now, fav, flash, big, expanded, onFav, onRec, onExpand, onRemove, onDropCam, toast }: TileProps) {
   const [menu, setMenu] = useState<HTMLElement | null>(null);
+  const [clip, setClip] = useState<HTMLElement | null>(null);
   const [over, setOver] = useState(false);
+  const [hyb, setHyb] = useState<Hyb | null>(null);
+  const [ptz, setPtz] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const { hide } = useTooltipApi();
   const off = cam.status === 'offline';
+  const bar = !off && (!!hyb || ptz);
+
+  // Reprodução da gravação dentro do slot.
+  useEffect(() => {
+    if (!hyb?.playing) return;
+    const t = setInterval(() => setHyb((h) => {
+      if (!h) return h;
+      const n = h.t + 250 * h.speed;
+      return n >= Date.now() ? { ...h, t: Date.now(), playing: false } : { ...h, t: n };
+    }), 250);
+    return () => clearInterval(t);
+  }, [hyb?.playing]);
+
+  const toggleHyb = () => { hide(); setHyb(hyb ? null : { t: Date.now() - 5 * 60000, playing: true, speed: 1 }); };
+  const saveClip = (sec: number) => toast(`Trecho de ${sec < 60 ? `${sec} s` : `${sec / 60} min`} de ${cam.name} salvo em Exportações`);
 
   return (
     <div
-      className={`mv-tile${big ? ' is-big' : ''}${expanded ? ' is-expanded' : ''}${flash ? ' is-flash' : ''}${over ? ' is-over' : ''}${menu ? ' is-menu' : ''}`}
+      className={`mv-tile${big ? ' is-big' : ''}${expanded ? ' is-expanded' : ''}${flash ? ' is-flash' : ''}${over ? ' is-over' : ''}${menu || clip ? ' is-menu' : ''}${bar ? ' has-bar' : ''}${hyb ? ' is-hyb' : ''}`}
       draggable={!expanded}
       onDragStart={(e) => { e.dataTransfer.setData(DT, cam.id); e.dataTransfer.effectAllowed = 'move'; hide(); }}
       onDragOver={(e) => { if (e.dataTransfer.types.includes(DT)) { e.preventDefault(); setOver(true); } }}
@@ -228,7 +299,7 @@ function Tile({ cam, idx, now, fav, flash, big, expanded, onFav, onRec, onExpand
       onDrop={(e) => { e.preventDefault(); setOver(false); const id = e.dataTransfer.getData(DT); if (id && id !== cam.id) onDropCam(id, idx); }}
       onDoubleClick={onExpand}
       tabIndex={0}
-      aria-label={`${cam.name}, ${STATUS_LABEL[cam.status]}`}
+      aria-label={`${cam.name}, ${hyb ? 'gravação' : STATUS_LABEL[cam.status]}`}
     >
       {off ? (
         <div className="mv-tile__off">
@@ -238,12 +309,14 @@ function Tile({ cam, idx, now, fav, flash, big, expanded, onFav, onRec, onExpand
           <Button onClick={(e) => { e.stopPropagation(); toast(`Reconectando ${cam.name}…`); }}>Tentar reconectar</Button>
         </div>
       ) : (
-        <img className="mv-tile__img" src={sceneUrl(cam)} alt="" draggable={false} />
+        <img className="mv-tile__img" src={sceneUrl(cam)} alt="" draggable={false} style={zoom > 1 ? { transform: `scale(${zoom})` } : undefined} />
       )}
 
       <div className="mv-tile__top">
         {off ? (
           <span className="mv-pill is-offline"><Icon name="nosignal" size={14} />Sem sinal</span>
+        ) : hyb ? (
+          <span className="mv-pill is-rec"><Icon name="film" size={14} />Gravação · {fmt(new Date(hyb.t))}{hyb.speed !== 1 && ` · ${hyb.speed}x`}</span>
         ) : cam.status === 'atencao' ? (
           <span className="mv-pill is-atencao" title={cam.note}><Icon name="warn" size={14} />Saúde degradada</span>
         ) : (
@@ -251,12 +324,14 @@ function Tile({ cam, idx, now, fav, flash, big, expanded, onFav, onRec, onExpand
         )}
         <div className="mv-tools" onDoubleClick={(e) => e.stopPropagation()}>
           <TileAction icon={fav ? 'starFill' : 'star'} label={fav ? 'Remover dos favoritos' : 'Favoritar'} on={fav} onClick={onFav} />
-          {!off && <TileAction icon="replay" label="Ver gravação" onClick={onRec} />}
+          {!off && <TileAction icon="film" label={hyb ? 'Voltar ao vivo' : 'Modo híbrido: tocar gravação no slot'} on={!!hyb} onClick={toggleHyb} />}
+          {!off && <TileAction icon="replay" label="Histórico de gravações" onClick={onRec} />}
+          {!off && <TileAction icon="scissors" label="Salvar trecho" on={!!clip} onClick={(e) => { hide(); setClip(clip ? null : e.currentTarget); }} />}
           {!off && <TileAction icon="snapshot" label="Capturar imagem" onClick={() => toast(`Imagem de ${cam.name} salva`)} />}
           <TileAction icon={expanded ? 'collapse' : 'expand'} label={expanded ? 'Voltar ao mural' : 'Ampliar'} onClick={onExpand} />
           <TileAction icon="more" label="Mais ações" on={!!menu} onClick={(e) => { hide(); setMenu(menu ? null : e.currentTarget); }} />
-          <span className="mv-tools__sep" />
-          <TileAction icon="close" label="Remover do mural" onClick={onRemove} />
+          {!expanded && <span className="mv-tools__sep" />}
+          {!expanded && <TileAction icon="close" label="Remover do mural" onClick={onRemove} />}
         </div>
       </div>
 
@@ -265,11 +340,28 @@ function Tile({ cam, idx, now, fav, flash, big, expanded, onFav, onRec, onExpand
           <b>{cam.name}</b>
           <span>{cam.area}</span>
         </div>
-        {!off && <time>{fmt(now)}</time>}
+        {!off && !hyb && <time>{fmt(now)}</time>}
       </div>
+
+      {bar && (
+        <SlotBar hyb={hyb} zoom={zoom} now={now} onHyb={setHyb} onZoom={setZoom}
+          onLive={() => setHyb(null)} onClose={() => { setPtz(false); setZoom(1); }} onSave={() => saveClip(60)} />
+      )}
+
+      {clip && (
+        <Menu anchor={clip} onClose={() => setClip(null)}>
+          <div className="nx-menu__title">Salvar trecho {hyb ? 'da gravação' : 'recente'}</div>
+          {CLIPS.map(([l, sec]) => (
+            <NavItem key={l} role="menuitem" icon="scissors" label={l} onClick={() => { setClip(null); saveClip(sec); }} />
+          ))}
+          <div className="nx-menu__sep" />
+          <NavItem role="menuitem" icon="calendar" label="Escolher intervalo…" onClick={() => { setClip(null); onRec(); }} />
+        </Menu>
+      )}
 
       {menu && (
         <Menu anchor={menu} onClose={() => setMenu(null)}>
+          <NavItem role="menuitem" icon="zoomIn" label={ptz || hyb ? 'PTZ digital (ativo)' : 'PTZ digital (zoom)'} onClick={() => { setMenu(null); if (!off) setPtz(true); else toast('Câmera sem sinal'); }} />
           {([
             ['external', 'Abrir em nova janela'],
             ['share', 'Compartilhar câmera'],
