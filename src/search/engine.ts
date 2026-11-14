@@ -44,27 +44,3 @@ export function search(q: string, kind: Kind | 'all'): Entry[] {
   }
   return scored.sort((a, b) => b.score - a.score).map((s) => s.e);
 }
-
-/** Resposta simulada do modo IA: interpreta a pergunta por palavras-chave. */
-export function askAi(q: string): { summary: string; results: Entry[] } {
-  const n = norm(q);
-  const pick = (f: (e: Entry) => boolean) => ENTRIES.filter(f);
-  if (/camera|dispositivo|offline|problema|sinal/.test(n)) {
-    const r = pick((e) => e.kind === 'camera' && !!e.tag && e.tag.tone !== 'success');
-    return { summary: `${r.length} câmeras com problema agora: 1 offline há mais de 2 horas e 1 com imagem instável. As duas ficam no Bloco B e no Estacionamento B.`, results: r };
-  }
-  if (/restri|furto|roub|placa|veicul|carro/.test(n)) {
-    const r = pick((e) => (e.kind === 'veiculo' && e.tag?.tone === 'danger') || e.id === 'a1');
-    return { summary: 'Hoje 1 veículo em restrição passou pelo campus: a placa MKP3H41, lida pela LPR-03 no Estacionamento A há 4 minutos. Já existe um alerta crítico aberto.', results: r };
-  }
-  if (/ocorr/.test(n)) {
-    const r = pick((e) => e.kind === 'ocorrencia' && e.tag?.label !== 'Encerrada' && (!/bloco b/.test(n) || /bloco b/.test(norm(e.subtitle))));
-    return { summary: `${r.length} ocorrências abertas${/bloco b/.test(n) ? ' no Bloco B' : ''}. A mais recente é o furto de celular no 2º andar, em atendimento há 35 minutos.`, results: r };
-  }
-  if (/observ|watch|lista|pessoa|portaria/.test(n)) {
-    const r = pick((e) => e.id === 'p1' || e.id === 'a2' || e.id === 'p4');
-    return { summary: '1 pessoa da lista de observação passou pela Portaria principal hoje (Mariana Duarte Lopes, às 09:28). Também há um desconhecido recorrente visto 6 vezes na semana.', results: r };
-  }
-  const r = search(q, 'all').slice(0, 6);
-  return { summary: r.length ? `Encontrei ${r.length} registros relacionados a “${q}”.` : `Não encontrei nada sobre “${q}”. Tente citar uma placa, um local, uma câmera ou uma pessoa.`, results: r };
-}

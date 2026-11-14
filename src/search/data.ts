@@ -68,11 +68,3 @@ export const ENTRIES: Entry[] = [
 /** Buscas e visitas recentes de exemplo, mostradas antes de digitar. */
 export const SAMPLE_RECENT_QUERIES = ['BRA2E19', 'ocorrências abertas Bloco B', 'câmeras offline'];
 export const SAMPLE_RECENT_VISITED = ['v1', 'o1', 'c3', 'p4'];
-
-/** Perguntas de exemplo para o modo IA. */
-export const AI_SUGGESTIONS = [
-  'Quais câmeras estão com problema agora?',
-  'Veículos em restrição vistos hoje',
-  'Ocorrências abertas no Bloco B',
-  'Pessoas da lista de observação que passaram na portaria',
-];

@@ -4,8 +4,8 @@ import { Badge, Icon, Kbd } from '../ds/components';
 import type { IconName } from '../ds/icons/icons';
 import { storage } from '../lib/storage';
 import { useUi } from '../lib/useUi';
-import { AI_SUGGESTIONS, KINDS, SAMPLE_RECENT_QUERIES, SAMPLE_RECENT_VISITED, type Entry, type Kind } from './data';
-import { askAi, byId, looksLikePlate, norm, search } from './engine';
+import { KINDS, SAMPLE_RECENT_QUERIES, SAMPLE_RECENT_VISITED, type Entry, type Kind } from './data';
+import { byId, looksLikePlate, norm, search } from './engine';
 
 type Filter = Kind | 'all';
 const FILTERS: { id: Filter; label: string }[] = [
@@ -53,7 +53,7 @@ function Hl({ text, q }: { text: string; q: string }) {
 type Row = { key: string; onSelect: () => void; node: (sel: boolean) => ReactNode };
 
 function RowView({ icon, title, subtitle, tag, side, sel, tone, q = '' }: {
-  icon: IconName; title: string; subtitle?: string; tag?: Entry['tag']; side?: string; sel: boolean; tone?: 'ai' | 'plain'; q?: string;
+  icon: IconName; title: string; subtitle?: string; tag?: Entry['tag']; side?: string; sel: boolean; tone?: 'plain'; q?: string;
 }) {
   return (
     <>
@@ -81,8 +81,6 @@ function Palette({ onClose }: { onClose: () => void }) {
   const { toast } = useUi();
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
-  const [ai, setAi] = useState(false);
-  const [aiAsked, setAiAsked] = useState<string | null>(null);
   const [sel, setSel] = useState(0);
   const [recentQ, setRecentQ] = useState(() => readList('nx-recent-q', SAMPLE_RECENT_QUERIES));
   const [recentV, setRecentV] = useState(() => readList('nx-recent-v', SAMPLE_RECENT_VISITED));
@@ -103,18 +101,11 @@ function Palette({ onClose }: { onClose: () => void }) {
     node: (s) => <RowView icon={KINDS[e.kind].icon} title={e.title} subtitle={e.subtitle} tag={e.tag} side={opts.side ?? KINDS[e.kind].label} sel={s} q={q} />,
   });
 
-  const results = useMemo(() => (ai ? [] : search(q, filter)), [q, filter, ai]);
-  const aiAnswer = useMemo(() => (aiAsked ? askAi(aiAsked) : null), [aiAsked]);
+  const results = useMemo(() => search(q, filter), [q, filter]);
 
   // Monta as seções e a lista navegável por teclado.
   const sections: { title?: string; rows: Row[]; more?: { label: string; onClick: () => void } }[] = [];
-  if (ai) {
-    if (aiAnswer) sections.push({ title: 'Registros encontrados', rows: aiAnswer.results.map((e) => entryRow(e, { prefix: 'ai-' })) });
-    else sections.push({
-      title: 'Experimente perguntar',
-      rows: AI_SUGGESTIONS.map((s) => ({ key: s, onSelect: () => { setQ(s); setAiAsked(s); }, node: (sel) => <RowView icon="sparkle" tone="ai" title={s} sel={sel} /> })),
-    });
-  } else if (!q.trim()) {
+  if (!q.trim()) {
     sections.push({
       title: 'Buscados recentemente',
       rows: recentQ.map((r) => ({ key: `rq-${r}`, onSelect: () => { setQ(r); inputRef.current?.focus(); }, node: (sel) => <RowView icon="clock" tone="plain" title={r} sel={sel} /> })),
@@ -136,75 +127,58 @@ function Palette({ onClose }: { onClose: () => void }) {
   const rows = sections.flatMap((s) => s.rows);
   const selIdx = Math.min(sel, Math.max(rows.length - 1, 0));
 
-  useEffect(() => { setSel(0); }, [q, filter, ai, aiAsked]);
+  useEffect(() => { setSel(0); }, [q, filter]);
   useEffect(() => { listRef.current?.querySelector('.is-sel')?.scrollIntoView({ block: 'nearest' }); }, [selIdx]);
 
-  const toggleAi = () => { setAi((a) => !a); setAiAsked(null); setQ(''); setFilter('all'); inputRef.current?.focus(); };
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setSel(Math.min(selIdx + 1, rows.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setSel(Math.max(selIdx - 1, 0)); }
     else if (e.key === 'Enter') {
       e.preventDefault();
-      if (ai && !aiAnswer) { if (q.trim()) setAiAsked(q.trim()); else rows[selIdx]?.onSelect(); return; }
       rows[selIdx]?.onSelect();
-    } else if (e.key === 'Tab' && !ai) {
+    } else if (e.key === 'Tab') {
       e.preventDefault();
       const i = FILTERS.findIndex((f) => f.id === filter);
       setFilter(FILTERS[(i + (e.shiftKey ? FILTERS.length - 1 : 1)) % FILTERS.length].id);
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      if (ai) toggleAi(); else if (q) setQ(''); else onClose();
+      if (q) setQ(''); else onClose();
     }
   };
 
-  const plateHint = !ai && looksLikePlate(q);
+  const plateHint = looksLikePlate(q);
   let k = -1;
 
   return (
     <div className="nx-scrim" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="nx-sp" role="dialog" aria-label="Buscar">
-        <div className={`nx-sp__wrap${ai ? ' is-ai' : ''}`}>
+        <div className="nx-sp__wrap">
         <div className="nx-sp__field">
-          <Icon name={ai ? 'sparkle' : 'search'} className="nx-sp__lead" />
+          <Icon name="search" className="nx-sp__lead" />
           <input
             ref={inputRef}
             autoFocus
             autoComplete="off"
             spellCheck={false}
             value={q}
-            placeholder={ai ? 'Pergunte em linguagem natural…' : 'Buscar pessoas, placas, câmeras, locais, ocorrências…'}
-            onChange={(e) => { setQ(e.target.value); if (ai) setAiAsked(null); }}
+            placeholder="Buscar pessoas, placas, câmeras, locais, ocorrências…"
+            onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKey}
           />
-          <button type="button" className={`nx-sp__ai${ai ? ' is-on' : ''}`} onClick={toggleAi}>
-            <Icon name={ai ? 'close' : 'sparkle'} size={16} />
-            {ai ? 'Sair da IA' : 'Buscar com IA'}
-          </button>
         </div>
         </div>
 
         <div className="nx-sp__panel">
-          {!ai && (
-            <div className="nx-sp__filters" role="tablist">
+                      <div className="nx-sp__filters" role="tablist">
               {FILTERS.map((f) => (
                 <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} className={`nx-chip${filter === f.id ? ' is-on' : ''}`} onClick={() => { setFilter(f.id); inputRef.current?.focus(); }}>
                   {f.label}
                 </button>
               ))}
             </div>
-          )}
 
           <div className="nx-sp__list" ref={listRef}>
-            {ai && aiAnswer && (
-              <div className="nx-sp__answer">
-                <span className="nx-sr__ic nx-sr__ic--ai"><Icon name="sparkle" size={18} /></span>
-                <div>
-                  <p>{aiAnswer.summary}</p>
-                  <span className="nx-sp__note">Resposta simulada no protótipo</span>
-                </div>
-              </div>
-            )}
             {plateHint && <div className="nx-sp__hint">Parece uma placa: mostrando veículos primeiro.</div>}
 
             {sections.map((s) => (
@@ -223,7 +197,7 @@ function Palette({ onClose }: { onClose: () => void }) {
               </Fragment>
             ))}
 
-            {!ai && q.trim() && rows.length === 0 && (
+            {q.trim() && rows.length === 0 && (
               <div className="nx-sp__empty">
                 <b>Nada encontrado para “{q}”</b>
                 <span>Confira a grafia ou tente outro termo, como uma placa, um local ou um nome.</span>
@@ -233,9 +207,9 @@ function Palette({ onClose }: { onClose: () => void }) {
 
           <div className="nx-sp__foot">
             <span><Kbd>↑↓</Kbd> Navegar</span>
-            <span><Kbd>Enter</Kbd> {ai && !aiAnswer ? 'Perguntar' : 'Abrir'}</span>
-            {!ai && <span><Kbd>Tab</Kbd> Filtrar</span>}
-            <span><Kbd>Esc</Kbd> {ai ? 'Sair da IA' : 'Fechar'}</span>
+            <span><Kbd>Enter</Kbd> Abrir</span>
+            <span><Kbd>Tab</Kbd> Filtrar</span>
+            <span><Kbd>Esc</Kbd> Fechar</span>
           </div>
         </div>
       </div>
