@@ -30,6 +30,14 @@ export const icons = {
   plus: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M11.1 11.1V5.7h1.8v5.4h5.4v1.8h-5.4v5.4h-1.8v-5.4H5.7v-1.8h5.4z\" fill=\"currentColor\"/></svg>",
   enter: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M18.3 4.8h1.8v8.1c0 .5-.4.9-.9.9H7.6l3.3 3.3-1.3 1.3L4.1 13l5.5-5.4 1.3 1.3L7.6 12h10.7V4.8z\" fill=\"currentColor\"/></svg>",
   close: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M12 10.7l4.5-4.4 1.2 1.2-4.4 4.5 4.4 4.5-1.2 1.2-4.5-4.4-4.5 4.4-1.2-1.2 4.4-4.5-4.4-4.5 1.2-1.2 4.5 4.4z\" fill=\"currentColor\"/></svg>",
+  chevron: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M12 13.17l4.95-4.95 1.41 1.42L12 16 5.64 9.64l1.41-1.42L12 13.17z\" fill=\"currentColor\"/></svg>",
+  share: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M13.12 17.02l-4.2-2.29a4 4 0 1 1 0-5.46l4.2-2.29a4 4 0 1 1 .96 1.75l-4.2 2.29a4 4 0 0 1 0 1.96l4.2 2.29a4 4 0 1 1-.96 1.75zM6 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm11-6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z\" fill=\"currentColor\"/></svg>",
+  audit: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M12 1l8.22 1.83a1 1 0 0 1 .78.97v9.99a6 6 0 0 1-2.67 4.99L12 23l-6.33-4.22A6 6 0 0 1 3 13.79V3.8a1 1 0 0 1 .78-.97L12 1zm0 2.05L5 4.6v9.19a4 4 0 0 0 1.78 3.33L12 20.6l5.22-3.48A4 4 0 0 0 19 13.79V4.6l-7-1.55zm4.45 5.17l1.42 1.42-6.37 6.36-4.24-4.24 1.41-1.42 2.83 2.83 4.95-4.95z\" fill=\"currentColor\"/></svg>",
+  chart: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M2 13h6v8H2v-8zM9 3h6v18H9V3zm7 5h6v13h-6V8zM4 15v4h2v-4H4zm7-10v14h2V5h-2zm7 5v9h2v-9h-2z\" fill=\"currentColor\"/></svg>",
+  nodes: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M10 2a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H8v2h5V9a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-1H8v6h5v-1a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-1H7a1 1 0 0 1-1-1V8H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h6zm9 16h-4v2h4v-2zm0-8h-4v2h4v-2zM9 4H5v2h4V4z\" fill=\"currentColor\"/></svg>",
+  flash: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M13 9h8L11 24v-9H4l9-15v9zm-2 2V7.22L7.53 13H13v4.39L17.26 11H11z\" fill=\"currentColor\"/></svg>",
+  stack: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M20.08 15.2l1.2.72a.5.5 0 0 1 0 .86l-8.77 5.26a1 1 0 0 1-1.03 0l-8.77-5.26a.5.5 0 0 1 0-.86l1.2-.72L12 20.05l8.08-4.85zm0-4.7l1.2.72a.5.5 0 0 1 0 .86L12 17.65l-9.28-5.57a.5.5 0 0 1 0-.86l1.2-.72L12 15.35l8.08-4.85zm-7.57-9.19l8.77 5.26a.5.5 0 0 1 0 .86L12 12.95 2.72 7.43a.5.5 0 0 1 0-.86l8.77-5.26a1 1 0 0 1 1.03 0zM12 3.33L5.89 7 12 10.67 18.11 7 12 3.33z\" fill=\"currentColor\"/></svg>",
+  idcard: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M3 4h18a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 2v12h16V6H4zm2 2h6v6H6V8zm2 2v2h2v-2H8zm6-2h4v2h-4V8zm0 4h4v2h-4v-2zm-8 4h12v1.5H6V16z\" fill=\"currentColor\"/></svg>",
 } as const;
 
 export type IconName = keyof typeof icons;
