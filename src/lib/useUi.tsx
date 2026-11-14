@@ -18,10 +18,8 @@ const isNarrow = () => window.matchMedia('(max-width: 720px)').matches;
 /** Estado global da interface: tema, menu recolhido, paleta de comando e avisos. */
 export function UiProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => (storage.get('nx-theme') === 'light' ? 'light' : 'dark'));
-  const [collapsed, setCollapsedState] = useState(() => {
-    const saved = storage.get('nx-collapsed');
-    return saved === null ? isNarrow() : saved === '1';
-  });
+  // O menu sempre começa fechado ao abrir o app; abrir/fechar vale só durante a visita.
+  const [collapsed, setCollapsedState] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -32,7 +30,6 @@ export function UiProvider({ children }: { children: ReactNode }) {
 
   const setCollapsed = useCallback((c: boolean) => {
     setCollapsedState(c);
-    storage.set('nx-collapsed', c ? '1' : '0');
   }, []);
 
   const toast = useCallback((msg: string) => setToastMsg(msg), []);
