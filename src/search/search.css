@@ -3,19 +3,18 @@
 .nx-sp { width: min(680px, 100%); display: flex; flex-direction: column; gap: 8px; max-height: 80vh; }
 
 .nx-sp__wrap {
-  /* Dois trechos de luz azul que percorrem o contorno, sobre um traço azul discreto. */
+  /* Um trecho de luz azul que percorre o contorno, sobre um traço azul discreto. */
   --nx-comet: conic-gradient(from var(--nx-glow-angle),
-    transparent 0deg, transparent 70deg, rgba(55, 93, 251, 0.35) 120deg, #5b7dff 160deg, #b9ccff 176deg, transparent 180deg,
-    transparent 250deg, rgba(55, 93, 251, 0.35) 300deg, #5b7dff 340deg, #b9ccff 356deg, transparent 360deg);
+    transparent 0deg, transparent 230deg, rgba(55, 93, 251, 0.3) 290deg, #5b7dff 340deg, #b9ccff 356deg, transparent 360deg);
   position: relative; flex: none; border-radius: var(--nx-radius-lg);
   animation: nx-glow-spin 6s linear infinite;
 }
 /* Halo azul que acompanha os trechos de luz */
 .nx-sp__wrap::before {
   content: ''; position: absolute; inset: -1px; border-radius: inherit;
-  background: var(--nx-comet); filter: blur(10px); opacity: 0.7; pointer-events: none;
+  background: var(--nx-comet); filter: blur(10px); opacity: 0.5; pointer-events: none;
 }
-[data-theme='light'] .nx-sp__wrap::before { opacity: 0.45; }
+[data-theme='light'] .nx-sp__wrap::before { opacity: 0.35; }
 .nx-sp__field {
   position: relative;
   display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 16px;
