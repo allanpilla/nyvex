@@ -274,3 +274,18 @@
 .mv-spop__list { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
 .mv-spop .mv-row { cursor: pointer; padding-left: 8px; }
 .mv-spop__area { color: var(--nx-text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- Ajustes v5: filtro ativo em cinza; bolinha sem sinal pulsando ---- */
+.mv-rail__btn.is-on { background: var(--nx-bg-badge); color: var(--nx-text-main); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+.mv-rail__btn.is-on b { color: var(--nx-text-main); }
+.mv-viewbar { background: var(--nx-bg-hover); color: var(--nx-text-sub); border: 1px solid var(--nx-stroke); }
+.mv-viewbar b { color: var(--nx-text-main); }
+.mv-viewbar .nx-btn { border-color: var(--nx-bg-badge); color: var(--nx-text-sub); }
+.mv-viewbar .nx-btn:hover { color: var(--nx-text-main); }
+[data-theme='light'] .mv-rail__btn.is-on { box-shadow: inset 0 0 0 1px rgba(10,13,20,.12); }
+.mv-dot.is-offline { animation: mv-pulse-red 1.6s ease-in-out infinite; }
+@keyframes mv-pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(223, 28, 65, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(223, 28, 65, .35), 0 0 8px 2px rgba(223, 28, 65, .55); }
+}
+@media (prefers-reduced-motion: reduce) { .mv-dot.is-offline { animation: none; box-shadow: 0 0 0 3px rgba(223, 28, 65, .3); } }
