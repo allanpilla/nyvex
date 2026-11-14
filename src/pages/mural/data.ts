@@ -56,7 +56,7 @@ export const LOCAIS = [...new Set(CAMS.map((c) => c.local))];
 
 export const STATUS_LABEL: Record<CamStatus, string> = { online: 'Online', atencao: 'Atenção', offline: 'Sem sinal' };
 
-export type LayoutId = '1' | '4' | '9' | '16' | 'destaque';
+export type LayoutId = '1' | '4' | '9' | '16' | 'destaque' | 'custom';
 export const LAYOUTS: { id: LayoutId; label: string; cols: number; slots: number }[] = [
   { id: '1', label: '1×1', cols: 1, slots: 1 },
   { id: '4', label: '2×2', cols: 2, slots: 4 },

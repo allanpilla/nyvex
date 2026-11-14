@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button, Icon, IconButton, NavItem, PageHeader, Segmented, Switch, useTooltipApi } from '../../ds/components';
 import type { IconName } from '../../ds/icons/icons';
 import { useUi } from '../../lib/useUi';
@@ -6,10 +7,11 @@ import { storage } from '../../lib/storage';
 import type { Screen } from '../../navigation';
 import { CAMS, CAM_BY_ID, DEFAULT_MURAL, LAYOUTS, LOCAIS, PRESETS, STATUS_LABEL, type Cam, type CamStatus, type LayoutId } from './data';
 import { sceneUrl } from './scene';
+import { RecordingModal } from './RecordingModal';
 import './mural.css';
 
 type Slot = string | null;
-type Tab = 'todas' | 'mural' | 'fav';
+type Tab = 'todas' | 'fav';
 const PATROL_MS = 10000;
 const DT = 'text/nx-cam';
 
@@ -39,7 +41,7 @@ function Menu({ anchor, onClose, align = 'right', children }: { anchor: HTMLElem
     return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key, true); };
   }, [anchor, onClose]);
   const style = align === 'right' ? { top: r.bottom + 6, right: window.innerWidth - r.right } : { top: r.bottom + 6, left: r.left };
-  return <div ref={ref} className="nx-menu" role="menu" style={style}>{children}</div>;
+  return createPortal(<div ref={ref} className="nx-menu" role="menu" style={style}>{children}</div>, document.body);
 }
 
 /* ───────────── Painel lateral de câmeras ───────────── */
@@ -50,9 +52,12 @@ type PanelProps = {
   onToggle: (id: string, on: boolean) => void;
   onLocate: (id: string) => void;
   onHide: () => void;
+  freeSlots: number;
+  onAutofill: (ids: string[]) => void;
+  onClear: () => void;
 };
 
-function CamPanel({ mural, favs, onToggle, onLocate, onHide }: PanelProps) {
+function CamPanel({ mural, favs, onToggle, onLocate, onHide, freeSlots, onAutofill, onClear }: PanelProps) {
   const [q, setQ] = useState('');
   const [tab, setTab] = useState<Tab>('todas');
   const [status, setStatus] = useState<CamStatus | null>(null);
@@ -66,13 +71,13 @@ function CamPanel({ mural, favs, onToggle, onLocate, onHide }: PanelProps) {
   }, []);
 
   const list = CAMS.filter((c) => {
-    if (tab === 'mural' && !inMural.has(c.id)) return false;
     if (tab === 'fav' && !favs.has(c.id)) return false;
     if (status && c.status !== status) return false;
     if (q && !norm(`${c.name} ${c.area}`).includes(norm(q))) return false;
     return true;
   });
   const filtering = !!q || !!status || tab !== 'todas';
+  const fillable = list.filter((c) => !inMural.has(c.id) && c.status !== 'offline').map((c) => c.id);
 
   return (
     <aside className="mv-panel" aria-label="Câmeras">
@@ -97,7 +102,6 @@ function CamPanel({ mural, favs, onToggle, onLocate, onHide }: PanelProps) {
           onChange={setTab}
           options={[
             { value: 'todas', label: <>Todas <span className="nx-seg__n">{CAMS.length}</span></> },
-            { value: 'mural', label: <>No mural <span className="nx-seg__n">{inMural.size}</span></> },
             { value: 'fav', label: <>Favoritas <span className="nx-seg__n">{favs.size}</span></> },
           ]}
         />
@@ -168,8 +172,18 @@ function CamPanel({ mural, favs, onToggle, onLocate, onHide }: PanelProps) {
       </div>
 
       <div className="mv-panel__foot">
-        <Icon name="drag" size={14} />
-        Arraste uma câmera para qualquer posição do mural.
+        <div className="mv-panel__acts">
+          <Button
+            icon="flash"
+            disabled={freeSlots === 0 || fillable.length === 0}
+            title={freeSlots === 0 ? 'Não há posições livres no mural' : 'Preenche as posições livres com as câmeras da lista (respeita busca e filtros)'}
+            onClick={() => onAutofill(fillable)}
+          >
+            Preencher mural{freeSlots > 0 && fillable.length > 0 ? ` (${Math.min(freeSlots, fillable.length)})` : ''}
+          </Button>
+          <Button icon="eraser" disabled={inMural.size === 0} onClick={onClear}>Limpar</Button>
+        </div>
+        <span className="mv-panel__hint"><Icon name="drag" size={14} />Arraste uma câmera para qualquer posição do mural.</span>
       </div>
     </aside>
   );
@@ -182,7 +196,6 @@ type TileProps = {
   idx: number;
   now: Date;
   fav: boolean;
-  rec: boolean;
   flash: boolean;
   big?: boolean;
   expanded?: boolean;
@@ -198,11 +211,10 @@ function TileAction({ icon, label, onClick, on }: { icon: IconName; label: strin
   return <IconButton icon={icon} label={label} tipPlace="bottom" className={`mv-act${on ? ' is-on' : ''}`} onClick={(e) => { e.stopPropagation(); onClick(e); }} />;
 }
 
-function Tile({ cam, idx, now, fav, rec, flash, big, expanded, onFav, onRec, onExpand, onRemove, onDropCam, toast }: TileProps) {
+function Tile({ cam, idx, now, fav, flash, big, expanded, onFav, onRec, onExpand, onRemove, onDropCam, toast }: TileProps) {
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [over, setOver] = useState(false);
   const { hide } = useTooltipApi();
-  const recTime = new Date(now.getTime() - 5 * 60 * 1000);
   const off = cam.status === 'offline';
 
   return (
@@ -225,14 +237,12 @@ function Tile({ cam, idx, now, fav, rec, flash, big, expanded, onFav, onRec, onE
           <Button onClick={(e) => { e.stopPropagation(); toast(`Reconectando ${cam.name}…`); }}>Tentar reconectar</Button>
         </div>
       ) : (
-        <img className={`mv-tile__img${rec ? ' is-rec' : ''}`} src={sceneUrl(cam)} alt="" draggable={false} />
+        <img className="mv-tile__img" src={sceneUrl(cam)} alt="" draggable={false} />
       )}
 
       <div className="mv-tile__top">
         {off ? (
           <span className="mv-pill is-offline"><Icon name="nosignal" size={14} />Sem sinal</span>
-        ) : rec ? (
-          <span className="mv-pill is-rec"><Icon name="replay" size={14} />Gravação · {fmt(recTime)}</span>
         ) : cam.status === 'atencao' ? (
           <span className="mv-pill is-atencao" title={cam.note}><Icon name="warn" size={14} />Saúde degradada</span>
         ) : (
@@ -240,7 +250,7 @@ function Tile({ cam, idx, now, fav, rec, flash, big, expanded, onFav, onRec, onE
         )}
         <div className="mv-tools" onDoubleClick={(e) => e.stopPropagation()}>
           <TileAction icon={fav ? 'starFill' : 'star'} label={fav ? 'Remover dos favoritos' : 'Favoritar'} on={fav} onClick={onFav} />
-          {!off && <TileAction icon="replay" label={rec ? 'Voltar ao vivo' : 'Ver gravação'} on={rec} onClick={onRec} />}
+          {!off && <TileAction icon="replay" label="Ver gravação" onClick={onRec} />}
           {!off && <TileAction icon="snapshot" label="Capturar imagem" onClick={() => toast(`Imagem de ${cam.name} salva`)} />}
           <TileAction icon={expanded ? 'collapse' : 'expand'} label={expanded ? 'Voltar ao mural' : 'Ampliar'} onClick={onExpand} />
           <TileAction icon="more" label="Mais ações" on={!!menu} onClick={(e) => { hide(); setMenu(menu ? null : e.currentTarget); }} />
@@ -254,7 +264,7 @@ function Tile({ cam, idx, now, fav, rec, flash, big, expanded, onFav, onRec, onE
           <b>{cam.name}</b>
           <span>{cam.area}</span>
         </div>
-        {!off && <time>{fmt(rec ? recTime : now)}</time>}
+        {!off && <time>{fmt(now)}</time>}
       </div>
 
       {menu && (
@@ -328,7 +338,10 @@ export function MuralPage({ screen }: { screen: Screen }) {
   const [layout, setLayout] = useState<LayoutId>(() => readJson<LayoutId>('nx-mural-layout', '9'));
   const [mural, setMural] = useState<Slot[]>(() => readJson<Slot[]>('nx-mural', DEFAULT_MURAL).filter((x) => x == null || CAM_BY_ID[x]));
   const [favs, setFavs] = useState<Set<string>>(() => new Set(readJson<string[]>('nx-mural-favs', ['bloco-04-externa', 'portarias-portaria-1', 'bloco-08-porta'])));
-  const [rec, setRec] = useState<Set<string>>(new Set());
+  const [recCam, setRecCam] = useState<string | null>(null);
+  const [grid, setGrid] = useState<{ c: number; r: number }>(() => readJson('nx-mural-grid', { c: 5, r: 4 }));
+  const [gridBtn, setGridBtn] = useState<HTMLElement | null>(null);
+  const segRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
   const [panel, setPanel] = useState(() => !window.matchMedia('(max-width: 900px)').matches);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -336,8 +349,9 @@ export function MuralPage({ screen }: { screen: Screen }) {
   const [patrol, setPatrol] = useState(false);
   const [presetBtn, setPresetBtn] = useState<HTMLElement | null>(null);
   const wallRef = useRef<HTMLDivElement>(null);
+  const { hide: hideTip } = useTooltipApi();
 
-  const L = LAYOUTS.find((l) => l.id === layout)!;
+  const L = layout === 'custom' ? { id: 'custom' as LayoutId, label: `${grid.c}×${grid.r}`, cols: grid.c, slots: grid.c * grid.r } : LAYOUTS.find((l) => l.id === layout) ?? LAYOUTS[2];
   const N = L.slots;
   const pages = Math.max(1, Math.ceil(mural.length / N));
   const cur = Math.min(page, pages - 1);
@@ -347,6 +361,7 @@ export function MuralPage({ screen }: { screen: Screen }) {
   useEffect(() => { storage.set('nx-mural', JSON.stringify(mural)); }, [mural]);
   useEffect(() => { storage.set('nx-mural-layout', JSON.stringify(layout)); }, [layout]);
   useEffect(() => { storage.set('nx-mural-favs', JSON.stringify([...favs])); }, [favs]);
+  useEffect(() => { storage.set('nx-mural-grid', JSON.stringify(grid)); }, [grid]);
 
   useEffect(() => {
     if (!patrol) return;
@@ -402,6 +417,17 @@ export function MuralPage({ screen }: { screen: Screen }) {
     setMural(trim(m));
   };
 
+  const freeSlots = slotsFree();
+  function slotsFree() { let n = 0; for (let j = cur * N; j < cur * N + N; j++) if (mural[j] == null) n++; return n; }
+  const autofill = (ids: string[]) => {
+    const m = [...mural];
+    let k = 0;
+    for (let j = cur * N; j < cur * N + N && k < ids.length; j++) if (m[j] == null) { while (m.length < j) m.push(null); m[j] = ids[k++]; }
+    setMural(trim(m));
+    toast(`${k} ${k === 1 ? 'câmera adicionada' : 'câmeras adicionadas'} ao mural`);
+  };
+  const clearWall = () => { setMural([]); setPage(0); setExpanded(null); toast('Mural limpo'); };
+
   const changeLayout = (id: LayoutId) => {
     setLayout(id);
     setMural((m) => m.filter(Boolean));
@@ -415,10 +441,9 @@ export function MuralPage({ screen }: { screen: Screen }) {
     idx,
     now,
     fav: favs.has(c.id),
-    rec: rec.has(c.id),
     flash: flash === c.id,
     onFav: () => setFavs((s) => { const n = new Set(s); if (n.has(c.id)) n.delete(c.id); else n.add(c.id); return n; }),
-    onRec: () => setRec((s) => { const n = new Set(s); if (n.has(c.id)) n.delete(c.id); else n.add(c.id); return n; }),
+    onRec: () => setRecCam(c.id),
     onRemove: () => remove(c.id),
     onDropCam: placeAt,
     toast,
@@ -426,31 +451,52 @@ export function MuralPage({ screen }: { screen: Screen }) {
 
   return (
     <div className="mv">
-      {panel && (
+      {panel ? (
         <CamPanel
           mural={mural}
           favs={favs}
           onToggle={(id, on) => (on ? add(id) : remove(id))}
           onLocate={locate}
-          onHide={() => setPanel(false)}
+          onHide={() => { hideTip(); setPanel(false); }}
+          freeSlots={freeSlots}
+          onAutofill={autofill}
+          onClear={clearWall}
         />
+      ) : (
+        <aside className="mv-rail" aria-label="Câmeras">
+          <div className="mv-rail__head">
+            <IconButton icon="panel" label="Mostrar lista de câmeras" onClick={() => { hideTip(); setPanel(true); }} />
+          </div>
+          <button type="button" className="mv-rail__label" onClick={() => setPanel(true)}>
+            <Icon name="camera" size={18} />
+            <span>Câmeras</span>
+          </button>
+        </aside>
       )}
       <div className="mv-main">
         <PageHeader
           title={screen.label}
+          icon="tv"
           description={`${count} ${count === 1 ? 'câmera' : 'câmeras'} no mural · ${online} de ${CAMS.length} online`}
           actions={
             <>
-              {!panel && <Button icon="panel" onClick={() => setPanel(true)}>Câmeras</Button>}
-              <Segmented<LayoutId>
-                label="Layout do mural"
-                value={layout}
-                onChange={changeLayout}
-                options={LAYOUTS.map((l) => ({ value: l.id, label: <><LayoutGlyph id={l.id} />{l.id === 'destaque' ? 'Destaque' : l.label}</>, title: `Layout ${l.label}` }))}
-              />
+              <div ref={segRef} className="mv-layout">
+                <Segmented<LayoutId>
+                  label="Layout do mural"
+                  value={layout}
+                  onChange={(v) => {
+                    if (v === 'custom') { setGridBtn(segRef.current!.querySelector<HTMLElement>('.nx-seg__opt:last-child')); return; }
+                    changeLayout(v);
+                  }}
+                  options={[
+                    ...LAYOUTS.map((l) => ({ value: l.id, label: <LayoutGlyph id={l.id} />, title: l.id === 'destaque' ? 'Destaque (1 grande + 5)' : `Grade ${l.label}` })),
+                    { value: 'custom' as LayoutId, label: <><Icon name="sliders" size={14} />{layout === 'custom' ? `${grid.c}×${grid.r}` : 'Personalizar'}</>, title: 'Grade personalizada (colunas × linhas)' },
+                  ]}
+                />
+              </div>
               <div className="mv-pager" aria-label="Páginas do mural">
                 <IconButton icon="arrowLeft" label="Página anterior" tipPlace="bottom" disabled={pages < 2} onClick={() => setPage((cur - 1 + pages) % pages)} />
-                <span>Página <b>{cur + 1}</b> de {pages}</span>
+                <span title={`Página ${cur + 1} de ${pages}`}><b>{cur + 1}</b> / {pages}</span>
                 <IconButton icon="arrowRight" label="Próxima página" tipPlace="bottom" disabled={pages < 2} onClick={() => setPage((cur + 1) % pages)} />
               </div>
               <Button icon={patrol ? 'pause' : 'play'} className={patrol ? 'is-active' : undefined} onClick={() => {
@@ -474,13 +520,12 @@ export function MuralPage({ screen }: { screen: Screen }) {
             ))}
             <div className="nx-menu__sep" />
             <NavItem role="menuitem" icon="plus" label="Salvar mural atual como preset" onClick={() => { setPresetBtn(null); toast('Salvar preset: ação simulada no protótipo'); }} />
-            <NavItem role="menuitem" icon="eraser" label="Limpar mural" onClick={() => { setPresetBtn(null); setMural([]); setPage(0); setExpanded(null); }} />
           </Menu>
         )}
 
         <div className="mv-wall" ref={wallRef}>
           {patrol && <div key={cur} className="mv-patrol" style={{ animationDuration: `${PATROL_MS}ms` }} />}
-          <div className={`mv-grid mv-grid--${layout}`} style={{ ['--cols' as string]: L.cols, ['--rows' as string]: Math.ceil((layout === 'destaque' ? 9 : N) / L.cols) }}>
+          <div className={`mv-grid mv-grid--${layout}${L.cols >= 4 ? ' is-dense' : ''}`} style={{ ['--cols' as string]: L.cols, ['--rows' as string]: Math.ceil((layout === 'destaque' ? 9 : N) / L.cols) }}>
             {slots.map((id, i) => {
               const idx = cur * N + i;
               const big = layout === 'destaque' && i === 0;
@@ -499,6 +544,60 @@ export function MuralPage({ screen }: { screen: Screen }) {
           )}
         </div>
       </div>
+      {recCam && CAM_BY_ID[recCam] && <RecordingModal cam={CAM_BY_ID[recCam]} onClose={() => setRecCam(null)} toast={toast} />}
+      {gridBtn && (
+        <Menu anchor={gridBtn} onClose={() => setGridBtn(null)}>
+          <CustomGrid
+            initial={grid}
+            onApply={(g) => { setGrid(g); setGridBtn(null); changeLayout('custom'); }}
+            onClose={() => setGridBtn(null)}
+          />
+        </Menu>
+      )}
+    </div>
+  );
+}
+
+const GRID_SHORTCUTS: [number, number][] = [[5, 4], [6, 4], [6, 5], [7, 5], [8, 4], [10, 5], [10, 10]];
+
+/** Grade personalizada: colunas × linhas, com atalhos comuns de videowall. */
+function CustomGrid({ initial, onApply, onClose }: { initial: { c: number; r: number }; onApply: (g: { c: number; r: number }) => void; onClose: () => void }) {
+  const [c, setC] = useState(initial.c);
+  const [r, setR] = useState(initial.r);
+  const clamp = (n: number) => Math.max(1, Math.min(12, n));
+  const Step = ({ label, v, set }: { label: string; v: number; set: (n: number) => void }) => (
+    <div className="mv-cg__step">
+      <span>{label}</span>
+      <div>
+        <IconButton icon="arrowLeft" label={`Menos ${label.toLowerCase()}`} tipPlace="bottom" onClick={() => set(clamp(v - 1))} />
+        <b>{v}</b>
+        <IconButton icon="arrowRight" label={`Mais ${label.toLowerCase()}`} tipPlace="bottom" onClick={() => set(clamp(v + 1))} />
+      </div>
+    </div>
+  );
+  return (
+    <div className="mv-cg">
+      <div className="mv-cg__head">
+        <b>Grade personalizada</b>
+        <IconButton icon="close" label="Fechar" tipPlace="bottom" onClick={onClose} />
+      </div>
+      <p>Defina colunas e linhas para montar o mosaico.</p>
+      <div className="mv-cg__row">
+        <Step label="Colunas" v={c} set={setC} />
+        <Step label="Linhas" v={r} set={setR} />
+      </div>
+      <div className="mv-cg__total"><span>Total</span><b>{c * r} câmeras ao mesmo tempo</b></div>
+      <div className="mv-cg__sc">
+        <span>Atalhos de videowall</span>
+        <div>
+          {GRID_SHORTCUTS.map(([sc, sr]) => (
+            <button key={`${sc}x${sr}`} type="button" className={`mv-chip${sc === c && sr === r ? ' is-on' : ''}`} onClick={() => { setC(sc); setR(sr); }}>
+              {sc}×{sr} <span className="mv-chip__n">{sc * sr}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <Button variant="primary" icon="check" onClick={() => onApply({ c, r })}>Aplicar grade</Button>
     </div>
   );
 }
