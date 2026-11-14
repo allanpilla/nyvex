@@ -1,0 +1,52 @@
+/* Tokens do DS Nyvex. Dark é o tema primário; light é secundário (data-theme="light"). */
+:root,
+[data-theme='dark'] {
+  --nx-bg-canvas: #0a0d14;
+  --nx-bg-surface: #161922;
+  --nx-bg-hover: #20232d;
+  --nx-bg-badge: #31353f;
+  --nx-text-main: #ffffff;
+  --nx-text-sub: #cdd0d5;
+  --nx-text-soft: #868c98;
+  --nx-icon-sub: #868c98;
+  --nx-stroke: #20232d;
+  --nx-tonal-bg: #162664;
+  --nx-tonal-fg: #c2d6ff;
+  --nx-primary: #375dfb;
+  --nx-success: #38c793;
+  --nx-error: #df1c41;
+  --nx-tip-bg: #ffffff;
+  --nx-tip-fg: #0a0d14;
+  --nx-overlay: rgba(5, 7, 11, 0.6);
+  --nx-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --nx-bg-canvas: #f6f8fa;
+  --nx-bg-surface: #ffffff;
+  --nx-bg-hover: #eceef2;
+  --nx-bg-badge: #e2e4e9;
+  --nx-text-main: #0a0d14;
+  --nx-text-sub: #525866;
+  --nx-text-soft: #868c98;
+  --nx-icon-sub: #868c98;
+  --nx-stroke: #e2e4e9;
+  --nx-tonal-bg: #ebf1ff;
+  --nx-tonal-fg: #253ea7;
+  --nx-tip-bg: #0a0d14;
+  --nx-tip-fg: #ffffff;
+  --nx-overlay: rgba(10, 13, 20, 0.25);
+  --nx-shadow: 0 16px 40px rgba(10, 13, 20, 0.12);
+  color-scheme: light;
+}
+
+:root {
+  --nx-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --nx-radius-sm: 6px;
+  --nx-radius-md: 8px;
+  --nx-radius-lg: 12px;
+  --nx-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --nx-sidebar-open: 240px;
+  --nx-sidebar-closed: 60px;
+}
