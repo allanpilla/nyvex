@@ -140,3 +140,40 @@
 .nx-menu .nx-item__lbl { font-size: 13px; }
 .nx-menu__sep { height: 1px; background: var(--nx-stroke); margin: 3px 0; }
 .nx-menu__title { padding: 6px 8px 4px; font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--nx-text-soft); }
+
+/* Seletor de data e hora */
+.nx-dtp { display: flex; flex-direction: column; gap: 4px; }
+.nx-dtp__label { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--nx-text-soft); }
+.nx-dtp__field { height: 32px; display: inline-flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: var(--nx-radius-md); border: 1px solid var(--nx-stroke); background: var(--nx-bg-canvas); color: var(--nx-text-main); font-size: 13px; font-variant-numeric: tabular-nums; transition: border-color .12s; }
+.nx-dtp__field .nx-icon { color: var(--nx-icon-sub); }
+.nx-dtp__field:hover { border-color: var(--nx-bg-badge); }
+.nx-dtp__field.is-open { border-color: var(--nx-primary); }
+.nx-dtp__sep { width: 1px; height: 14px; background: var(--nx-bg-badge); }
+[data-theme='light'] .nx-dtp__field { background: var(--nx-bg-surface); border-color: var(--nx-bg-badge); }
+.nx-dtp__pop { position: fixed; z-index: 80; display: flex; border-radius: var(--nx-radius-lg); background: var(--nx-bg-surface); border: 1px solid var(--nx-stroke); box-shadow: var(--nx-shadow); overflow: hidden; }
+.nx-dtp__cal { padding: 12px; width: 268px; display: flex; flex-direction: column; gap: 8px; }
+.nx-dtp__head { display: flex; align-items: center; gap: 2px; }
+.nx-dtp__head b { flex: 1; font-size: 14px; font-weight: 500; padding-left: 4px; }
+.nx-dtp__head button { width: 28px; height: 28px; border-radius: var(--nx-radius-sm); display: grid; place-items: center; color: var(--nx-icon-sub); }
+.nx-dtp__head button:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
+.nx-dtp__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.nx-dtp__wd { height: 28px; display: grid; place-items: center; font-size: 11px; font-weight: 500; color: var(--nx-text-soft); }
+.nx-dtp__day { height: 32px; border-radius: var(--nx-radius-sm); font-size: 13px; color: var(--nx-text-sub); font-variant-numeric: tabular-nums; position: relative; }
+.nx-dtp__day:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
+.nx-dtp__day.is-out { color: var(--nx-text-soft); opacity: .5; }
+.nx-dtp__day.is-today::after { content: ''; position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--nx-primary); }
+.nx-dtp__day.is-on { background: var(--nx-primary); color: #fff; font-weight: 500; }
+.nx-dtp__day.is-on::after { background: #fff; }
+.nx-dtp__day:disabled { opacity: .25; pointer-events: none; }
+.nx-dtp__foot { display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--nx-stroke); }
+.nx-dtp__foot button { height: 28px; padding: 0 10px; border-radius: var(--nx-radius-sm); font-size: 13px; font-weight: 500; color: var(--nx-text-sub); }
+.nx-dtp__foot button:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
+.nx-dtp__foot button.is-primary { background: var(--nx-primary); color: #fff; }
+.nx-dtp__foot button.is-primary:hover { background: #2547d0; }
+.nx-dtp__time { display: grid; grid-template-columns: 56px 56px; grid-template-rows: auto 1fr; border-left: 1px solid var(--nx-stroke); padding: 12px 6px 6px; column-gap: 2px; height: 330px; }
+.nx-dtp__tl { text-align: center; font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--nx-text-soft); padding-bottom: 8px; }
+.nx-dtp__col { overflow-y: auto; display: flex; flex-direction: column; gap: 2px; scrollbar-width: none; min-height: 0; }
+.nx-dtp__col::-webkit-scrollbar { display: none; }
+.nx-dtp__col button { flex: none; height: 30px; border-radius: var(--nx-radius-sm); font-size: 13px; color: var(--nx-text-sub); font-variant-numeric: tabular-nums; }
+.nx-dtp__col button:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
+.nx-dtp__col button.is-on { background: var(--nx-primary); color: #fff; font-weight: 500; }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, Icon, IconButton } from '../../ds/components';
+import { Button, DateTimePicker, Icon, IconButton } from '../../ds/components';
 import type { Cam } from './data';
 import { sceneUrl } from './scene';
 
@@ -77,8 +77,8 @@ export function RecordingModal({ cam, onClose, toast }: Props) {
         </header>
 
         <div className="mv-modal__bar">
-          <label className="mv-dt"><span>De</span><input type="datetime-local" value={from} onChange={(e) => { setFrom(e.target.value); setQuick(null); }} /></label>
-          <label className="mv-dt"><span>Até</span><input type="datetime-local" value={to} onChange={(e) => { setTo(e.target.value); setQuick(null); }} /></label>
+          <DateTimePicker label="De" value={from} max={toLocal(new Date())} onChange={(v) => { setFrom(v); setQuick(null); }} />
+          <DateTimePicker label="Até" value={to} max={toLocal(new Date())} onChange={(v) => { setTo(v); setQuick(null); }} />
           <div className="mv-quick">
             {QUICK.map(([l, m]) => (
               <button key={m} type="button" className={`mv-chip${quick === m ? ' is-on' : ''}`} onClick={() => pickQuick(m)}>{l}</button>

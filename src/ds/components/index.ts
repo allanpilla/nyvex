@@ -10,3 +10,4 @@ export { PageHeader } from './PageHeader';
 export { Switch } from './Switch';
 export { Segmented } from './Segmented';
 export type { TipPlace } from './Tooltip';
+export { DateTimePicker } from './DateTimePicker';
