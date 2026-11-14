@@ -2,36 +2,12 @@
 .nx-scrim { position: fixed; inset: 0; z-index: 20; background: var(--nx-overlay); backdrop-filter: blur(2px); display: flex; justify-content: center; align-items: flex-start; padding: 10vh 16px 16px; }
 .nx-sp { width: min(680px, 100%); display: flex; flex-direction: column; gap: 8px; max-height: 80vh; }
 
-.nx-sp__wrap {
-  /* Um trecho de luz azul que percorre o contorno, sobre um traço azul discreto. */
-  --nx-comet: conic-gradient(from var(--nx-glow-angle),
-    transparent 0deg, transparent 230deg, rgba(55, 93, 251, 0.3) 290deg, #5b7dff 340deg, #b9ccff 356deg, transparent 360deg);
-  position: relative; flex: none; border-radius: var(--nx-radius-lg);
-  animation: nx-glow-spin 6s linear infinite;
-}
-/* Halo azul que acompanha os trechos de luz */
-.nx-sp__wrap::before {
-  content: ''; position: absolute; inset: -1px; border-radius: inherit;
-  background: var(--nx-comet); filter: blur(10px); opacity: 0.5; pointer-events: none;
-}
-[data-theme='light'] .nx-sp__wrap::before { opacity: 0.35; }
+.nx-sp__wrap { flex: none; }
 .nx-sp__field {
-  position: relative;
   display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 16px;
-  background: var(--nx-bg-surface); border-radius: var(--nx-radius-lg);
-  box-shadow: inset 0 0 0 1px rgba(55, 93, 251, 0.28), var(--nx-shadow);
+  background: var(--nx-bg-surface); border: 1px solid var(--nx-primary); border-radius: var(--nx-radius-lg);
+  box-shadow: 0 0 0 4px rgba(55, 93, 251, 0.18), var(--nx-shadow);
 }
-/* Traço fino de 1px com a luz passando */
-.nx-sp__field::before {
-  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
-  background: var(--nx-comet);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  pointer-events: none;
-}
-@property --nx-glow-angle { syntax: '<angle>'; initial-value: 0deg; inherits: true; }
-@keyframes nx-glow-spin { to { --nx-glow-angle: 360deg; } }
-@media (prefers-reduced-motion: reduce) { .nx-sp__wrap { animation: none; } }
 .nx-sp__lead { width: 20px; height: 20px; color: var(--nx-icon-sub); }
 .nx-sp__field input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--nx-text-main); font: inherit; font-size: 16px; }
 .nx-sp__field input::placeholder { color: var(--nx-text-soft); }
