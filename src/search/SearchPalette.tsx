@@ -63,7 +63,9 @@ function RowView({ icon, title, subtitle, tag, side, sel, tone, q = '' }: {
         {subtitle && <span className="nx-sr__sub"><Hl text={subtitle} q={q} /></span>}
       </span>
       {tag && <Badge tone={tag.tone}>{tag.label}</Badge>}
-      {sel ? <span className="nx-sr__enter"><Icon name="enter" size={16} /></span> : side && <span className="nx-sr__side">{side}</span>}
+      {side && <span className="nx-sr__side">{side}</span>}
+      {/* Espaço fixo para o ↵: aparece só na linha selecionada, sem empurrar o conteúdo. */}
+      <span className={`nx-sr__enter${sel ? ' is-on' : ''}`} aria-hidden="true"><Icon name="enter" size={16} /></span>
     </>
   );
 }
@@ -162,7 +164,8 @@ function Palette({ onClose }: { onClose: () => void }) {
   return (
     <div className="nx-scrim" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="nx-sp" role="dialog" aria-label="Buscar">
-        <div className={`nx-sp__field${ai ? ' is-ai' : ''}`}>
+        <div className={`nx-sp__wrap${ai ? ' is-ai' : ''}`}>
+        <div className="nx-sp__field">
           <Icon name={ai ? 'sparkle' : 'search'} className="nx-sp__lead" />
           <input
             ref={inputRef}
@@ -178,6 +181,7 @@ function Palette({ onClose }: { onClose: () => void }) {
             <Icon name={ai ? 'close' : 'sparkle'} size={16} />
             {ai ? 'Sair da IA' : 'Buscar com IA'}
           </button>
+        </div>
         </div>
 
         <div className="nx-sp__panel">
