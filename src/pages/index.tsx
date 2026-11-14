@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import type { Screen } from '../navigation';
+import { MuralPage } from './mural/MuralPage';
 
 /**
  * Telas já desenhadas, por id do menu. Ao criar uma tela nova:
@@ -7,4 +8,6 @@ import type { Screen } from '../navigation';
  * 2) registre aqui: { alertas: AlertasPage }
  * Itens sem entrada aqui usam a tela provisória.
  */
-export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> = {};
+export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> = {
+  mural: MuralPage,
+};

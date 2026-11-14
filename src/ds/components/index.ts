@@ -7,3 +7,6 @@ export { NavItem } from './NavItem';
 export { TooltipProvider, useTooltip, useTooltipApi } from './Tooltip';
 export { Button } from './Button';
 export { PageHeader } from './PageHeader';
+export { Switch } from './Switch';
+export { Segmented } from './Segmented';
+export type { TipPlace } from './Tooltip';
