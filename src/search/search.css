@@ -61,7 +61,6 @@
 
 .nx-sp__empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px; text-align: center; color: var(--nx-text-soft); }
 .nx-sp__empty b { color: var(--nx-text-main); font-weight: 500; }
-.nx-sp__empty .nx-sp__ai { margin-top: 8px; }
 
 .nx-sp__foot { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px; border-top: 1px solid var(--nx-stroke); font-size: 12px; color: var(--nx-text-soft); flex: none; }
 .nx-sp__foot span { display: inline-flex; align-items: center; gap: 6px; }
@@ -70,6 +69,5 @@
   .nx-scrim { padding-top: 16px; }
   .nx-sp__ai { padding: 0 10px; font-size: 0; gap: 0; }
   .nx-sp__ai .nx-icon { margin: 0; }
-  .nx-sp__empty .nx-sp__ai { font-size: 13px; gap: 6px; }
   .nx-sr .nx-badge, .nx-sr__side { display: none; }
 }

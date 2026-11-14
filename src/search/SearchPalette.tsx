@@ -222,10 +222,7 @@ function Palette({ onClose }: { onClose: () => void }) {
             {!ai && q.trim() && rows.length === 0 && (
               <div className="nx-sp__empty">
                 <b>Nada encontrado para “{q}”</b>
-                <span>Tente outro termo ou pergunte para a IA.</span>
-                <button type="button" className="nx-sp__ai" onClick={() => { setAi(true); setAiAsked(q.trim()); }}>
-                  <Icon name="sparkle" size={16} /> Perguntar para a IA
-                </button>
+                <span>Confira a grafia ou tente outro termo, como uma placa, um local ou um nome.</span>
               </div>
             )}
           </div>
