@@ -233,3 +233,27 @@
 .mv-grid.is-dense .mv-tile__info { padding: 22px 10px 8px; }
 .mv-grid.is-dense .mv-tile__name span, .mv-grid.is-dense .mv-slot__btn > span:last-child, .mv-grid.is-dense .mv-tile__off .nx-btn, .mv-grid.is-dense .mv-tile__off > span:not(.nx-icon) { display: none; }
 .mv-grid.is-dense .mv-tile__off { padding-bottom: 40px; }
+
+/* ---- Ajustes v3 ---- */
+.mv-panel__head, .mv-main .nx-ph-head, .mv-rail__head { height: 64px; padding-top: 0; padding-bottom: 0; }
+.mv-main .nx-ph-head h1 { font-size: 18px; line-height: 24px; }
+.mv-main .nx-ph-head p { font-size: 12px; line-height: 16px; }
+.mv-main .nx-ph-head__icon { width: 32px; height: 32px; }
+.mv-main .nx-ph-head__icon .nx-icon { width: 18px !important; height: 18px !important; }
+.mv-panel__head h2 { font-size: 15px; line-height: 22px; }
+
+.mv-rail { gap: 4px; }
+.mv-rail__group { margin-top: 10px; display: flex; flex-direction: column; gap: 2px; }
+.mv-rail__btn { width: 40px; min-height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: var(--nx-radius-md); color: var(--nx-icon-sub); }
+.mv-rail__btn:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
+.mv-rail__btn b { font-size: 12px; line-height: 14px; font-weight: 500; color: var(--nx-text-sub); font-variant-numeric: tabular-nums; }
+.mv-rail__group .mv-rail__btn { min-height: 44px; }
+.mv-rail__sep { width: 24px; height: 1px; background: var(--nx-stroke); margin: 6px 0; }
+
+.mv-confirm { width: min(400px, 100%); padding: 20px; border-radius: var(--nx-radius-lg); background: var(--nx-bg-surface); border: 1px solid var(--nx-stroke); box-shadow: var(--nx-shadow); animation: mv-zoom .16s var(--nx-ease); }
+.mv-confirm__ic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(223, 28, 65, .16); color: #f2556f; }
+.mv-confirm h2 { margin: 14px 0 4px; font-size: 16px; line-height: 24px; font-weight: 500; }
+.mv-confirm p { margin: 0; font-size: 13px; line-height: 20px; color: var(--nx-text-soft); }
+.mv-confirm__btns { margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px; }
+.nx-btn--primary.is-danger { background: var(--nx-error); }
+.nx-btn--primary.is-danger:hover { background: #b8173a; }

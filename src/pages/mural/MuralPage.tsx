@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, Icon, IconButton, NavItem, PageHeader, Segmented, Switch, useTooltipApi } from '../../ds/components';
+import { Button, Icon, IconButton, NavItem, PageHeader, Segmented, Switch, useTooltip, useTooltipApi } from '../../ds/components';
 import type { IconName } from '../../ds/icons/icons';
 import { useUi } from '../../lib/useUi';
 import { storage } from '../../lib/storage';
@@ -55,12 +55,14 @@ type PanelProps = {
   freeSlots: number;
   onAutofill: (ids: string[]) => void;
   onClear: () => void;
+  init?: PanelInit;
 };
+type PanelInit = { tab?: Tab; status?: CamStatus | null; focus?: boolean };
 
-function CamPanel({ mural, favs, onToggle, onLocate, onHide, freeSlots, onAutofill, onClear }: PanelProps) {
+function CamPanel({ mural, favs, onToggle, onLocate, onHide, freeSlots, onAutofill, onClear, init }: PanelProps) {
   const [q, setQ] = useState('');
-  const [tab, setTab] = useState<Tab>('todas');
-  const [status, setStatus] = useState<CamStatus | null>(null);
+  const [tab, setTab] = useState<Tab>(init?.tab ?? 'todas');
+  const [status, setStatus] = useState<CamStatus | null>(init?.status ?? null);
   const [closed, setClosed] = useState<Set<string>>(new Set());
   const inMural = useMemo(() => new Set(mural.filter(Boolean) as string[]), [mural]);
 
@@ -92,7 +94,7 @@ function CamPanel({ mural, favs, onToggle, onLocate, onHide, freeSlots, onAutofi
       <div className="mv-panel__tools">
         <label className="nx-input">
           <Icon name="search" size={16} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar câmera ou local" aria-label="Buscar câmera ou local" />
+          <input autoFocus={!!init?.focus} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar câmera ou local" aria-label="Buscar câmera ou local" />
           {q && <button type="button" className="mv-clear" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={16} /></button>}
         </label>
         <Segmented<Tab>
@@ -183,7 +185,6 @@ function CamPanel({ mural, favs, onToggle, onLocate, onHide, freeSlots, onAutofi
           </Button>
           <Button icon="eraser" disabled={inMural.size === 0} onClick={onClear}>Limpar</Button>
         </div>
-        <span className="mv-panel__hint"><Icon name="drag" size={14} />Arraste uma câmera para qualquer posição do mural.</span>
       </div>
     </aside>
   );
@@ -426,7 +427,10 @@ export function MuralPage({ screen }: { screen: Screen }) {
     setMural(trim(m));
     toast(`${k} ${k === 1 ? 'câmera adicionada' : 'câmeras adicionadas'} ao mural`);
   };
-  const clearWall = () => { setMural([]); setPage(0); setExpanded(null); toast('Mural limpo'); };
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [panelInit, setPanelInit] = useState<PanelInit | undefined>();
+  const openPanel = (init?: PanelInit) => { hideTip(); setPanelInit(init); setPanel(true); };
+  const clearWall = () => { setMural([]); setPage(0); setExpanded(null); setConfirmClear(false); toast('Mural limpo'); };
 
   const changeLayout = (id: LayoutId) => {
     setLayout(id);
@@ -460,17 +464,25 @@ export function MuralPage({ screen }: { screen: Screen }) {
           onHide={() => { hideTip(); setPanel(false); }}
           freeSlots={freeSlots}
           onAutofill={autofill}
-          onClear={clearWall}
+          onClear={() => setConfirmClear(true)}
+          init={panelInit}
         />
       ) : (
         <aside className="mv-rail" aria-label="Câmeras">
           <div className="mv-rail__head">
-            <IconButton icon="panel" label="Mostrar lista de câmeras" onClick={() => { hideTip(); setPanel(true); }} />
+            <IconButton icon="panel" label="Mostrar lista de câmeras" onClick={() => openPanel()} />
           </div>
-          <button type="button" className="mv-rail__label" onClick={() => setPanel(true)}>
-            <Icon name="camera" size={18} />
-            <span>Câmeras</span>
-          </button>
+          <div className="mv-rail__group" aria-label="Situação das câmeras">
+            {(['online', 'atencao', 'offline'] as CamStatus[]).map((st) => (
+              <RailBtn key={st} label={`${STATUS_LABEL[st]}: ver na lista`} onClick={() => openPanel({ status: st })}>
+                <span className={`mv-dot is-${st}`} />
+                <b>{CAMS.filter((c) => c.status === st).length}</b>
+              </RailBtn>
+            ))}
+          </div>
+          <div className="mv-rail__sep" />
+          <RailBtn label="Buscar câmera" onClick={() => openPanel({ focus: true })}><Icon name="search" size={18} /></RailBtn>
+          <RailBtn label={`Favoritas (${favs.size})`} onClick={() => openPanel({ tab: 'fav' })}><Icon name="star" size={18} /></RailBtn>
         </aside>
       )}
       <div className="mv-main">
@@ -544,6 +556,15 @@ export function MuralPage({ screen }: { screen: Screen }) {
           )}
         </div>
       </div>
+      {confirmClear && (
+        <ConfirmDialog
+          title="Limpar o mural?"
+          text={`${count} ${count === 1 ? 'câmera sai' : 'câmeras saem'} do mural. O layout e os presets salvos continuam como estão.`}
+          confirm="Limpar mural"
+          onConfirm={clearWall}
+          onCancel={() => setConfirmClear(false)}
+        />
+      )}
       {recCam && CAM_BY_ID[recCam] && <RecordingModal cam={CAM_BY_ID[recCam]} onClose={() => setRecCam(null)} toast={toast} />}
       {gridBtn && (
         <Menu anchor={gridBtn} onClose={() => setGridBtn(null)}>
@@ -555,6 +576,35 @@ export function MuralPage({ screen }: { screen: Screen }) {
         </Menu>
       )}
     </div>
+  );
+}
+
+function RailBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  const tip = useTooltip(label);
+  const { hide } = useTooltipApi();
+  return <button type="button" className="mv-rail__btn" aria-label={label} {...tip} onClick={() => { hide(); onClick(); }}>{children}</button>;
+}
+
+/** Confirmação para ações que não dá para desfazer. */
+function ConfirmDialog({ title, text, confirm, onConfirm, onCancel }: { title: string; text: string; confirm: string; onConfirm: () => void; onCancel: () => void }) {
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel(); } };
+    document.addEventListener('keydown', k, true);
+    return () => document.removeEventListener('keydown', k, true);
+  }, [onCancel]);
+  return createPortal(
+    <div className="mv-modal__back" onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+      <div className="mv-confirm" role="alertdialog" aria-modal="true" aria-labelledby="mv-confirm-t">
+        <span className="mv-confirm__ic"><Icon name="eraser" size={20} /></span>
+        <h2 id="mv-confirm-t">{title}</h2>
+        <p>{text}</p>
+        <div className="mv-confirm__btns">
+          <Button autoFocus onClick={onCancel}>Cancelar</Button>
+          <Button variant="primary" className="is-danger" onClick={onConfirm}>{confirm}</Button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
