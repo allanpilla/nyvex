@@ -68,21 +68,14 @@
 .nx-pop .nx-item { width: 100% !important; }
 .nx-pop .nx-item__lbl { opacity: 1 !important; }
 
+/* Busca fixa no topo do menu */
+.nx-sb__search { flex: none; padding-top: 4px; padding-bottom: 4px; }
+
 /* ---------- Conteúdo ---------- */
 .nx-main { flex: 1; min-width: 0; padding: 8px 8px 8px 0; display: flex; }
 .nx-panel { flex: 1; min-width: 0; background: var(--nx-bg-surface); border-radius: var(--nx-radius-lg); display: flex; flex-direction: column; overflow: hidden; transition: background 0.2s; }
-.nx-top { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--nx-stroke); }
-.nx-crumb { font-size: 12px; color: var(--nx-text-soft); display: flex; gap: 6px; align-items: center; white-space: nowrap; overflow: hidden; }
-.nx-crumb b { color: var(--nx-text-sub); font-weight: 500; }
-.nx-search { margin-left: auto; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px 0 10px; border-radius: var(--nx-radius-md); border: 1px solid var(--nx-stroke); color: var(--nx-text-soft); font-size: 13px; min-width: 0; transition: background 0.12s; }
-.nx-search:hover { background: var(--nx-bg-hover); }
-.nx-search svg { width: 16px; height: 16px; flex: none; }
-.nx-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
 .nx-page { padding: 24px 20px; display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; overflow: auto; }
-.nx-page h1 { margin: 0; font-size: 24px; line-height: 32px; font-weight: 500; letter-spacing: -0.01em; text-wrap: balance; }
-.nx-page p { margin: 0; color: var(--nx-text-soft); max-width: 60ch; }
-.nx-ph { margin-top: 18px; flex: 1; min-height: 160px; border: 1px dashed var(--nx-bg-badge); border-radius: var(--nx-radius-lg); display: grid; place-items: center; color: var(--nx-text-soft); font-size: 13px; text-align: center; padding: 16px; }
+.nx-ph { flex: 1; min-height: 160px; border: 1px dashed var(--nx-bg-badge); border-radius: var(--nx-radius-lg); display: grid; place-items: center; color: var(--nx-text-soft); font-size: 13px; text-align: center; padding: 16px; }
 
 /* ---------- Paleta de comando ---------- */
 .nx-scrim { position: absolute; inset: 0; z-index: 20; background: var(--nx-overlay); display: flex; justify-content: center; align-items: flex-start; padding: 12vh 16px 16px; }
@@ -102,5 +95,4 @@
 @media (max-width: 720px) {
   .nx-app:not(.is-collapsed) .nx-sb { position: absolute; top: 0; bottom: 0; left: 0; box-shadow: var(--nx-shadow); }
   .nx-app:not(.is-collapsed) .nx-main { margin-left: var(--nx-sidebar-closed); }
-  .nx-search span { display: none; }
 }

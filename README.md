@@ -30,6 +30,6 @@ src/
 
 ## Atalhos
 
-- `⌘K` / `Ctrl K`: ir para uma tela
+- `⌘K` / `Ctrl K`: buscar telas (também no topo do menu)
 - `[`: recolher ou expandir o menu
 - Menu fechado: passe o mouse no logo para ver o botão de expandir

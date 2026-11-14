@@ -43,12 +43,12 @@ function Palette({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="nx-scrim" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="nx-pal" role="dialog" aria-label="Comando">
+      <div className="nx-pal" role="dialog" aria-label="Buscar">
         <div className="nx-pal__in">
-          <Icon name="cmd" />
+          <Icon name="search" />
           <input
             autoFocus
-            placeholder="Ir para uma tela…"
+            placeholder="Buscar telas…"
             autoComplete="off"
             value={q}
             onChange={(e) => { setQ(e.target.value); setSel(0); }}

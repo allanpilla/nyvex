@@ -72,3 +72,28 @@
 }
 .nx-tip.is-on { opacity: 1; transform: none; }
 .nx-tip .nx-kbd { background: transparent; border-color: currentColor; color: inherit; opacity: 0.7; }
+
+/* Botão */
+.nx-btn {
+  height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px;
+  border-radius: var(--nx-radius-md); font-size: 14px; font-weight: 500; white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.nx-btn--primary { background: var(--nx-primary); color: #fff; }
+.nx-btn--primary:hover { background: #2547d0; }
+.nx-btn--secondary { border: 1px solid var(--nx-stroke); color: var(--nx-text-sub); background: transparent; }
+.nx-btn--secondary:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
+
+/* Cabeçalho de página */
+.nx-ph-head {
+  display: flex; align-items: center; gap: 16px; padding: 16px 20px; min-height: 72px;
+  border-bottom: 1px solid var(--nx-stroke);
+}
+.nx-ph-head__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.nx-ph-head h1 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 500; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nx-ph-head p { margin: 0; font-size: 13px; line-height: 18px; color: var(--nx-text-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nx-ph-head__actions { display: flex; align-items: center; gap: 8px; flex: none; }
+@media (max-width: 720px) {
+  .nx-ph-head { flex-wrap: wrap; }
+  .nx-ph-head p { white-space: normal; }
+}

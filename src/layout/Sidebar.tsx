@@ -30,7 +30,7 @@ export function Sidebar() {
   const { hide } = useTooltipApi();
   const [userOpen, setUserOpen] = useState(false);
   const themeLabel = theme === 'light' ? 'Tema claro' : 'Tema escuro';
-  const cmdTip = useTooltip('Comando', '⌘K', collapsed);
+  const searchTip = useTooltip('Buscar', '⌘K', collapsed);
   const themeTip = useTooltip(themeLabel, undefined, collapsed);
   const userTip = useTooltip('Nome do usuário', undefined, collapsed && !userOpen);
 
@@ -47,6 +47,10 @@ export function Sidebar() {
         <IconButton icon="unfold" label="Expandir menu" shortcut="[" className="nx-sb__unfold" onClick={() => toggle(false)} />
       </div>
 
+      <div className="nx-sb__search">
+        <NavItem icon="search" label="Buscar" trailing={<span className="nx-count">⌘K</span>} {...searchTip} onClick={() => { hide(); setPaletteOpen(true); }} />
+      </div>
+
       <nav className="nx-sb__scroll" onScroll={hide}>
         {NAV.map((g, i) => (
           <div className={`nx-sb__grp${g.title ? '' : ' nx-sb__grp--first'}`} key={g.title ?? i}>
@@ -60,7 +64,6 @@ export function Sidebar() {
 
       <div className="nx-sb__foot">
         <SideItem screen={MAPS} active={pathname === MAPS.path} />
-        <NavItem icon="cmd" label="Comando" trailing={<span className="nx-count">⌘K</span>} {...cmdTip} onClick={() => { hide(); setPaletteOpen(true); }} className="nx-sb__cmd" />
         <NavItem icon={theme === 'light' ? 'sun' : 'moon'} label={themeLabel} {...themeTip} onClick={toggleTheme} />
         <div className="nx-sb__div" />
         <div className="nx-sb__user-wrap">

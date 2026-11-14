@@ -5,3 +5,5 @@ export { Badge } from './Badge';
 export { Avatar } from './Avatar';
 export { NavItem } from './NavItem';
 export { TooltipProvider, useTooltip, useTooltipApi } from './Tooltip';
+export { Button } from './Button';
+export { PageHeader } from './PageHeader';
