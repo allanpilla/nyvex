@@ -552,6 +552,7 @@ export function MuralPage({ screen }: { screen: Screen }) {
 
   return (
     <div className="mv">
+      <div className={`mv-side${panel ? ' is-open' : ''}`}>
       {panel ? (
         <CamPanel
           mural={mural}
@@ -582,6 +583,7 @@ export function MuralPage({ screen }: { screen: Screen }) {
           <RailBtn on={!!view?.fav} label={view?.fav ? 'Voltar ao mural' : `Mostrar favoritas (${favs.size})`} onClick={() => toggleView({ fav: true })}><Icon name={view?.fav ? 'starFill' : 'star'} size={18} /></RailBtn>
         </aside>
       )}
+      </div>
       <div className="mv-main">
         <PageHeader
           title={screen.label}

@@ -333,3 +333,11 @@
 @container (max-width: 560px) { .mv-sbar .is-opt, .mv-sbar__lbl, .mv-sbar__sep { display: none; } }
 @container (max-width: 400px) { .mv-sbtn--live span:not(.nx-icon), .mv-sbar__val { display: none; } .mv-sbtn--live { padding: 0; width: 28px; } .mv-sbtn--live i { width: 8px; height: 8px; } }
 @container (max-width: 300px) { .mv-sbtn--save span:not(.nx-icon), .mv-sbar .mv-sbtn--txt { display: none; } .mv-sbtn--save { padding: 0 7px; } .mv-tools .mv-act.nx-icon-btn { width: 24px; height: 24px; } }
+
+/* ---- Ajustes v7: painel de câmeras abre/fecha com transição (igual à sidebar principal) ---- */
+.mv-side { flex: none; width: 56px; min-height: 0; display: flex; overflow: hidden; transition: width .22s var(--nx-ease); }
+.mv-side.is-open { width: 320px; }
+.mv-side > .mv-panel, .mv-side > .mv-rail { flex: none; animation: mv-side-in .22s var(--nx-ease); }
+.mv-side > .mv-panel { width: 320px; }
+@keyframes mv-side-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .mv-side, .mv-side > * { transition: none; animation: none; } }
