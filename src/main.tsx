@@ -7,6 +7,7 @@ import './ds/tokens.css';
 import './ds/base.css';
 import './ds/components.css';
 import './layout/layout.css';
+import './search/search.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

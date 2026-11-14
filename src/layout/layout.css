@@ -77,17 +77,6 @@
 .nx-page { padding: 24px 20px; display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; overflow: auto; }
 .nx-ph { flex: 1; min-height: 160px; border: 1px dashed var(--nx-bg-badge); border-radius: var(--nx-radius-lg); display: grid; place-items: center; color: var(--nx-text-soft); font-size: 13px; text-align: center; padding: 16px; }
 
-/* ---------- Paleta de comando ---------- */
-.nx-scrim { position: absolute; inset: 0; z-index: 20; background: var(--nx-overlay); display: flex; justify-content: center; align-items: flex-start; padding: 12vh 16px 16px; }
-.nx-pal { width: min(520px, 100%); background: var(--nx-bg-surface); border: 1px solid var(--nx-stroke); border-radius: var(--nx-radius-lg); box-shadow: var(--nx-shadow); overflow: hidden; }
-.nx-pal__in { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--nx-stroke); color: var(--nx-icon-sub); }
-.nx-pal__in input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--nx-text-main); font: inherit; font-size: 15px; }
-.nx-pal__in input::placeholder { color: var(--nx-text-soft); }
-.nx-pal__list { max-height: 320px; overflow: auto; padding: 6px; }
-.nx-pal__sec { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--nx-text-soft); padding: 8px 8px 4px; }
-.nx-pal__grp { font-size: 12px; color: var(--nx-text-soft); }
-.nx-pal__empty { padding: 20px; text-align: center; color: var(--nx-text-soft); }
-
 /* ---------- Aviso ---------- */
 .nx-toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 60; background: var(--nx-tip-bg); color: var(--nx-tip-fg); padding: 8px 12px; border-radius: var(--nx-radius-md); font-size: 13px; box-shadow: var(--nx-shadow); }
 

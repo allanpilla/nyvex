@@ -24,6 +24,12 @@ export const icons = {
   unfold: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M20.1 17.4012V19.2012H3.90002V17.4012H20.1ZM16.8636 4.71484L21 8.85124L16.8636 12.9876L15.591 11.715L18.4548 8.85124L15.591 5.98744L16.8636 4.71484ZM12 11.1012V12.9012H3.90002V11.1012H12ZM12 4.80124V6.60124H3.90002V4.80124H12Z\" fill=\"currentColor\"/></svg>",
   updown: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M17.1728 9.53586L12.0002 4.36328L6.82764 9.53586L8.00615 10.7144L12.0002 6.7203L15.9943 10.7144L17.1728 9.53586ZM6.82751 14.4645L12.0001 19.6372L17.1727 14.4645L15.9942 13.286L12.0001 17.2801L8.00602 13.286L6.82751 14.4645Z\" fill=\"currentColor\"/></svg>",
   search: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M18.03 16.62l4.28 4.28-1.41 1.41-4.28-4.28A9 9 0 1 1 18.03 16.62zm-2-.74A7 7 0 1 0 6.1 15.88a7 7 0 0 0 9.93 0z\" fill=\"currentColor\"/></svg>",
+  clock: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zm0-1.8a7.2 7.2 0 1 0 0-14.4 7.2 7.2 0 0 0 0 14.4zm.9-7.2h3.6v1.8h-5.4V6.6h1.8V12z\" fill=\"currentColor\"/></svg>",
+  sparkle: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M12 2.5l1.9 5.6c.3.9 1 1.6 1.9 1.9l5.7 2-5.7 2c-.9.3-1.6 1-1.9 1.9L12 21.5l-1.9-5.6c-.3-.9-1-1.6-1.9-1.9l-5.7-2 5.7-2c.9-.3 1.6-1 1.9-1.9L12 2.5z\" fill=\"currentColor\"/></svg>",
+  camera: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M3.9 6.6h11.7c.5 0 .9.4.9.9v2.3l3.8-2.6c.4-.3 1 0 1 .5v8.6c0 .5-.6.8-1 .5l-3.8-2.6v2.3c0 .5-.4.9-.9.9H3.9c-.5 0-.9-.4-.9-.9V7.5c0-.5.4-.9.9-.9zm.9 1.8v7.2h9.9V8.4H4.8zm11.7 3.2v.8l2.7 1.9V9.7l-2.7 1.9z\" fill=\"currentColor\"/></svg>",
+  plus: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M11.1 11.1V5.7h1.8v5.4h5.4v1.8h-5.4v5.4h-1.8v-5.4H5.7v-1.8h5.4z\" fill=\"currentColor\"/></svg>",
+  enter: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M18.3 4.8h1.8v8.1c0 .5-.4.9-.9.9H7.6l3.3 3.3-1.3 1.3L4.1 13l5.5-5.4 1.3 1.3L7.6 12h10.7V4.8z\" fill=\"currentColor\"/></svg>",
+  close: "<svg viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"M12 10.7l4.5-4.4 1.2 1.2-4.4 4.5 4.4 4.5-1.2 1.2-4.5-4.4-4.5 4.4-1.2-1.2 4.4-4.5-4.4-4.5 1.2-1.2 4.5 4.4z\" fill=\"currentColor\"/></svg>",
 } as const;
 
 export type IconName = keyof typeof icons;

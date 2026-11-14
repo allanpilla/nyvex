@@ -97,3 +97,9 @@
   .nx-ph-head { flex-wrap: wrap; }
   .nx-ph-head p { white-space: normal; }
 }
+.nx-badge--warning { background: rgba(242, 174, 64, 0.15); color: #f2ae40; }
+.nx-badge--danger { background: rgba(223, 28, 65, 0.16); color: #f2556f; }
+.nx-badge--info { background: var(--nx-tonal-bg); color: var(--nx-tonal-fg); }
+[data-theme='light'] .nx-badge--warning { color: #b46a00; }
+[data-theme='light'] .nx-badge--danger { color: #c0102f; }
+[data-theme='light'] .nx-badge--success { color: #1a8a63; }

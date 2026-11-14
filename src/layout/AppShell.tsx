@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
-import { CommandPalette } from './CommandPalette';
+import { SearchPalette } from '../search/SearchPalette';
 import { useUi } from '../lib/useUi';
 
 /** Casca do app: menu lateral + painel de conteúdo da rota atual. */
@@ -14,7 +14,7 @@ export function AppShell() {
           <Outlet />
         </section>
       </main>
-      <CommandPalette />
+      <SearchPalette />
     </div>
   );
 }

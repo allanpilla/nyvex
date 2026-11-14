@@ -30,6 +30,6 @@ src/
 
 ## Atalhos
 
-- `⌘K` / `Ctrl K`: buscar telas (também no topo do menu)
+- `⌘K` / `Ctrl K`: busca global (pessoas, placas, câmeras, locais, ocorrências, alertas, telas e ações), com filtros por tipo (`Tab`) e modo "Buscar com IA" simulado. Dados de exemplo em `src/search/data.ts`.
 - `[`: recolher ou expandir o menu
 - Menu fechado: passe o mouse no logo para ver o botão de expandir
