@@ -354,7 +354,11 @@ export function MuralPage({ screen }: { screen: Screen }) {
 
   const L = layout === 'custom' ? { id: 'custom' as LayoutId, label: `${grid.c}×${grid.r}`, cols: grid.c, slots: grid.c * grid.r } : LAYOUTS.find((l) => l.id === layout) ?? LAYOUTS[2];
   const N = L.slots;
-  const pages = Math.max(1, Math.ceil(mural.length / N));
+  const [view, setView] = useState<{ status?: CamStatus; fav?: boolean } | null>(null);
+  const [searchBtn, setSearchBtn] = useState<HTMLElement | null>(null);
+  const viewIds: Slot[] | null = view ? CAMS.filter((c) => (view.fav ? favs.has(c.id) : c.status === view.status)).map((c) => c.id) : null;
+  const source: Slot[] = viewIds ?? mural;
+  const pages = Math.max(1, Math.ceil(source.length / N));
   const cur = Math.min(page, pages - 1);
   const count = mural.filter(Boolean).length;
   const online = CAMS.filter((c) => c.status === 'online').length;
@@ -439,7 +443,8 @@ export function MuralPage({ screen }: { screen: Screen }) {
     setExpanded(null);
   };
 
-  const slots: Slot[] = Array.from({ length: N }, (_, i) => mural[cur * N + i] ?? null);
+  const slots: Slot[] = Array.from({ length: N }, (_, i) => source[cur * N + i] ?? null);
+  const toggleView = (v: { status?: CamStatus; fav?: boolean }) => { setPage(0); setExpanded(null); setView((cv) => (cv && cv.status === v.status && !!cv.fav === !!v.fav ? null : v)); };
   const tileProps = (c: Cam, idx: number) => ({
     cam: c,
     idx,
@@ -474,15 +479,15 @@ export function MuralPage({ screen }: { screen: Screen }) {
           </div>
           <div className="mv-rail__group" aria-label="Situação das câmeras">
             {(['online', 'atencao', 'offline'] as CamStatus[]).map((st) => (
-              <RailBtn key={st} label={`${STATUS_LABEL[st]}: ver na lista`} onClick={() => openPanel({ status: st })}>
+              <RailBtn key={st} on={view?.status === st} label={view?.status === st ? 'Voltar ao mural' : `Mostrar câmeras: ${STATUS_LABEL[st]}`} onClick={() => toggleView({ status: st })}>
                 <span className={`mv-dot is-${st}`} />
                 <b>{CAMS.filter((c) => c.status === st).length}</b>
               </RailBtn>
             ))}
           </div>
           <div className="mv-rail__sep" />
-          <RailBtn label="Buscar câmera" onClick={() => openPanel({ focus: true })}><Icon name="search" size={18} /></RailBtn>
-          <RailBtn label={`Favoritas (${favs.size})`} onClick={() => openPanel({ tab: 'fav' })}><Icon name="star" size={18} /></RailBtn>
+          <RailBtn on={!!searchBtn} label="Buscar câmera" onClick={(el) => setSearchBtn(searchBtn ? null : el)}><Icon name="search" size={18} /></RailBtn>
+          <RailBtn on={!!view?.fav} label={view?.fav ? 'Voltar ao mural' : `Mostrar favoritas (${favs.size})`} onClick={() => toggleView({ fav: true })}><Icon name={view?.fav ? 'starFill' : 'star'} size={18} /></RailBtn>
         </aside>
       )}
       <div className="mv-main">
@@ -537,13 +542,24 @@ export function MuralPage({ screen }: { screen: Screen }) {
 
         <div className="mv-wall" ref={wallRef}>
           {patrol && <div key={cur} className="mv-patrol" style={{ animationDuration: `${PATROL_MS}ms` }} />}
+          {view && (
+            <div className="mv-viewbar">
+              {view.fav ? <Icon name="starFill" size={16} className="mv-viewbar__star" /> : <span className={`mv-dot is-${view.status}`} />}
+              <span>
+                Mostrando <b>{viewIds!.length} {viewIds!.length === 1 ? 'câmera' : 'câmeras'} {view.fav ? (viewIds!.length === 1 ? 'favorita' : 'favoritas') : `· ${STATUS_LABEL[view.status!]}`}</b> do inventário. O mural salvo não muda.
+              </span>
+              <Button icon="close" onClick={() => { setView(null); setPage(0); }}>Voltar ao mural</Button>
+            </div>
+          )}
           <div className={`mv-grid mv-grid--${layout}${L.cols >= 4 ? ' is-dense' : ''}`} style={{ ['--cols' as string]: L.cols, ['--rows' as string]: Math.ceil((layout === 'destaque' ? 9 : N) / L.cols) }}>
             {slots.map((id, i) => {
               const idx = cur * N + i;
               const big = layout === 'destaque' && i === 0;
               const c = id ? CAM_BY_ID[id] : null;
               return c ? (
-                <Tile key={c.id} {...tileProps(c, idx)} big={big} onExpand={() => setExpanded(c.id)} />
+                <Tile key={c.id} {...tileProps(c, idx)} {...(view ? { onDropCam: () => {} } : {})} big={big} onExpand={() => setExpanded(c.id)} />
+              ) : view ? (
+                <div key={`b${idx}`} className={`mv-blank${big ? ' is-big' : ''}`} />
               ) : (
                 <EmptySlot key={`e${idx}`} idx={idx} big={big} mural={mural} onPick={placeAt} />
               );
@@ -556,6 +572,15 @@ export function MuralPage({ screen }: { screen: Screen }) {
           )}
         </div>
       </div>
+      {searchBtn && (
+        <SearchPop
+          anchor={searchBtn}
+          mural={mural}
+          onClose={() => setSearchBtn(null)}
+          onToggle={(id, on) => (on ? add(id) : remove(id))}
+          onLocate={(id) => { setView(null); locate(id); }}
+        />
+      )}
       {confirmClear && (
         <ConfirmDialog
           title="Limpar o mural?"
@@ -579,10 +604,49 @@ export function MuralPage({ screen }: { screen: Screen }) {
   );
 }
 
-function RailBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+function RailBtn({ label, onClick, on, children }: { label: string; onClick: (el: HTMLElement) => void; on?: boolean; children: React.ReactNode }) {
   const tip = useTooltip(label);
   const { hide } = useTooltipApi();
-  return <button type="button" className="mv-rail__btn" aria-label={label} {...tip} onClick={() => { hide(); onClick(); }}>{children}</button>;
+  return <button type="button" className={`mv-rail__btn${on ? ' is-on' : ''}`} aria-label={label} aria-pressed={on} {...tip} onClick={(e) => { hide(); onClick(e.currentTarget); }}>{children}</button>;
+}
+
+/** Busca flutuante ao lado da faixa recolhida. */
+function SearchPop({ anchor, mural, onClose, onToggle, onLocate }: { anchor: HTMLElement; mural: Slot[]; onClose: () => void; onToggle: (id: string, on: boolean) => void; onLocate: (id: string) => void }) {
+  const [q, setQ] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+  const r = anchor.getBoundingClientRect();
+  const inMural = new Set(mural.filter(Boolean) as string[]);
+  const res = CAMS.filter((c) => !q || norm(`${c.name} ${c.area}`).includes(norm(q))).slice(0, 8);
+  useEffect(() => {
+    const down = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node) && !anchor.contains(e.target as Node)) onClose(); };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } };
+    document.addEventListener('mousedown', down);
+    document.addEventListener('keydown', key, true);
+    return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key, true); };
+  }, [anchor, onClose]);
+  return createPortal(
+    <div ref={ref} className="mv-spop" style={{ left: r.right + 8, top: Math.max(8, Math.min(r.top - 8, window.innerHeight - 420)) }} role="dialog" aria-label="Buscar câmera">
+      <label className="nx-input">
+        <Icon name="search" size={16} />
+        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar câmera ou local" aria-label="Buscar câmera ou local"
+          onKeyDown={(e) => { if (e.key === 'Enter' && res[0]) (inMural.has(res[0].id) ? onLocate(res[0].id) : onToggle(res[0].id, true)); }} />
+      </label>
+      <div className="mv-spop__list">
+        {res.map((c) => {
+          const on = inMural.has(c.id);
+          return (
+            <div key={c.id} role="button" tabIndex={0} className={`mv-row${on ? ' is-on' : ''}`} onClick={() => (on ? onLocate(c.id) : onToggle(c.id, true))}>
+              <span className={`mv-dot is-${c.status}`} />
+              <span className="mv-row__txt"><b>{c.name}</b>{c.note ? <span className={`is-${c.status}`}>{c.note}</span> : <span className="mv-spop__area">{c.area}</span>}</span>
+              <Switch size="sm" checked={on} label={`${on ? 'Remover' : 'Adicionar'} ${c.name}`} onChange={(v) => onToggle(c.id, v)} />
+            </div>
+          );
+        })}
+        {res.length === 0 && <div className="mv-empty"><b>Nenhuma câmera encontrada</b><span>Tente outro nome ou local.</span></div>}
+      </div>
+    </div>,
+    document.body,
+  );
 }
 
 /** Confirmação para ações que não dá para desfazer. */

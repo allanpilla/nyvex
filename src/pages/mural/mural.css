@@ -257,3 +257,20 @@
 .mv-confirm__btns { margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px; }
 .nx-btn--primary.is-danger { background: var(--nx-error); }
 .nx-btn--primary.is-danger:hover { background: #b8173a; }
+
+/* ---- Ajustes v4: faixa recolhida filtra o mural ---- */
+.mv-rail__btn.is-on { background: var(--nx-tonal-bg); color: var(--nx-tonal-fg); box-shadow: inset 0 0 0 1px var(--nx-primary); }
+.mv-rail__btn.is-on b { color: var(--nx-tonal-fg); }
+.mv-viewbar { display: flex; align-items: center; gap: 10px; margin: -2px 0 10px; padding: 6px 6px 6px 12px; border-radius: var(--nx-radius-md); background: var(--nx-tonal-bg); color: var(--nx-tonal-fg); font-size: 13px; }
+.mv-viewbar > span:not(.mv-dot) { flex: 1; min-width: 0; }
+.mv-viewbar b { font-weight: 600; }
+.mv-viewbar__star { color: #f2ae40; }
+.mv-viewbar .nx-btn { height: 28px; border-color: rgba(194, 214, 255, .3); color: inherit; }
+.mv-wall:has(.mv-viewbar) { display: flex; flex-direction: column; }
+.mv-wall:has(.mv-viewbar) .mv-grid { flex: 1; min-height: 0; height: auto; }
+.mv-blank { border-radius: var(--nx-radius-md); background: rgba(255,255,255,.015); }
+.mv-blank.is-big { grid-column: span 2; grid-row: span 2; }
+.mv-spop { position: fixed; z-index: 45; width: 340px; padding: 8px; border-radius: var(--nx-radius-lg); background: var(--nx-bg-surface); border: 1px solid var(--nx-stroke); box-shadow: var(--nx-shadow); display: flex; flex-direction: column; gap: 6px; animation: mv-zoom .14s var(--nx-ease); }
+.mv-spop__list { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.mv-spop .mv-row { cursor: pointer; padding-left: 8px; }
+.mv-spop__area { color: var(--nx-text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
