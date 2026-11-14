@@ -33,11 +33,13 @@ function GroupSection({ group, open, onToggle, pathname }: { group: NavGroup; op
         <span>{group.title}</span>
         <Icon name="chevron" size={16} className="nx-sb__chev" />
       </button>
-      <div className="nx-sb__grp-items" hidden={!open}>
-        {group.items.map((it) => (
-          <SideItem key={it.id} screen={it} active={pathname === it.path} />
-        ))}
-      </div>
+      {open && (
+        <div className="nx-sb__grp-items">
+          {group.items.map((it) => (
+            <SideItem key={it.id} screen={it} active={pathname === it.path} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
