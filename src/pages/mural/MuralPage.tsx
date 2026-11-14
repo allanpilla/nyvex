@@ -328,10 +328,10 @@ function Tile({ cam, idx, now, fav, flash, big, expanded, onFav, onRec, onExpand
           {!off && <TileAction icon="replay" label="Histórico de gravações" onClick={onRec} />}
           {!off && <TileAction icon="scissors" label="Salvar trecho" on={!!clip} onClick={(e) => { hide(); setClip(clip ? null : e.currentTarget); }} />}
           {!off && <TileAction icon="snapshot" label="Capturar imagem" onClick={() => toast(`Imagem de ${cam.name} salva`)} />}
-          <TileAction icon={expanded ? 'collapse' : 'expand'} label={expanded ? 'Voltar ao mural' : 'Ampliar'} onClick={onExpand} />
-          <TileAction icon="more" label="Mais ações" on={!!menu} onClick={(e) => { hide(); setMenu(menu ? null : e.currentTarget); }} />
-          {!expanded && <span className="mv-tools__sep" />}
           {!expanded && <TileAction icon="close" label="Remover do mural" onClick={onRemove} />}
+          <TileAction icon="more" label="Mais ações" on={!!menu} onClick={(e) => { hide(); setMenu(menu ? null : e.currentTarget); }} />
+          <span className="mv-tools__sep" />
+          <TileAction icon={expanded ? 'collapse' : 'expand'} label={expanded ? 'Voltar ao mural' : 'Ampliar'} onClick={onExpand} />
         </div>
       </div>
 
