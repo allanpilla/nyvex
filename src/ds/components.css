@@ -293,8 +293,8 @@
 
 /* Drawers flutuantes: afastados das bordas e com cantos arredondados */
 .nx-sheet-back { padding: 8px; }
-.nx-sheet-back.is-soft { background: rgba(5, 7, 11, .35); backdrop-filter: none; }
-[data-theme='light'] .nx-sheet-back.is-soft { background: rgba(10, 13, 20, .12); }
+.nx-sheet-back, .nx-sheet-back.is-soft { background: rgba(3, 4, 8, .62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+[data-theme='light'] .nx-sheet-back, [data-theme='light'] .nx-sheet-back.is-soft { background: rgba(10, 13, 20, .32); }
 .nx-sheet { height: 100%; border: 1px solid var(--nx-stroke); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 64px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .3); }
 [data-theme='light'] .nx-sheet { box-shadow: 0 24px 64px rgba(10, 13, 20, .16), 0 2px 6px rgba(10, 13, 20, .06); }
 .nx-menu { z-index: 80; }
