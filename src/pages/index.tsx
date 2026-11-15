@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { Screen } from '../navigation';
 import { MuralPage } from './mural/MuralPage';
+import { DevicesPage } from './devices/DevicesPage';
 
 /**
  * Telas já desenhadas, por id do menu. Ao criar uma tela nova:
@@ -10,4 +11,5 @@ import { MuralPage } from './mural/MuralPage';
  */
 export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> = {
   mural: MuralPage,
+  disp: DevicesPage,
 };

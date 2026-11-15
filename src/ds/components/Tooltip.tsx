@@ -42,5 +42,7 @@ export function useTooltip(label: string, shortcut?: string, enabled = true, pla
     onFocus: (e: React.FocusEvent<HTMLElement>) =>
       enabled && e.currentTarget.matches(':focus-visible') && show(e.currentTarget, label, shortcut, place),
     onBlur: hide,
+    // Clique costuma trocar/remover o elemento: some com o balão para ele não ficar órfão.
+    onMouseDown: hide,
   };
 }

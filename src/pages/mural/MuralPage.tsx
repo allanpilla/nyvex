@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, Icon, IconButton, NavItem, PageHeader, Segmented, Switch, useTooltip, useTooltipApi } from '../../ds/components';
+import { Button, ConfirmDialog, Icon, IconButton, Menu, NavItem, PageHeader, Segmented, Switch, useTooltip, useTooltipApi } from '../../ds/components';
 import type { IconName } from '../../ds/icons/icons';
 import { useUi } from '../../lib/useUi';
 import { storage } from '../../lib/storage';
@@ -27,21 +27,6 @@ function useNow() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
   return now;
-}
-
-/** Menu suspenso preso a um botão. */
-function Menu({ anchor, onClose, align = 'right', children }: { anchor: HTMLElement; onClose: () => void; align?: 'left' | 'right'; children: React.ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const r = anchor.getBoundingClientRect();
-  useEffect(() => {
-    const down = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node) && !anchor.contains(e.target as Node)) onClose(); };
-    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } };
-    document.addEventListener('mousedown', down);
-    document.addEventListener('keydown', key, true);
-    return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key, true); };
-  }, [anchor, onClose]);
-  const style = align === 'right' ? { top: r.bottom + 6, right: window.innerWidth - r.right } : { top: r.bottom + 6, left: r.left };
-  return createPortal(<div ref={ref} className="nx-menu" role="menu" style={style}>{children}</div>, document.body);
 }
 
 /* ───────────── Painel lateral de câmeras ───────────── */
@@ -681,6 +666,7 @@ export function MuralPage({ screen }: { screen: Screen }) {
           text={`${count} ${count === 1 ? 'câmera sai' : 'câmeras saem'} do mural. O layout e os presets salvos continuam como estão.`}
           confirm="Limpar mural"
           onConfirm={clearWall}
+          icon="eraser"
           onCancel={() => setConfirmClear(false)}
         />
       )}
@@ -743,28 +729,6 @@ function SearchPop({ anchor, mural, onClose, onToggle, onLocate }: { anchor: HTM
   );
 }
 
-/** Confirmação para ações que não dá para desfazer. */
-function ConfirmDialog({ title, text, confirm, onConfirm, onCancel }: { title: string; text: string; confirm: string; onConfirm: () => void; onCancel: () => void }) {
-  useEffect(() => {
-    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel(); } };
-    document.addEventListener('keydown', k, true);
-    return () => document.removeEventListener('keydown', k, true);
-  }, [onCancel]);
-  return createPortal(
-    <div className="mv-modal__back" onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
-      <div className="mv-confirm" role="alertdialog" aria-modal="true" aria-labelledby="mv-confirm-t">
-        <span className="mv-confirm__ic"><Icon name="eraser" size={20} /></span>
-        <h2 id="mv-confirm-t">{title}</h2>
-        <p>{text}</p>
-        <div className="mv-confirm__btns">
-          <Button autoFocus onClick={onCancel}>Cancelar</Button>
-          <Button variant="primary" className="is-danger" onClick={onConfirm}>{confirm}</Button>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
 
 const GRID_SHORTCUTS: [number, number][] = [[5, 4], [6, 4], [6, 5], [7, 5], [8, 4], [10, 5], [10, 10]];
 

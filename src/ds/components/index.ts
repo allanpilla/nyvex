@@ -11,3 +11,6 @@ export { Switch } from './Switch';
 export { Segmented } from './Segmented';
 export type { TipPlace } from './Tooltip';
 export { DateTimePicker } from './DateTimePicker';
+export { Checkbox } from './Checkbox';
+export { Menu } from './Menu';
+export { ConfirmDialog } from './ConfirmDialog';
