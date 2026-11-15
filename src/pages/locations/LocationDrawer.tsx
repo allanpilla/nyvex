@@ -6,7 +6,7 @@ import { ago, ConnPill, copy } from '../devices/parts';
 import { EXPO_LABEL, fmtDate, KIND_LABEL, PEOPLE, pathOf, type Loc, type LocHealth } from './data';
 import { EnvBadge, MapCanvas } from './parts';
 
-type Tab = 'info' | 'infra' | 'rel';
+type Tab = 'info' | 'infra' | 'rel' | 'analises' | 'eventos';
 type Props = {
   l: Loc; locs: Loc[]; devs: Device[]; health: LocHealth;
   onClose: () => void; onOpen: (id: string) => void; onEdit: () => void; onMural: () => void; onDevices: () => void; onAddChild: () => void;
@@ -15,7 +15,7 @@ type Props = {
 
 /**
  * Detalhes do local: só o que a ficha do sistema atual mostra (Informações, Infraestrutura e Relacionamentos).
- * Análises e Eventos ainda não existem no backend, então ficam de fora. Para alterar, “Editar” abre o formulário completo.
+ * Análises e Eventos ainda não existem no backend: mostram a mesma mensagem de indisponível do sistema atual. Para alterar, “Editar” abre o formulário completo.
  */
 export function LocationDrawer({ l, locs, devs, health, onClose, onOpen, onEdit, onMural, onDevices, onAddChild, onPeople, onDelete }: Props) {
   const { toast } = useUi();
@@ -87,6 +87,8 @@ export function LocationDrawer({ l, locs, devs, health, onClose, onOpen, onEdit,
           { value: 'info', label: 'Informações' },
           { value: 'infra', label: <>Infraestrutura<span className="nx-seg__n">{devs.length}</span></> },
           { value: 'rel', label: <>Relacionamentos<span className="nx-seg__n">{l.people.length}</span></> },
+          { value: 'analises', label: 'Análises' },
+          { value: 'eventos', label: 'Eventos' },
         ]} />
       </div>
 
@@ -120,6 +122,13 @@ export function LocationDrawer({ l, locs, devs, health, onClose, onOpen, onEdit,
         )}
 
         {tab === 'rel' && <People l={l} onChange={onPeople} />}
+
+        {(tab === 'analises' || tab === 'eventos') && (
+          <div className="lc-empty">
+            <span className="dv-empty__ic"><Icon name={tab === 'analises' ? 'chart' : 'calendar'} /></span>
+            <span>Esta aba ainda não está disponível. Ela fica pronta quando o backend expuser esses dados.</span>
+          </div>
+        )}
       </div>
 
       {more && (

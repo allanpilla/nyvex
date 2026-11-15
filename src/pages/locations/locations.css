@@ -126,3 +126,4 @@
 .lc-meta__id { font-family: var(--nx-font-mono, ui-monospace, monospace); font-size: 11px; color: var(--nx-text-soft); padding: 1px 4px; border-radius: 4px; }
 .lc-meta__id:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
 .dv-dsheet .lc-mapc { aspect-ratio: 16 / 8; min-height: 180px; }
+.dv-dsheet .dv-drawer__tabs .nx-seg__opt { font-size: 12px; padding-left: 4px; padding-right: 4px; }
