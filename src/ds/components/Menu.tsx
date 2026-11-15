@@ -1,10 +1,10 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-type Props = { anchor: HTMLElement; onClose: () => void; align?: 'left' | 'right'; className?: string; children: ReactNode };
+type Props = { anchor: HTMLElement; onClose: () => void; align?: 'left' | 'right'; className?: string; width?: number; children: ReactNode };
 
 /** Menu/popover suspenso preso a um botão. Fecha com Esc ou clique fora. Abre para cima se faltar espaço. */
-export function Menu({ anchor, onClose, align = 'right', className, children }: Props) {
+export function Menu({ anchor, onClose, align = 'right', className, width, children }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const r = anchor.getBoundingClientRect();
   useEffect(() => {
@@ -20,6 +20,6 @@ export function Menu({ anchor, onClose, align = 'right', className, children }: 
     const h = el.offsetHeight;
     if (r.bottom + 6 + h > window.innerHeight - 8 && r.top - 6 - h > 8) { el.style.top = `${r.top - 6 - h}px`; el.classList.add('is-up'); }
   });
-  const style = align === 'right' ? { top: r.bottom + 6, right: window.innerWidth - r.right } : { top: r.bottom + 6, left: r.left };
+  const style = { ...(align === 'right' ? { top: r.bottom + 6, right: window.innerWidth - r.right } : { top: r.bottom + 6, left: r.left }), ...(width ? { width } : {}) };
   return createPortal(<div ref={ref} className={['nx-menu', className].filter(Boolean).join(' ')} role="menu" style={style}>{children}</div>, document.body);
 }

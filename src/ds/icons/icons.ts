@@ -81,6 +81,10 @@ export const icons = {
   signal: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 19v-3M9.7 19v-6.5M14.3 19V9M19 19V5\"/></svg>",
   sort: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 9.5l4-4 4 4M8 14.5l4 4 4-4\"/></svg>",
   plug: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 3.5v4M15 3.5v4M6.5 7.5h11v3.5a5.5 5.5 0 0 1-11 0zM12 16.5v4\"/></svg>",
+  errorFill: "<svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zm-.9-6.3v1.8h1.8v-1.8h-1.8zm0-7.2v5.4h1.8V7.5h-1.8z\"/></svg>",
+  warnFill: "<svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12.78 3.45l8.57 14.85A.9.9 0 0 1 20.57 19.65H3.43a.9.9 0 0 1-.78-1.35l8.57-14.85a.9.9 0 0 1 1.56 0zM11.1 15.15v1.8h1.8v-1.8h-1.8zm0-6.3v4.5h1.8v-4.5h-1.8z\"/></svg>",
+  successFill: "<svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zm-.9-5.4l6.36-6.37-1.27-1.27-5.09 5.09-2.55-2.55-1.27 1.27 3.82 3.83z\"/></svg>",
+  infoFill: "<svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zm-.9-9.9v5.4h1.8v-5.4h-1.8zm0-3.6v1.8h1.8V7.5h-1.8z\"/></svg>",
 } as const;
 
 export type IconName = keyof typeof icons;

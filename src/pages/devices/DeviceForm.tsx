@@ -1,72 +1,81 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Button, Icon, IconButton, Segmented } from '../../ds/components';
-import { DEV_LOCAIS, KIND_LABEL, MODEL_OPTIONS, type Device, type Kind } from './data';
+import { useNavigate } from 'react-router-dom';
+import { Alert, Button, Combobox, Icon, Sheet, type StatusType } from '../../ds/components';
+import { DEVICES, DEV_LOCAIS, PROFILES, TYPE_BY_NAME, TYPES, profileFor, type Device } from './data';
 import { norm } from './parts';
 
 type Props = { edit?: Device; existing: Device[]; onClose: () => void; onSave: (d: Device) => void };
 
 const IP_RE = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+const AREA = Object.fromEntries(DEVICES.map((d) => [d.local, d.area]));
 
-/** Cadastro e edição em um só formulário, com teste de conexão antes de salvar. */
+/** Cadastro e edição no drawer lateral. Mesmas seções do sistema original: Identificação, Homologação de hardware, Categoria, Localização e Stream. */
 export function DeviceForm({ edit, existing, onClose, onSave }: Props) {
-  const [kind, setKind] = useState<Kind>(edit?.kind ?? 'camera');
-  const opts = MODEL_OPTIONS[kind];
-  const [mi, setMi] = useState(() => Math.max(0, edit ? opts.findIndex((o) => o.model === edit.model) : 0));
-  const model = opts[mi] ?? opts[0];
-  const [name, setName] = useState(edit?.name ?? '');
-  const [local, setLocal] = useState(edit?.local ?? '');
-  const [env, setEnv] = useState<'int' | 'ext'>(edit?.outdoor ? 'ext' : 'int');
+  const navigate = useNavigate();
+  const nextId = useMemo(() => `DEV-${1000 + existing.length + 1}`, [existing.length]);
+  const [name, setName] = useState(edit?.name ?? nextId);
+  const [type, setType] = useState<string | null>(edit?.type ?? null);
+  const [profileId, setProfileId] = useState<string | null>(edit ? profileFor(edit).id : null);
+  const [local, setLocal] = useState<string | null>(edit?.local ?? null);
   const [ip, setIp] = useState(edit?.ip ?? '');
-  const [port, setPort] = useState(String(edit?.port ?? model.port));
+  const prof0 = profileId ? PROFILES.find((p) => p.id === profileId) : undefined;
+  const [port, setPort] = useState(String(edit?.port ?? prof0?.rtsp ?? 554));
+  const [path, setPath] = useState(prof0?.path ?? '/stream1');
   const [user, setUser] = useState(edit?.user ?? 'admin');
   const [pass, setPass] = useState(edit ? 'Nyv3x#2026' : '');
   const [show, setShow] = useState(false);
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [touched, setTouched] = useState(false);
   const [test, setTest] = useState<'idle' | 'run' | 'ok' | 'fail'>(edit ? 'ok' : 'idle');
 
-  useEffect(() => {
-    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } };
-    document.addEventListener('keydown', k, true);
-    return () => document.removeEventListener('keydown', k, true);
-  }, [onClose]);
-  // Credenciais/endereço mudaram: o teste anterior deixa de valer.
-  useEffect(() => { if (!edit || ip !== edit.ip) setTest('idle'); }, [ip, port, user, pass]); // eslint-disable-line react-hooks/exhaustive-deps
+  const t = type ? TYPE_BY_NAME[type] : undefined;
+  const profiles = useMemo(() => PROFILES.filter((p) => !type || p.types.includes(type)), [type]);
+  const prof = profileId ? PROFILES.find((p) => p.id === profileId) : undefined;
+  const video = t?.video ?? true;
 
-  const dupIp = useMemo(() => existing.find((d) => d.ip === ip.trim() && d.id !== edit?.id), [existing, ip, edit]);
-  const dupName = useMemo(() => existing.find((d) => norm(d.name) === norm(name.trim()) && d.id !== edit?.id), [existing, name, edit]);
+  // Trocar o tipo invalida um perfil que não serve para ele.
+  useEffect(() => { if (prof && type && !prof.types.includes(type)) setProfileId(null); }, [type]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Perfil escolhido define portas e caminho do stream.
+  useEffect(() => {
+    if (!prof || (edit && prof.id === profileFor(edit).id)) return;
+    setPort(String((video ? prof.rtsp : prof.http) ?? 554));
+    if (prof.path) setPath(prof.path);
+  }, [profileId, video]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!edit || ip !== edit.ip) setTest('idle'); }, [ip, port, user, pass, path]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const dupIp = existing.find((d) => d.ip === ip.trim() && d.id !== edit?.id);
+  const dupName = existing.find((d) => norm(d.name) === norm(name.trim()) && d.id !== edit?.id);
   const errors = {
-    name: !name.trim() ? 'Dê um nome para encontrar o dispositivo depois' : dupName ? 'Já existe um dispositivo com esse nome' : '',
+    name: !name.trim() ? 'Obrigatório' : dupName ? 'Já existe um dispositivo com essa identificação' : '',
+    type: !type ? 'Escolha o tipo' : '',
+    profile: !profileId ? 'Escolha o perfil de hardware (ou o genérico)' : '',
     local: !local ? 'Escolha onde ele está instalado' : '',
     ip: !ip.trim() ? 'Informe o IP' : !IP_RE.test(ip.trim()) ? 'IP inválido. Ex.: 172.26.1.80' : dupIp ? `IP já usado por “${dupIp.name}”` : '',
     port: !/^\d{1,5}$/.test(port) || Number(port) > 65535 ? 'Porta inválida' : '',
   };
-  const valid = Object.values(errors).every((e) => !e);
-  const err = (k: keyof typeof errors) => (touched[k] ? errors[k] : '');
-  const blur = (k: string) => () => setTouched((t) => ({ ...t, [k]: true }));
+  const err = (k: keyof typeof errors) => (touched ? errors[k] : '');
+  const nErr = Object.values(errors).filter(Boolean).length;
+  const url = `rtsp://${user || 'usuario'}:${show ? pass || 'senha' : '••••••'}@${ip.trim() || '0.0.0.0'}:${port}${path.startsWith('/') ? path : '/' + path}`;
 
   const runTest = () => {
-    setTouched((t) => ({ ...t, ip: true, port: true }));
-    if (errors.ip || errors.port) return;
+    if (errors.ip || errors.port) { setTouched(true); return; }
     setTest('run');
     setTimeout(() => setTest(pass.length >= 4 ? 'ok' : 'fail'), 1100);
   };
 
   const save = () => {
-    setTouched({ name: true, local: true, ip: true, port: true });
-    if (!valid) return;
-    const id = edit?.id ?? `novo-${Date.now()}`;
-    const area = existing.find((d) => d.local === local)?.area ?? '';
+    setTouched(true);
+    if (nErr || !t || !prof || !local) return;
     const ok = test === 'ok';
     onSave({
       ...(edit ?? {
         mac: '44:19:B6:' + Array.from({ length: 3 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':').toUpperCase(),
-        firmware: model.certified ? '—' : '—', situacao: 'ativo' as const, uptime: 100, added: new Date().toISOString().slice(0, 10),
+        firmware: '—', situacao: 'ativo' as const, uptime: 100, added: new Date().toISOString().slice(0, 10), outdoor: false,
       }),
-      id, kind, name: name.trim(), type: model.type, vendor: model.vendor, model: model.model, certified: model.certified,
-      local, area, outdoor: env === 'ext', ip: ip.trim(), port: Number(port), user,
+      id: edit?.id ?? `novo-${Date.now()}`, name: name.trim(), kind: t.kind, type: t.type,
+      vendor: prof.vendor, model: prof.model, certified: prof.certified,
+      local, area: AREA[local] ?? '', ip: ip.trim(), port: Number(port), user,
       conn: edit ? edit.conn : ok ? 'online' : 'offline',
-      stream: kind === 'camera' ? (edit ? edit.stream : ok ? 'live' : 'sem') : 'na',
+      stream: t.video ? (edit ? edit.stream : ok ? 'live' : 'sem') : 'na',
       hb: edit ? edit.hb : ok ? 1 : null,
       latency: edit ? edit.latency : ok ? 18 : null,
       note: edit ? edit.note : ok ? undefined : 'Aguardando a primeira conexão',
@@ -74,101 +83,130 @@ export function DeviceForm({ edit, existing, onClose, onSave }: Props) {
     } as Device);
   };
 
-  return createPortal(
-    <div className="nx-modal-back" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <form className="dv-form" role="dialog" aria-modal="true" aria-labelledby="dv-form-t" onSubmit={(e) => { e.preventDefault(); save(); }} noValidate>
-        <header className="dv-form__head">
-          <div>
-            <h2 id="dv-form-t">{edit ? 'Editar dispositivo' : 'Adicionar dispositivo'}</h2>
-            <p>{edit ? edit.name : 'Cadastre o equipamento e teste a conexão antes de salvar.'}</p>
-          </div>
-          <IconButton icon="close" label="Fechar" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
-        </header>
+  const testAlert: Record<'ok' | 'fail', [StatusType, string, string]> = {
+    ok: ['success', video ? 'Stream encontrado' : 'Conectado', video ? 'Credenciais válidas. Codec e resolução serão detectados pelo gateway ao iniciar.' : `Respondeu em 18 ms em ${ip.trim()}:${port}.`],
+    fail: ['error', 'Falha na autenticação', 'O dispositivo respondeu, mas recusou usuário e senha.'],
+  };
 
-        <div className="dv-form__body">
-          <fieldset className="dv-fs">
-            <legend>Equipamento</legend>
-            <div className="dv-field">
-              <span className="dv-field__l">Categoria</span>
-              <Segmented label="Categoria" value={kind} onChange={(k) => { if (edit) return; setKind(k); setMi(0); setPort(String(MODEL_OPTIONS[k][0].port)); }}
-                options={(['camera', 'acesso', 'infra'] as Kind[]).map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
-              {edit && <span className="dv-field__h">A categoria não muda depois do cadastro.</span>}
-            </div>
-            <label className="dv-field">
-              <span className="dv-field__l">Modelo</span>
-              <select className="nx-select" value={mi} onChange={(e) => { const i = Number(e.target.value); setMi(i); setPort(String(opts[i].port)); }}>
-                {opts.map((o, i) => <option key={o.model} value={i}>{o.vendor === 'Genérico' ? o.model : `${o.vendor} ${o.model}`} · {o.type}</option>)}
-              </select>
-              <span className={`dv-field__h${model.certified ? ' is-ok' : ''}`}>
-                {model.certified ? <><Icon name="check" size={12} />Integração certificada: PTZ, eventos e saúde completos</> : 'Integração genérica: só vídeo e heartbeat'}
-              </span>
-            </label>
-            <label className={`dv-field${err('name') ? ' is-err' : ''}`}>
-              <span className="dv-field__l">Nome</span>
-              <span className="nx-input"><input value={name} onChange={(e) => setName(e.target.value)} onBlur={blur('name')} placeholder="Ex.: Bloco 02 · Entrada principal" autoFocus={!edit} /></span>
-              <span className="dv-field__h">{err('name') || 'Padrão sugerido: Local · Ponto. Facilita a busca e o mural.'}</span>
-            </label>
-            <div className="dv-row">
-              <label className={`dv-field${err('local') ? ' is-err' : ''}`}>
-                <span className="dv-field__l">Local</span>
-                <select className="nx-select" value={local} onChange={(e) => setLocal(e.target.value)} onBlur={blur('local')}>
-                  <option value="" disabled>Escolha um local</option>
-                  {DEV_LOCAIS.map((l) => <option key={l}>{l}</option>)}
-                </select>
-                {err('local') && <span className="dv-field__h">{err('local')}</span>}
-              </label>
-              <div className="dv-field">
-                <span className="dv-field__l">Ambiente</span>
-                <Segmented label="Ambiente" value={env} onChange={setEnv} options={[{ value: 'int', label: 'Interno' }, { value: 'ext', label: 'Externo' }]} />
-              </div>
-            </div>
-          </fieldset>
-
-          <fieldset className="dv-fs">
-            <legend>Conexão</legend>
-            <div className="dv-row dv-row--ip">
-              <label className={`dv-field${err('ip') ? ' is-err' : ''}`}>
-                <span className="dv-field__l">Endereço IP</span>
-                <span className="nx-input"><input value={ip} onChange={(e) => setIp(e.target.value)} onBlur={blur('ip')} placeholder="172.26.1.80" inputMode="decimal" className="is-mono" /></span>
-                {err('ip') && <span className="dv-field__h">{err('ip')}</span>}
-              </label>
-              <label className={`dv-field${err('port') ? ' is-err' : ''}`}>
-                <span className="dv-field__l">Porta</span>
-                <span className="nx-input"><input value={port} onChange={(e) => setPort(e.target.value.replace(/\D/g, ''))} onBlur={blur('port')} inputMode="numeric" className="is-mono" /></span>
-                {err('port') && <span className="dv-field__h">{err('port')}</span>}
-              </label>
-            </div>
-            <div className="dv-row">
-              <label className="dv-field">
-                <span className="dv-field__l">Usuário</span>
-                <span className="nx-input"><input value={user} onChange={(e) => setUser(e.target.value)} autoComplete="off" /></span>
-              </label>
-              <label className="dv-field">
-                <span className="dv-field__l">Senha</span>
-                <span className="nx-input">
-                  <input type={show ? 'text' : 'password'} value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" placeholder="••••••" />
-                  <button type="button" className="dv-eye" aria-label={show ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShow(!show)}><Icon name={show ? 'eyeOff' : 'eye'} size={16} /></button>
-                </span>
-              </label>
-            </div>
-            <div className={`dv-test is-${test}`}>
-              {test === 'idle' && <span>Teste antes de salvar para já começar monitorado.</span>}
-              {test === 'run' && <span><Icon name="refresh" size={16} className="is-spin" />Testando {ip.trim()}…</span>}
-              {test === 'ok' && <span><Icon name="check" size={16} />Conectado · credenciais válidas{kind === 'camera' ? ' · stream encontrado' : ''}</span>}
-              {test === 'fail' && <span><Icon name="warn" size={16} />Sem autenticação. Confira usuário e senha.</span>}
-              <Button icon="activity" onClick={runTest} disabled={test === 'run'}>{test === 'idle' ? 'Testar conexão' : 'Testar de novo'}</Button>
-            </div>
-          </fieldset>
-        </div>
-
-        <footer className="dv-form__foot">
-          {!edit && test !== 'ok' && <span className="dv-form__hint">Dá para salvar sem testar: ele fica como “Aguardando a primeira conexão”.</span>}
+  return (
+    <Sheet
+      eyebrow={edit ? 'Editar dispositivo' : 'Novo dispositivo'}
+      title={edit ? edit.name : name.trim() || nextId}
+      onClose={onClose}
+      onSubmit={save}
+      footer={
+        <>
+          {touched && nErr > 0 && <span className="dv-form__err"><Icon name="errorFill" size={14} />{nErr === 1 ? '1 campo precisa de atenção' : `${nErr} campos precisam de atenção`}</span>}
           <span className="dv-tools__sp" />
           <Button onClick={onClose}>Cancelar</Button>
-          <button type="submit" className="nx-btn nx-btn--primary">{edit ? 'Salvar alterações' : 'Adicionar dispositivo'}</button>
-        </footer>
-      </form>
-    </div>,
-    document.body,
+          <button type="submit" className="nx-btn nx-btn--primary">Salvar dispositivo</button>
+        </>
+      }
+    >
+      <section className="dv-card2">
+        <h3>Identificação</h3>
+        <div className="dv-row">
+          <label className={`dv-field${err('name') ? ' is-err' : ''}`}>
+            <span className="dv-field__l">Identificação<i>*</i></span>
+            <span className="nx-input"><input value={name} onChange={(e) => setName(e.target.value)} autoFocus={!edit} /></span>
+            {err('name') && <span className="dv-field__h">{err('name')}</span>}
+          </label>
+          <div className={`dv-field${err('type') ? ' is-err' : ''}`}>
+            <span className="dv-field__l">Tipo<i>*</i></span>
+            <Combobox label="Tipo" value={type} onChange={setType} invalid={!!err('type')} searchPlaceholder="Buscar tipo…"
+              options={TYPES.map((x) => ({ value: x.type, label: x.type, meta: x.category }))} />
+            {err('type') && <span className="dv-field__h">{err('type')}</span>}
+          </div>
+        </div>
+      </section>
+
+      <section className="dv-card2">
+        <h3>Homologação de hardware</h3>
+        <p>Selecione o perfil de hardware homologado pelo laboratório Nyvex para associar drivers, portas e capacidades calibradas.</p>
+        <div className={`dv-field${err('profile') ? ' is-err' : ''}`}>
+          <span className="dv-field__l">Fabricante e modelo homologado<i>*</i></span>
+          <Combobox label="Fabricante e modelo homologado" value={profileId} onChange={setProfileId} invalid={!!err('profile')} searchPlaceholder="Buscar fabricante ou modelo…"
+            placeholder={type ? 'Selecione…' : 'Escolha o tipo primeiro'} disabled={!type}
+            options={profiles.map((p) => ({ value: p.id, label: p.vendor === 'Genérico' ? 'Genérico · ONVIF / RTSP' : `${p.vendor} · ${p.model}`, meta: p.certified ? 'Certificado' : 'Não homologado' }))} />
+          {err('profile') && <span className="dv-field__h">{err('profile')}</span>}
+        </div>
+        {prof && (
+          <div className={`dv-prof${prof.certified ? '' : ' is-generic'}`}>
+            <div className="dv-prof__top">
+              <span className={`dv-prof__badge${prof.certified ? ' is-on' : ''}`}><i />{prof.certified ? 'Certificado em bancada' : 'Não homologado'}</span>
+              <b>{prof.name}</b>
+            </div>
+            <span className="dv-prof__drv">Driver: <code>{prof.driver}</code></span>
+            <p>{prof.desc}</p>
+            <div className="dv-prof__caps">
+              {prof.caps.map(([c, tone]) => <span key={c} className={`dv-cap is-${tone}`}>{c}</span>)}
+              <span className="dv-cap is-port">Portas: {prof.rtsp ? `RTSP ${prof.rtsp} · ` : ''}HTTP {prof.http}</span>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className="dv-card2 dv-card2--row">
+        <span className="dv-field__l">Categoria</span>
+        {t ? <><b className="dv-catv">{t.category}</b><span className="dv-cap is-info">{t.tag}</span></> : <span className="dv-muted">Definida pelo tipo</span>}
+      </section>
+
+      <section className="dv-card2">
+        <h3>Localização</h3>
+        <p>Onde o equipamento está instalado, conforme o cadastro de Locais.</p>
+        <div className={`dv-field${err('local') ? ' is-err' : ''}`}>
+          <span className="dv-field__l">Local<i>*</i></span>
+          <Combobox label="Local" value={local} onChange={setLocal} invalid={!!err('local')} searchPlaceholder="Buscar local…"
+            options={DEV_LOCAIS.map((l) => ({ value: l, label: AREA[l] ? `${l} — ${AREA[l]}` : l }))} />
+          {err('local') && <span className="dv-field__h">{err('local')}</span>}
+        </div>
+        <button type="button" className="dv-link dv-link--start" onClick={() => { onClose(); navigate('/locais'); }}>Gerenciar locais</button>
+      </section>
+
+      <section className="dv-card2">
+        <h3>{video ? 'Stream' : 'Conexão'}</h3>
+        <p>{video ? 'Fonte de imagem. O gateway detecta o codec e a resolução reais via ffprobe ao iniciar (não é algo cadastrado).' : 'Endereço e credenciais usados para monitorar o equipamento.'}</p>
+        <div className="dv-row dv-row--ip">
+          <label className={`dv-field${err('ip') ? ' is-err' : ''}`}>
+            <span className="dv-field__l">Endereço IP<i>*</i></span>
+            <span className="nx-input"><input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="172.26.1.80" inputMode="decimal" className="is-mono" /></span>
+            {err('ip') && <span className="dv-field__h">{err('ip')}</span>}
+          </label>
+          <label className={`dv-field${err('port') ? ' is-err' : ''}`}>
+            <span className="dv-field__l">{video ? 'Porta RTSP' : 'Porta HTTP'}</span>
+            <span className="nx-input"><input value={port} onChange={(e) => setPort(e.target.value.replace(/\D/g, ''))} inputMode="numeric" className="is-mono" /></span>
+            {err('port') && <span className="dv-field__h">{err('port')}</span>}
+          </label>
+        </div>
+        {video && (
+          <label className="dv-field">
+            <span className="dv-field__l">Caminho do stream</span>
+            <span className="nx-input"><input value={path} onChange={(e) => setPath(e.target.value)} className="is-mono" /></span>
+          </label>
+        )}
+        <div className="dv-row">
+          <label className="dv-field">
+            <span className="dv-field__l">Usuário</span>
+            <span className="nx-input"><input value={user} onChange={(e) => setUser(e.target.value)} autoComplete="off" /></span>
+          </label>
+          <label className="dv-field">
+            <span className="dv-field__l">Senha</span>
+            <span className="nx-input">
+              <input type={show ? 'text' : 'password'} value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" placeholder="••••••" />
+              <button type="button" className="dv-eye" aria-label={show ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShow(!show)}><Icon name={show ? 'eyeOff' : 'eye'} size={16} /></button>
+            </span>
+          </label>
+        </div>
+        {video && <code className="dv-url">{url}</code>}
+        {test === 'ok' || test === 'fail'
+          ? <Alert type={testAlert[test][0]} title={testAlert[test][1]} action={<Button onClick={runTest}>Testar de novo</Button>}>{testAlert[test][2]}</Alert>
+          : (
+            <div className="dv-testrow">
+              <span>{test === 'run' ? <><Icon name="refresh" size={14} className="is-spin" />Testando {ip.trim()}…</> : 'Teste antes de salvar para o dispositivo já começar monitorado.'}</span>
+              <Button icon="activity" onClick={runTest} disabled={test === 'run'}>{video ? 'Testar stream' : 'Testar conexão'}</Button>
+            </div>
+          )}
+      </section>
+    </Sheet>
   );
 }

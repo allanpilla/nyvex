@@ -75,7 +75,7 @@ const cams: Device[] = CAMS.map((c, i) => {
     id: c.id,
     name: c.name,
     kind: 'camera',
-    type: c.outdoor ? 'Câmera bullet' : 'Câmera dome',
+    type: /patio|quadra|setor-a|guarita/.test(c.id) ? 'Câmera PTZ' : 'Câmera fixa',
     vendor: m[0], model: m[1], certified: m[2], firmware: m[3],
     local: c.local, area: c.area, outdoor: c.outdoor,
     ip: `172.26.1.${11 + i}`, port: 554, mac: mac(r), user: 'admin',
@@ -96,8 +96,8 @@ const EXTRA: Extra[] = [
   ['Portaria 1 · Leitor facial entrada', 'acesso', 'Leitor facial', 'Control iD', 'iDFace Max', 'Portarias', 'Acessos', 'ativo', 'online'],
   ['Portaria 1 · Leitor facial saída', 'acesso', 'Leitor facial', 'Control iD', 'iDFace Max', 'Portarias', 'Acessos', 'ativo', 'online'],
   ['Portaria 3 · Catraca pedestres', 'acesso', 'Catraca', 'Control iD', 'iDBlock Next', 'Portarias', 'Acessos', 'ativo', 'online'],
-  ['Cancela Norte · Leitor LPR', 'acesso', 'Leitor de placas (LPR)', 'Hikvision', 'iDS-TCM403', 'Estacionamento', 'Área externa', 'ativo', 'online'],
-  ['Cancela Sul · Leitor LPR', 'acesso', 'Leitor de placas (LPR)', 'Hikvision', 'iDS-TCM403', 'Estacionamento', 'Área externa', 'ativo', 'instavel', 'Latência alta nas últimas 2 h'],
+  ['Cancela Norte · Leitor LPR', 'acesso', 'Leitor LPR', 'Hikvision', 'iDS-TCM403', 'Estacionamento', 'Área externa', 'ativo', 'online'],
+  ['Cancela Sul · Leitor LPR', 'acesso', 'Leitor LPR', 'Hikvision', 'iDS-TCM403', 'Estacionamento', 'Área externa', 'ativo', 'instavel', 'Latência alta nas últimas 2 h'],
   ['Bloco 09 · Controladora data center', 'acesso', 'Controladora de acesso', 'Intelbras', 'CT 3000 4PB', 'Bloco 09', 'Tecnologia', 'ativo', 'online'],
   ['Bloco 07 · Catraca antiga', 'acesso', 'Catraca', 'Genérico', 'Wiegand 26', 'Bloco 07', 'Biblioteca', 'inativo', 'na', 'Substituída pela catraca nova em 03/2026'],
   ['Ginásio · Leitor facial vestiários', 'acesso', 'Leitor facial', 'Hikvision', 'DS-K1T671M', 'Ginásio', 'Esportes', 'inativo', 'na', 'Desativado durante a reforma do ginásio'],
@@ -169,22 +169,58 @@ export function latencySeries(d: Device): number[] {
   });
 }
 
-export const MODEL_OPTIONS: Record<Kind, { type: string; vendor: string; model: string; certified: boolean; port: number }[]> = {
-  camera: [
-    { type: 'Câmera dome', vendor: 'Hikvision', model: 'DS-2CD2347G2-LU', certified: true, port: 554 },
-    { type: 'Câmera bullet', vendor: 'Intelbras', model: 'VIP 3230 B', certified: true, port: 554 },
-    { type: 'Câmera dome', vendor: 'Hikvision', model: 'DS-2CD2143G2-IS', certified: true, port: 554 },
-    { type: 'Câmera IP', vendor: 'Genérico', model: 'ONVIF / RTSP', certified: false, port: 554 },
-  ],
-  acesso: [
-    { type: 'Leitor facial', vendor: 'Control iD', model: 'iDFace Max', certified: true, port: 80 },
-    { type: 'Catraca', vendor: 'Control iD', model: 'iDBlock Next', certified: true, port: 80 },
-    { type: 'Leitor de placas (LPR)', vendor: 'Hikvision', model: 'iDS-TCM403', certified: true, port: 80 },
-    { type: 'Controladora de acesso', vendor: 'Intelbras', model: 'CT 3000 4PB', certified: true, port: 80 },
-  ],
-  infra: [
-    { type: 'Gravador (NVR)', vendor: 'Hikvision', model: 'DS-7732NI-K4', certified: true, port: 8000 },
-    { type: 'Switch PoE', vendor: 'Intelbras', model: 'SG 2404 PoE', certified: true, port: 80 },
-    { type: 'Gateway de vídeo', vendor: 'Nyvex', model: 'Edge G2', certified: true, port: 8000 },
-  ],
+/* ───────────── Cadastro: mesmas informações do sistema original ───────────── */
+
+/** Tipos de dispositivo e a categoria derivada de cada um (categoria não é escolhida, vem do tipo). */
+export const TYPES: { type: string; kind: Kind; category: string; tag: string; video: boolean }[] = [
+  { type: 'Câmera fixa', kind: 'camera', category: 'Aquisição de imagem', tag: 'Fonte de vídeo', video: true },
+  { type: 'Câmera PTZ', kind: 'camera', category: 'Aquisição de imagem', tag: 'Fonte de vídeo', video: true },
+  { type: 'Leitor LPR', kind: 'acesso', category: 'Aquisição de imagem', tag: 'Fonte de vídeo', video: true },
+  { type: 'Leitor facial', kind: 'acesso', category: 'Controle de acesso', tag: 'Acesso', video: false },
+  { type: 'Catraca', kind: 'acesso', category: 'Controle de acesso', tag: 'Acesso', video: false },
+  { type: 'Controladora de acesso', kind: 'acesso', category: 'Controle de acesso', tag: 'Acesso', video: false },
+  { type: 'Gravador (NVR)', kind: 'infra', category: 'Infraestrutura', tag: 'Gravação', video: false },
+  { type: 'Switch PoE', kind: 'infra', category: 'Infraestrutura', tag: 'Rede', video: false },
+  { type: 'Gateway de vídeo', kind: 'infra', category: 'Infraestrutura', tag: 'Rede', video: false },
+  { type: 'Servidor de análise', kind: 'infra', category: 'Infraestrutura', tag: 'Processamento', video: false },
+];
+export const TYPE_BY_NAME = Object.fromEntries(TYPES.map((t) => [t.type, t])) as Record<string, (typeof TYPES)[number]>;
+
+export type CapTone = 'info' | 'warning' | 'danger' | 'feature' | 'neutral';
+/** Perfil de hardware homologado pelo laboratório Nyvex (define driver, portas e capacidades). */
+export type Profile = {
+  id: string; types: string[]; vendor: string; model: string; name: string; driver: string;
+  certified: boolean; desc: string; caps: [string, CapTone][]; rtsp?: number; http: number; path?: string;
 };
+export const PROFILES: Profile[] = [
+  { id: 'hik-2347g2p', types: ['Câmera fixa'], vendor: 'Hikvision', model: 'DS-2CD2347G2P-LSU/SL', name: 'ColorVu Panoramic 180° AcuSense Live Guard', driver: 'hikvision_isapi', certified: true,
+    desc: 'Equipamento padrão do laboratório de bancada Nyvex. Calibração milimétrica de coordenadas 0..1000 e estrobo ativo.', caps: [['IA / Perímetro', 'info'], ['ColorVu', 'warning'], ['Live Guard', 'danger'], ['Áudio 2-Way', 'feature']], rtsp: 554, http: 80, path: '/Streaming/Channels/101' },
+  { id: 'hik-2347g2', types: ['Câmera fixa'], vendor: 'Hikvision', model: 'DS-2CD2347G2-LU', name: 'ColorVu 4 MP Turret', driver: 'hikvision_isapi', certified: true,
+    desc: 'Câmera turret ColorVu homologada com eventos de linha e intrusão.', caps: [['IA / Perímetro', 'info'], ['ColorVu', 'warning']], rtsp: 554, http: 80, path: '/Streaming/Channels/101' },
+  { id: 'hik-2143g2', types: ['Câmera fixa'], vendor: 'Hikvision', model: 'DS-2CD2143G2-IS', name: 'AcuSense 4 MP Dome', driver: 'hikvision_isapi', certified: true,
+    desc: 'Dome AcuSense com classificação de pessoas e veículos.', caps: [['IA / Perímetro', 'info'], ['Áudio 2-Way', 'feature']], rtsp: 554, http: 80, path: '/Streaming/Channels/101' },
+  { id: 'intel-3230', types: ['Câmera fixa'], vendor: 'Intelbras', model: 'VIP 3230 B', name: 'Bullet 2 MP IR 30 m', driver: 'intelbras_cgi', certified: true,
+    desc: 'Bullet de entrada homologada para áreas externas.', caps: [['IR 30 m', 'neutral']], rtsp: 554, http: 80, path: '/cam/realmonitor?channel=1&subtype=0' },
+  { id: 'hik-ptz-4425', types: ['Câmera PTZ'], vendor: 'Hikvision', model: 'DS-2DE4425IW-DE', name: 'PTZ 4 MP 25× DarkFighter', driver: 'hikvision_isapi', certified: true,
+    desc: 'Speed dome com rastreamento automático e presets calibrados.', caps: [['PTZ', 'info'], ['Auto-tracking', 'feature']], rtsp: 554, http: 80, path: '/Streaming/Channels/101' },
+  { id: 'hik-lpr-403', types: ['Leitor LPR'], vendor: 'Hikvision', model: 'iDS-TCM403', name: 'Câmera ANPR de cancela', driver: 'hikvision_anpr', certified: true,
+    desc: 'Leitura de placas Mercosul com lista de permissão local.', caps: [['LPR', 'info'], ['Lista local', 'neutral']], rtsp: 554, http: 80, path: '/Streaming/Channels/101' },
+  { id: 'cid-idface', types: ['Leitor facial'], vendor: 'Control iD', model: 'iDFace Max', name: 'Leitor facial com QR Code', driver: 'controlid_api', certified: true,
+    desc: 'Reconhecimento facial em até 0,3 s, com sincronização de cadastro.', caps: [['Face', 'info'], ['QR Code', 'neutral']], http: 80 },
+  { id: 'hik-k1t671', types: ['Leitor facial'], vendor: 'Hikvision', model: 'DS-K1T671M', name: 'Terminal facial 7"', driver: 'hikvision_isapi', certified: true,
+    desc: 'Terminal facial com cartão e senha.', caps: [['Face', 'info'], ['Cartão', 'neutral']], http: 80 },
+  { id: 'cid-idblock', types: ['Catraca'], vendor: 'Control iD', model: 'iDBlock Next', name: 'Catraca com leitor integrado', driver: 'controlid_api', certified: true,
+    desc: 'Catraca bidirecional com pictograma e urna.', caps: [['Bidirecional', 'neutral']], http: 80 },
+  { id: 'intel-ct3000', types: ['Controladora de acesso'], vendor: 'Intelbras', model: 'CT 3000 4PB', name: 'Controladora 4 portas', driver: 'intelbras_access', certified: true,
+    desc: 'Controladora de 4 portas com antipassback.', caps: [['4 portas', 'neutral'], ['Antipassback', 'info']], http: 80 },
+  { id: 'hik-nvr-7732', types: ['Gravador (NVR)'], vendor: 'Hikvision', model: 'DS-7732NI-K4', name: 'NVR 32 canais 4K', driver: 'hikvision_isapi', certified: true,
+    desc: 'NVR com 4 baias e reprodução sincronizada.', caps: [['32 canais', 'neutral']], http: 8000 },
+  { id: 'intel-nvd3332', types: ['Gravador (NVR)'], vendor: 'Intelbras', model: 'NVD 3332', name: 'NVR 32 canais', driver: 'intelbras_cgi', certified: true, desc: 'NVR de 32 canais com 2 baias.', caps: [['32 canais', 'neutral']], http: 80 },
+  { id: 'intel-sg2404', types: ['Switch PoE'], vendor: 'Intelbras', model: 'SG 2404 PoE', name: 'Switch gerenciável 24 portas PoE+', driver: 'snmp_v2', certified: true, desc: 'Monitorado por SNMP: portas, PoE e perda de pacotes.', caps: [['SNMP', 'neutral']], http: 80 },
+  { id: 'nyx-edge', types: ['Gateway de vídeo'], vendor: 'Nyvex', model: 'Edge G2', name: 'Gateway de vídeo de borda', driver: 'nyvex_edge', certified: true, desc: 'Converte e distribui streams da borda para a nuvem.', caps: [['Transcodificação', 'info']], http: 8000 },
+  { id: 'nyx-a1', types: ['Servidor de análise'], vendor: 'Nyvex', model: 'Analytics A1', name: 'Servidor de IA para faces e placas', driver: 'nyvex_edge', certified: true, desc: 'Processa faces e placas em tempo real.', caps: [['IA', 'info']], http: 8000 },
+  { id: 'generic', types: TYPES.map((t) => t.type), vendor: 'Genérico', model: 'ONVIF / RTSP', name: 'Perfil genérico', driver: 'onvif_generic', certified: false,
+    desc: 'Sem homologação de bancada: só vídeo e heartbeat. PTZ, eventos e saúde detalhada podem não funcionar.', caps: [], rtsp: 554, http: 80, path: '/stream1' },
+];
+export const profileFor = (d: Pick<Device, 'vendor' | 'model'>) => PROFILES.find((p) => p.vendor === d.vendor && p.model === d.model)
+  ?? PROFILES.find((p) => p.vendor === d.vendor && p.model.startsWith(d.model)) ?? PROFILES[PROFILES.length - 1];

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Icon, IconButton, Menu, NavItem, Segmented } from '../../ds/components';
+import { Alert, Button, Icon, IconButton, Menu, NavItem, Segmented } from '../../ds/components';
 import { useUi } from '../../lib/useUi';
 import { CAM_BY_ID } from '../mural/data';
 import { sceneUrl } from '../mural/scene';
-import { availability, eventsFor, KIND_ICON, KIND_LABEL, latencySeries, type Device, type Situacao } from './data';
+import { availability, eventsFor, KIND_ICON, KIND_LABEL, latencySeries, profileFor, TYPE_BY_NAME, type Device, type Situacao } from './data';
 import { ago, ConnPill, copy, latTone, SitBadge } from './parts';
 
 type Tab = 'geral' | 'saude' | 'conexao' | 'eventos';
@@ -60,10 +60,7 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
         {!inactive && <span className="dv-drawer__hb">Heartbeat {ago(d.hb)}</span>}
       </div>
       {d.note && (
-        <div className={`dv-note is-${d.situacao !== 'ativo' ? 'info' : d.conn === 'offline' ? 'bad' : d.conn === 'instavel' ? 'warn' : 'info'}`}>
-          <Icon name={d.situacao === 'manutencao' ? 'wrench' : d.situacao === 'inativo' ? 'eyeOff' : d.conn === 'offline' ? 'nosignal' : d.conn === 'instavel' ? 'warn' : 'clock'} size={16} />
-          <span>{d.note}</span>
-        </div>
+        <Alert type={d.situacao !== 'ativo' ? 'information' : d.conn === 'offline' ? 'error' : d.conn === 'instavel' ? 'warning' : 'information'}>{d.note}</Alert>
       )}
 
       <div className="dv-drawer__acts">
@@ -95,6 +92,8 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
             <dl className="dv-info">
               <Info k="Fabricante" v={d.vendor} />
               <Info k="Modelo" v={d.model} />
+              <Info k="Categoria" v={TYPE_BY_NAME[d.type]?.category ?? KIND_LABEL[d.kind]} />
+              <Info k="Driver" v={<code className="dv-code">{profileFor(d).driver}</code>} />
               <Info k="Integração" v={d.certified ? <span className="dv-cert is-on"><Icon name="check" size={12} />Certificado</span> : <span className="dv-cert">Genérico (ONVIF/RTSP)</span>} />
               <Info k="Firmware" v={d.firmware} />
               <Info k="Local" v={`${d.local} · ${d.area}`} />
@@ -205,13 +204,17 @@ function Connection({ d }: { d: Device }) {
       )}
       <section className="dv-sec">
         <div className="dv-sec__head"><h3>Teste de conexão</h3></div>
-        <div className={`dv-test is-${test}`}>
-          {test === 'idle' && <span>Verifica se o dispositivo responde e se as credenciais estão corretas.</span>}
-          {test === 'run' && <span><Icon name="refresh" size={16} className="is-spin" />Testando {d.ip}…</span>}
-          {test === 'ok' && <span><Icon name="check" size={16} />Respondeu em {d.latency ?? 20} ms · credenciais válidas{d.kind === 'camera' ? ' · stream H.264 1080p' : ''}</span>}
-          {test === 'fail' && <span><Icon name="warn" size={16} />Sem resposta em {d.ip}:{d.port}. Confira cabo, energia e rede.</span>}
-          <Button icon="activity" onClick={run} disabled={test === 'run'}>{test === 'idle' ? 'Testar conexão' : 'Testar de novo'}</Button>
-        </div>
+        {test === 'ok' || test === 'fail'
+          ? <Alert type={test === 'ok' ? 'success' : 'error'} title={test === 'ok' ? `Respondeu em ${d.latency ?? 20} ms` : `Sem resposta em ${d.ip}:${d.port}`}
+              action={<Button onClick={run}>Testar de novo</Button>}>
+              {test === 'ok' ? `Credenciais válidas${d.kind === 'camera' ? ' · stream H.264 1080p' : ''}.` : 'Confira cabo, energia e rede.'}
+            </Alert>
+          : (
+            <div className="dv-testrow">
+              <span>{test === 'run' ? <><Icon name="refresh" size={14} className="is-spin" />Testando {d.ip}…</> : 'Verifica se o dispositivo responde e se as credenciais estão corretas.'}</span>
+              <Button icon="activity" onClick={run} disabled={test === 'run'}>Testar conexão</Button>
+            </div>
+          )}
       </section>
     </>
   );

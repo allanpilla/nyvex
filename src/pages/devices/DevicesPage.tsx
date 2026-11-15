@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Checkbox, ConfirmDialog, Icon, IconButton, Kbd, Menu, NavItem, PageHeader, Segmented, useTooltip } from '../../ds/components';
+import { Button, Checkbox, ConfirmDialog, Icon, IconButton, Menu, NavItem, PageHeader, Segmented, useTooltip } from '../../ds/components';
 import type { IconName } from '../../ds/icons/icons';
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
@@ -235,7 +235,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
               <Icon name="search" size={16} />
               <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome, IP, modelo ou local" aria-label="Buscar dispositivos"
                 onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
-              {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : <Kbd>/</Kbd>}
+              {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
             </label>
             <Button icon="filter" className={nFilters ? 'is-active' : undefined} aria-expanded={!!filterBtn} onClick={(e) => setFilterBtn(filterBtn ? null : e.currentTarget)}>
               Filtros{nFilters > 0 && <span className="dv-fcount">{nFilters}</span>}

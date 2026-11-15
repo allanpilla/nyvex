@@ -314,3 +314,45 @@ b.is-ok { color: var(--nx-success); }
   .dv-size { display: none; }
   .dv-row { grid-template-columns: 1fr; }
 }
+
+/* Cadastro em drawer (mesmas seções do sistema original) */
+.dv-card2 { border: 1px solid var(--nx-stroke); border-radius: var(--nx-radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.dv-card2 h3 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--nx-text-main); }
+.dv-card2 h3 + p { margin: -8px 0 0; font-size: 12px; line-height: 18px; color: var(--nx-text-soft); }
+.dv-card2--row { flex-direction: row; align-items: center; gap: 10px; padding: 12px 16px; }
+.dv-catv { font-size: 13px; font-weight: 500; color: var(--nx-tonal-fg); }
+[data-theme='light'] .dv-catv { color: var(--nx-primary); }
+.dv-field__l i { font-style: normal; color: #f2556f; margin-left: 2px; }
+.dv-link--start { align-self: flex-start; }
+.dv-prof { border: 1px solid var(--nx-stroke); border-radius: var(--nx-radius-md); padding: 12px; display: flex; flex-direction: column; gap: 6px; background: var(--nx-bg-canvas); }
+[data-theme='light'] .dv-prof { background: var(--nx-bg-hover); }
+.dv-prof__top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.dv-prof__top b { font-size: 13px; font-weight: 500; color: var(--nx-text-main); }
+.dv-prof__badge { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 500; background: var(--nx-bg-badge); color: var(--nx-text-sub); }
+.dv-prof__badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.dv-prof__badge.is-on { background: rgba(56, 199, 147, .14); color: var(--nx-success); }
+.dv-prof__drv { font-size: 12px; color: var(--nx-text-soft); }
+.dv-prof__drv code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; color: var(--nx-tonal-fg); }
+[data-theme='light'] .dv-prof__drv code { color: var(--nx-primary); }
+.dv-prof p { margin: 0; font-size: 12px; line-height: 18px; color: var(--nx-text-sub); }
+.dv-prof.is-generic { border-color: rgba(242, 174, 64, .35); }
+.dv-prof__caps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.dv-cap { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.dv-cap.is-info { background: var(--nx-tonal-bg); color: var(--nx-tonal-fg); }
+.dv-cap.is-warning { background: rgba(242, 174, 64, .14); color: #f2ae40; }
+.dv-cap.is-danger { background: rgba(223, 28, 65, .14); color: #f2556f; }
+.dv-cap.is-feature { background: rgba(125, 82, 244, .16); color: #b49cff; }
+.dv-cap.is-neutral, .dv-cap.is-port { background: var(--nx-bg-badge); color: var(--nx-text-sub); }
+.dv-url { display: block; padding: 8px 10px; border-radius: var(--nx-radius-md); background: var(--nx-bg-canvas); border: 1px dashed var(--nx-stroke); font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px; line-height: 18px; color: var(--nx-text-soft); word-break: break-all; }
+.dv-testrow { display: flex; align-items: center; gap: 12px; }
+.dv-testrow > span { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--nx-text-soft); }
+.dv-form__err { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #f2556f; }
+.dv-drawer__body .nx-alert, .dv-drawer > .nx-alert { margin: 0; }
+.dv-drawer > .nx-alert { margin: 10px 16px 0; }
+
+/* Cartão ativo do resumo em azul (tonal) */
+.dv-card.is-on { background: var(--nx-tonal-bg); border-color: color-mix(in srgb, var(--nx-primary) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nx-primary) 55%, transparent); }
+.dv-card.is-on .dv-card__top, .dv-card.is-on b { color: var(--nx-tonal-fg); }
+.dv-card.is-on:hover { background: color-mix(in srgb, var(--nx-tonal-bg) 85%, var(--nx-primary)); }
+[data-theme='light'] .dv-card.is-on b, [data-theme='light'] .dv-card.is-on .dv-card__top { color: var(--nx-primary); }
+.dv-code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px; color: var(--nx-text-sub); }

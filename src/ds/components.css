@@ -216,3 +216,65 @@
 .nx-item.is-danger, .nx-item.is-danger .nx-item__ic { color: #f2556f; }
 .nx-item.is-danger:hover { background: rgba(223, 28, 65, .12); color: #f2556f; }
 [data-theme='light'] .nx-item.is-danger, [data-theme='light'] .nx-item.is-danger .nx-item__ic { color: #c0102f; }
+
+/* Status Modal (Figma › Modal › Status Modals) */
+.nx-smodal { width: min(440px, 100%); border-radius: 16px; background: var(--nx-bg-surface); border: 1px solid var(--nx-stroke); box-shadow: var(--nx-shadow); animation: nx-zoom .16s var(--nx-ease); overflow: hidden; }
+.nx-smodal__body { display: flex; gap: 16px; padding: 20px; }
+.nx-smodal.is-center .nx-smodal__body { flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+.nx-smodal__ic { width: 40px; height: 40px; flex: none; border-radius: 10px; display: grid; place-items: center; }
+.nx-smodal__text { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.nx-smodal h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; color: var(--nx-text-main); }
+.nx-smodal p { margin: 0; font-size: 14px; line-height: 20px; color: var(--nx-text-sub); }
+.nx-smodal__foot { display: flex; align-items: center; gap: 8px; padding: 16px 20px; border-top: 1px solid var(--nx-stroke); }
+.nx-smodal__foot .nx-check-row { width: auto; padding: 0; height: auto; }
+.nx-smodal__foot .nx-check-row:hover { background: none; }
+.nx-smodal__sp { flex: 1; }
+/* Cores de estado: fundo suave (16% no dark, cor clara no light) + ícone na cor do estado */
+.is-error > * > .nx-smodal__ic, .nx-alert.is-error { --st: #f2556f; --st-bg: rgba(223, 28, 65, .16); }
+.is-warning > * > .nx-smodal__ic, .nx-alert.is-warning { --st: #f2ae40; --st-bg: rgba(242, 174, 64, .16); }
+.is-success > * > .nx-smodal__ic, .nx-alert.is-success { --st: var(--nx-success); --st-bg: rgba(56, 199, 147, .16); }
+.is-information > * > .nx-smodal__ic, .nx-alert.is-information { --st: #6f8dff; --st-bg: rgba(55, 93, 251, .16); }
+[data-theme='light'] .is-error > * > .nx-smodal__ic, [data-theme='light'] .nx-alert.is-error { --st: #df1c41; --st-bg: #fde8ec; }
+[data-theme='light'] .is-warning > * > .nx-smodal__ic, [data-theme='light'] .nx-alert.is-warning { --st: #f17b2c; --st-bg: #fef3eb; }
+[data-theme='light'] .is-success > * > .nx-smodal__ic, [data-theme='light'] .nx-alert.is-success { --st: #1fc16b; --st-bg: #e0faec; }
+[data-theme='light'] .is-information > * > .nx-smodal__ic, [data-theme='light'] .nx-alert.is-information { --st: #335cff; --st-bg: #ebf1ff; }
+.nx-smodal__ic { background: var(--st-bg); color: var(--st); }
+
+/* Alerta em linha */
+.nx-alert { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: var(--nx-radius-md); background: var(--st-bg); color: var(--nx-text-main); font-size: 12px; line-height: 16px; }
+.nx-alert__ic { color: var(--st); margin-top: 0; flex: none; }
+.nx-alert__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-top: 0; }
+.nx-alert__text b { font-weight: 500; color: var(--nx-text-main); }
+.nx-alert__text span { color: var(--nx-text-sub); }
+.nx-alert > .nx-btn { flex: none; align-self: center; }
+
+/* Drawer lateral (Sheet) */
+.nx-sheet-back { position: fixed; inset: 0; z-index: 65; background: var(--nx-overlay); display: flex; justify-content: flex-end; animation: nx-fade .15s; }
+.nx-sheet { height: 100%; display: flex; flex-direction: column; background: var(--nx-bg-surface); border-left: 1px solid var(--nx-stroke); box-shadow: var(--nx-shadow); animation: nx-sheet-in .26s var(--nx-ease); }
+@keyframes nx-sheet-in { from { transform: translateX(32px); opacity: 0; } }
+.nx-sheet__head { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 0 12px 0 20px; border-bottom: 1px solid var(--nx-stroke); }
+.nx-sheet__head > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nx-sheet__eyebrow { font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--nx-text-soft); }
+.nx-sheet__head h2 { margin: 0; font-size: 16px; line-height: 22px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nx-sheet__body { flex: 1; min-height: 0; overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.nx-sheet__foot { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--nx-stroke); }
+
+/* Combobox */
+.nx-combo { height: 32px; width: 100%; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: var(--nx-radius-md); border: 1px solid var(--nx-stroke); background: var(--nx-bg-canvas); color: var(--nx-text-soft); font-size: 13px; text-align: left; transition: border-color .12s; }
+.nx-combo:hover { border-color: var(--nx-bg-badge); }
+.nx-combo.is-open, .nx-combo:focus-visible { border-color: var(--nx-primary); outline: 0; }
+.nx-combo.is-err { border-color: var(--nx-error); }
+.nx-combo:disabled { opacity: .6; pointer-events: none; }
+.nx-combo__v, .nx-combo__ph { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nx-combo__v { color: var(--nx-text-main); }
+[data-theme='light'] .nx-combo { background: var(--nx-bg-surface); border-color: var(--nx-bg-badge); }
+.nx-combo__menu { padding: 6px; max-height: 320px; z-index: 75; }
+.nx-combo__search { flex: none; margin-bottom: 4px; }
+.nx-combo__list { overflow: auto; display: flex; flex-direction: column; gap: 1px; min-height: 0; }
+.nx-combo__opt { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 8px; border-radius: var(--nx-radius-sm); font-size: 13px; color: var(--nx-text-sub); text-align: left; }
+.nx-combo__opt > span { flex: 1; min-width: 0; }
+.nx-combo__opt em { font-style: normal; font-size: 11px; color: var(--nx-text-soft); white-space: nowrap; }
+.nx-combo__opt.is-hi { background: var(--nx-bg-hover); color: var(--nx-text-main); }
+.nx-combo__opt[aria-selected='true'] { color: var(--nx-text-main); }
+.nx-combo__opt > .nx-icon { color: var(--nx-primary); }
+.nx-combo__none { padding: 10px 8px; font-size: 12px; color: var(--nx-text-soft); }
