@@ -9,6 +9,7 @@ export { Button } from './Button';
 export { PageHeader } from './PageHeader';
 export { Switch } from './Switch';
 export { Segmented } from './Segmented';
+export { Tabs } from './Tabs';
 export type { TipPlace } from './Tooltip';
 export { DateTimePicker } from './DateTimePicker';
 export { Checkbox } from './Checkbox';

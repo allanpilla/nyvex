@@ -111,7 +111,6 @@
 .lc-an b { font-size: 18px; line-height: 24px; font-weight: 500; }
 .lc-an small { font-size: 11px; color: var(--nx-text-soft); }
 .lc-foot { margin: 0; font-size: 11px; color: var(--nx-text-soft); }
-.dv-dsheet .dv-drawer__tabs .nx-seg__opt { padding-left: 6px; padding-right: 6px; }
 
 /* Formulário */
 .lc-genname { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
@@ -126,4 +125,6 @@
 .lc-meta__id { font-family: var(--nx-font-mono, ui-monospace, monospace); font-size: 11px; color: var(--nx-text-soft); padding: 1px 4px; border-radius: 4px; }
 .lc-meta__id:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
 .dv-dsheet .lc-mapc { aspect-ratio: 16 / 8; min-height: 180px; }
-.dv-dsheet .dv-drawer__tabs .nx-seg__opt { font-size: 12px; padding-left: 4px; padding-right: 4px; }
+.dv-drawer .lc-tabs { flex: none; padding: 0 16px; gap: 16px; }
+.dv-drawer .lc-tabs .nx-tab { font-size: 13px; padding: 0; gap: 5px; }
+.dv-drawer .lc-tabs .nx-tab__n { min-width: 16px; height: 16px; line-height: 16px; padding: 0 4px; }

@@ -300,3 +300,16 @@
 .nx-menu { z-index: 80; }
 .nx-tip { z-index: 90; }
 .nx-toast { z-index: 95; }
+
+/* Tab Menu horizontal */
+.nx-tabs { display: flex; align-items: stretch; gap: 20px; height: 44px; border-bottom: 1px solid var(--nx-stroke); overflow-x: auto; scrollbar-width: none; }
+.nx-tabs::-webkit-scrollbar { display: none; }
+.nx-tab { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 2px; font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: -0.006em; color: var(--nx-text-sub); white-space: nowrap; transition: color .12s; }
+.nx-tab:hover, .nx-tab.is-on { color: var(--nx-text-main); }
+.nx-tab .nx-icon { color: var(--nx-text-soft); }
+.nx-tab.is-on .nx-icon { color: var(--nx-primary); }
+.nx-tab::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px 2px 0 0; background: var(--nx-primary); transform: scaleX(0); transition: transform .18s var(--nx-ease); }
+.nx-tab.is-on::after { transform: scaleX(1); }
+.nx-tab:focus-visible { outline-offset: -2px; }
+.nx-tab__n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: var(--nx-bg-badge); color: var(--nx-text-sub); font-size: 11px; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
+.nx-tab.is-on .nx-tab__n { background: var(--nx-tonal-bg); color: var(--nx-tonal-fg); }

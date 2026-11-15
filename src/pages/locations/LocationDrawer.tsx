@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Combobox, Icon, IconButton, Menu, NavItem, Segmented, useTooltip } from '../../ds/components';
+import { Button, Combobox, Icon, IconButton, Menu, NavItem, Tabs, useTooltip } from '../../ds/components';
 import { useUi } from '../../lib/useUi';
 import { KIND_ICON, type Device } from '../devices/data';
 import { ago, ConnPill, copy } from '../devices/parts';
@@ -82,15 +82,13 @@ export function LocationDrawer({ l, locs, devs, health, onClose, onOpen, onEdit,
         <IconButton icon="more" label="Mais ações" onClick={(e) => setMore(more ? null : e.currentTarget)} tipPlace="bottom" />
       </div>
 
-      <div className="dv-drawer__tabs">
-        <Segmented label="Seções" value={tab} onChange={setTab} size="sm" options={[
-          { value: 'info', label: 'Informações' },
-          { value: 'infra', label: <>Infraestrutura<span className="nx-seg__n">{devs.length}</span></> },
-          { value: 'rel', label: <>Relacionamentos<span className="nx-seg__n">{l.people.length}</span></> },
-          { value: 'analises', label: 'Análises' },
-          { value: 'eventos', label: 'Eventos' },
-        ]} />
-      </div>
+      <Tabs label="Seções" value={tab} onChange={setTab} className="lc-tabs" options={[
+        { value: 'info', label: 'Informações' },
+        { value: 'infra', label: 'Infraestrutura', count: devs.length },
+        { value: 'rel', label: 'Relacionamentos', count: l.people.length },
+        { value: 'analises', label: 'Análises' },
+        { value: 'eventos', label: 'Eventos' },
+      ]} />
 
       <div className="dv-drawer__body" key={tab}>
         {tab === 'info' && (
