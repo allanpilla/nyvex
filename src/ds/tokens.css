@@ -1,8 +1,8 @@
 /* Tokens do DS Nyvex. Dark é o tema primário; light é secundário (data-theme="light"). */
 :root,
 [data-theme='dark'] {
-  --nx-bg-canvas: #0a0d14;
-  --nx-bg-surface: #161922;
+  --nx-bg-canvas: #090b11;
+  --nx-bg-surface: #13161e;
   --nx-bg-hover: #20232d;
   --nx-bg-badge: #31353f;
   --nx-text-main: #ffffff;
@@ -15,8 +15,9 @@
   --nx-primary: #375dfb;
   --nx-success: #38c793;
   --nx-error: #df1c41;
-  --nx-tip-bg: #ffffff;
-  --nx-tip-fg: #0a0d14;
+  --nx-tip-bg: #1b1e28;
+  --nx-tip-fg: #ffffff;
+  --nx-tip-stroke: #2b2f3b;
   --nx-overlay: rgba(5, 7, 11, 0.6);
   --nx-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
   color-scheme: dark;
@@ -34,8 +35,9 @@
   --nx-stroke: #e2e4e9;
   --nx-tonal-bg: #ebf1ff;
   --nx-tonal-fg: #253ea7;
-  --nx-tip-bg: #0a0d14;
-  --nx-tip-fg: #ffffff;
+  --nx-tip-bg: #ffffff;
+  --nx-tip-fg: #0a0d14;
+  --nx-tip-stroke: #e2e4e9;
   --nx-overlay: rgba(10, 13, 20, 0.25);
   --nx-shadow: 0 16px 40px rgba(10, 13, 20, 0.12);
   color-scheme: light;

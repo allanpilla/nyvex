@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Icon, IconButton, Menu, NavItem, Segmented } from '../../ds/components';
+import { Alert, Button, Icon, IconButton, Menu, NavItem, Segmented, useTooltip, useTooltipApi } from '../../ds/components';
 import { useUi } from '../../lib/useUi';
 import { CAM_BY_ID } from '../mural/data';
 import { sceneUrl } from '../mural/scene';
 import { availability, eventsFor, KIND_ICON, KIND_LABEL, latencySeries, profileFor, TYPE_BY_NAME, type Device, type Situacao } from './data';
-import { ago, ConnPill, copy, latTone, SitBadge } from './parts';
+import { ago, bitrate, ConnPill, copy, envOf, errorRate, healthScore, latTone, ReliabPill, SitBadge } from './parts';
+import type { IconName } from '../../ds/icons/icons';
 
 type Tab = 'geral' | 'saude' | 'conexao' | 'eventos';
 type Props = {
@@ -48,7 +49,7 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
       <header className="dv-drawer__head">
         <span className={`dv-kind is-${d.kind} is-lg`}><Icon name={KIND_ICON[d.kind]} size={20} /></span>
         <div className="dv-drawer__title">
-          <h2 title={d.name}>{d.name}</h2>
+          <h2>{d.name}</h2>
           <p>{d.type} · {KIND_LABEL[d.kind]}</p>
         </div>
         <IconButton icon="close" label="Fechar painel" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
@@ -64,9 +65,10 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
       )}
 
       <div className="dv-drawer__acts">
+        <Button icon="edit" onClick={onEdit}>Editar</Button>
         {d.camId && <Button icon="tv" onClick={onMural} disabled={inactive}>Ver no mural</Button>}
         {d.camId && <Button icon="replay" onClick={onRestart} disabled={inactive}>Reiniciar</Button>}
-        <Button icon="edit" onClick={onEdit}>Editar</Button>
+        {d.camId && <IconButton icon="sliders" label="Ajustes de câmera" onClick={() => toast('Ajustes de câmera: brilho, contraste, foco e perfil de stream · simulado no protótipo')} tipPlace="bottom" disabled={inactive} />}
         <IconButton icon="more" label="Mais ações" onClick={(e) => setMore(more ? null : e.currentTarget)} tipPlace="bottom" />
       </div>
 
@@ -97,7 +99,7 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
               <Info k="Integração" v={d.certified ? <span className="dv-cert is-on"><Icon name="check" size={12} />Certificado</span> : <span className="dv-cert">Genérico (ONVIF/RTSP)</span>} />
               <Info k="Firmware" v={d.firmware} />
               <Info k="Local" v={`${d.local} · ${d.area}`} />
-              <Info k="Ambiente" v={d.outdoor ? 'Externo' : 'Interno'} />
+              <Info k="Ambiente" v={envOf(d.local)} />
               <Info k="Endereço IP" v={<CopyVal v={d.ip} what="IP copiado" />} />
               <Info k="Cadastrado em" v={new Date(d.added + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} />
             </dl>
@@ -132,8 +134,9 @@ function Info({ k, v }: { k: string; v: React.ReactNode }) {
 
 function CopyVal({ v, what, mono = true }: { v: string; what: string; mono?: boolean }) {
   const { toast } = useUi();
+  const tip = useTooltip('Copiar', undefined, true, 'top');
   return (
-    <button type="button" className={`dv-copyval${mono ? ' is-mono' : ''}`} onClick={() => copy(v, toast, what)} title="Copiar">
+    <button type="button" className={`dv-copyval${mono ? ' is-mono' : ''}`} onClick={() => copy(v, toast, what)} {...tip}>
       <span>{v}</span><Icon name="copy" size={14} />
     </button>
   );
@@ -146,18 +149,25 @@ function Health({ d }: { d: Device }) {
   const max = Math.max(...lat, 100);
   const pts = lat.map((v, i) => `${(i / (lat.length - 1)) * 100},${40 - (v / max) * 36}`).join(' ');
   const avg = Math.round(lat.reduce((a, b) => a + b, 0) / lat.length);
+  const score = healthScore(d), err = errorRate(d), br = bitrate(d);
+  const tipApi = useTooltipApi();
   return (
     <>
-      <div className="dv-stats">
-        <div><span>Disponibilidade 30 d</span><b className={d.uptime >= 99 ? 'is-ok' : d.uptime >= 95 ? 'is-warn' : 'is-bad'}>{d.uptime.toFixed(2).replace('.', ',')}%</b></div>
-        <div><span>Latência agora</span><b className={latTone(d.latency)}>{d.latency ?? '—'}{d.latency != null && <small> ms</small>}</b></div>
-        <div><span>Último heartbeat</span><b>{ago(d.hb)}</b></div>
+      <div className="dv-tele">
+        <Stat icon="activity" k="Confiabilidade" v={<ReliabPill d={d} />} sub={d.kind === 'camera' ? `Sinal da câmera ${ago(d.hb)}` : `Heartbeat ${ago(d.hb)}`} />
+        <Stat icon="sliders" k="Saúde" v={<b className={score == null ? '' : score >= 85 ? 'is-ok' : score >= 50 ? 'is-warn' : 'is-bad'}>{score ?? '—'}<small> /100</small></b>} sub="Reportada pelo dispositivo" />
+        <Stat icon="flash" k="Heartbeat" v={<b>{ago(d.hb)}</b>} sub={d.conn === 'offline' ? 'Sem resposta' : 'A cada 10 s'} />
+        <Stat icon="clock" k="Latência" v={<b className={latTone(d.latency)}>{d.latency ?? '—'}{d.latency != null && <small> ms</small>}</b>} sub={`Média 24 h: ${avg} ms`} />
+        <Stat icon="warn" k="Taxa de erro" v={<b className={err == null ? '' : err >= 2 ? 'is-warn' : ''}>{err == null ? '—' : `${String(err).replace('.', ',')}%`}</b>} sub="Última janela de 5 min" />
+        <Stat icon="live" k="Transmissão" v={<b>{br == null ? '—' : `${(br / 1000).toFixed(1).replace('.', ',')}`}{br != null && <small> Mbps</small>}</b>} sub={br == null ? (d.kind === 'camera' ? 'Sem vídeo' : 'Não se aplica') : 'Stream principal'} />
+        <Stat icon="signal" k="Último sinal" v={<b>{ago(d.hb)}</b>} sub={d.ip} />
+        <Stat icon="check" k="Disponibilidade 30 d" v={<b className={d.uptime >= 99 ? 'is-ok' : d.uptime >= 95 ? 'is-warn' : 'is-bad'}>{d.uptime.toFixed(2).replace('.', ',')}%</b>} sub="Tempo respondendo" />
       </div>
 
       <section className="dv-sec">
         <div className="dv-sec__head"><h3>Disponibilidade · últimas 24 h</h3><span className="dv-legend"><i className="is-ok" />ok <i className="is-warn" />instável <i className="is-bad" />fora</span></div>
         <div className="dv-avail" role="img" aria-label="Disponibilidade em blocos de 30 minutos">
-          {av.map((s, i) => <i key={i} className={`is-${s}`} title={`${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`} />)}
+          {av.map((s, i) => <i key={i} className={`is-${s}`} onMouseEnter={(e) => tipApi.show(e.currentTarget, `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'} · ${s === 'ok' ? 'ok' : s === 'warn' ? 'instável' : 'fora'}`, undefined, 'top')} onMouseLeave={tipApi.hide} />)}
         </div>
         <div className="dv-axis"><span>24 h atrás</span><span>agora</span></div>
       </section>
@@ -231,5 +241,15 @@ function Events({ d }: { d: Device }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+function Stat({ icon, k, v, sub }: { icon: IconName; k: string; v: React.ReactNode; sub: string }) {
+  return (
+    <div className="dv-stat">
+      <span className="dv-stat__k"><Icon name={icon} size={14} />{k}</span>
+      <span className="dv-stat__v">{v}</span>
+      <span className="dv-stat__s">{sub}</span>
+    </div>
   );
 }

@@ -13,7 +13,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   const show = useCallback((el: HTMLElement, label: string, shortcut?: string, place: TipPlace = 'right') => {
     const r = el.getBoundingClientRect();
     if (place === 'right') setTip({ label, shortcut, place, x: r.right + 10, y: r.top + r.height / 2 - 13 });
-    else setTip({ label, shortcut, place, x: r.left + r.width / 2, y: place === 'bottom' ? r.bottom + 8 : r.top - 34 });
+    else setTip({ label, shortcut, place, x: r.left + r.width / 2, y: place === 'bottom' ? r.bottom + 8 : r.top - 8 });
   }, []);
   const hide = useCallback(() => setTip(null), []);
   return (
@@ -21,7 +21,7 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         role="tooltip"
-        className={`nx-tip${tip ? ' is-on' : ''}${tip && tip.place !== 'right' ? ' nx-tip--v' : ''}`}
+        className={`nx-tip${tip ? ' is-on' : ''}${tip && tip.place !== 'right' ? ' nx-tip--v' : ''} nx-tip--${tip?.place ?? 'right'}${tip && tip.label.length > 40 ? ' is-long' : ''}`}
         style={tip ? { left: tip.x, top: tip.y } : undefined}
       >
         {tip?.label}

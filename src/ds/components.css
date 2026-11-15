@@ -278,3 +278,25 @@
 .nx-combo__opt[aria-selected='true'] { color: var(--nx-text-main); }
 .nx-combo__opt > .nx-icon { color: var(--nx-primary); }
 .nx-combo__none { padding: 10px 8px; font-size: 12px; color: var(--nx-text-soft); }
+
+/* Tooltip no padrão do DS (Figma › Tooltip [1.0]): borda, sombra e seta apontando para o elemento */
+.nx-tip { border: 1px solid var(--nx-tip-stroke); box-shadow: 0 6px 16px rgba(0, 0, 0, .35), 0 1px 2px rgba(0, 0, 0, .25); font-weight: 400; padding: 4px 8px; }
+[data-theme='light'] .nx-tip { box-shadow: 0 6px 16px rgba(10, 13, 20, .1), 0 1px 2px rgba(10, 13, 20, .06); }
+.nx-tip.is-long { white-space: normal; max-width: 260px; padding: 6px 10px; line-height: 16px; }
+.nx-tip::after { content: ''; position: absolute; width: 7px; height: 7px; background: var(--nx-tip-bg); border: 1px solid var(--nx-tip-stroke); transform: rotate(45deg); }
+.nx-tip--right::after { left: -5px; top: calc(50% - 4px); border-top-color: transparent; border-right-color: transparent; }
+.nx-tip--bottom::after { top: -5px; left: calc(50% - 4px); border-bottom-color: transparent; border-right-color: transparent; }
+.nx-tip--top::after { bottom: -5px; left: calc(50% - 4px); border-top-color: transparent; border-left-color: transparent; }
+.nx-toast { background: var(--nx-tip-bg); color: var(--nx-tip-fg); border: 1px solid var(--nx-tip-stroke); }
+.nx-tip--v.nx-tip--top { transform: translate(-50%, calc(-100% + 2px)); }
+.nx-tip--v.nx-tip--top.is-on { transform: translate(-50%, -100%); }
+
+/* Drawers flutuantes: afastados das bordas e com cantos arredondados */
+.nx-sheet-back { padding: 8px; }
+.nx-sheet-back.is-soft { background: rgba(5, 7, 11, .35); backdrop-filter: none; }
+[data-theme='light'] .nx-sheet-back.is-soft { background: rgba(10, 13, 20, .12); }
+.nx-sheet { height: 100%; border: 1px solid var(--nx-stroke); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 64px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .3); }
+[data-theme='light'] .nx-sheet { box-shadow: 0 24px 64px rgba(10, 13, 20, .16), 0 2px 6px rgba(10, 13, 20, .06); }
+.nx-menu { z-index: 80; }
+.nx-tip { z-index: 90; }
+.nx-toast { z-index: 95; }

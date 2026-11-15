@@ -40,3 +40,39 @@ export function SitBadge({ s }: { s: Situacao }) {
   return <Badge tone={s === 'ativo' ? 'success' : s === 'manutencao' ? 'warning' : 'neutral'}>{SIT_LABEL[s]}</Badge>;
 }
 
+
+/* ───────────── saúde (mesmas medidas da tela atual) ───────────── */
+
+export type Reliab = 'confiavel' | 'instavel' | 'nao';
+export const RELIAB_LABEL: Record<Reliab, string> = { confiavel: 'Confiável', instavel: 'Instável', nao: 'Não confiável' };
+const seed = (s: string) => { let h = 7; for (const c of s) h = (Math.imul(h, 31) + c.charCodeAt(0)) | 0; return ((h >>> 0) % 1000) / 1000; };
+
+/** Ambiente do local (como no filtro “Environment” da tela atual). */
+export const envOf = (local: string) => (local === 'Estacionamento' ? 'Estacionamento' : local === 'Portarias' ? 'Perímetro' : local === 'Ginásio' ? 'Esportivo' : 'Predial');
+export function reliability(d: Device): Reliab | null {
+  if (d.situacao === 'inativo') return null;
+  if (d.conn === 'offline' || d.uptime < 95) return 'nao';
+  if (d.conn === 'instavel' || d.uptime < 99) return 'instavel';
+  return 'confiavel';
+}
+/** Saúde 0–100 reportada pelo dispositivo/gateway. */
+export function healthScore(d: Device): number | null {
+  if (d.situacao === 'inativo') return null;
+  const r = seed(d.id);
+  return d.conn === 'offline' ? Math.round(12 + r * 18) : d.conn === 'instavel' ? Math.round(52 + r * 16) : Math.round(88 + r * 11);
+}
+export function errorRate(d: Device): number | null {
+  if (d.situacao === 'inativo' || d.conn === 'offline') return null;
+  const r = seed(d.id + 'e');
+  return d.conn === 'instavel' ? Math.round((2 + r * 4) * 10) / 10 : Math.round(r * 4) / 10;
+}
+/** Transmissão em kbps (só fontes de vídeo ao vivo). */
+export function bitrate(d: Device): number | null {
+  if (d.stream !== 'live' || d.situacao === 'inativo') return null;
+  return Math.round((1800 + seed(d.id + 'b') * 2400) / 10) * 10;
+}
+export function ReliabPill({ d }: { d: Device }) {
+  const r = reliability(d);
+  if (!r) return <span className="dv-rel is-na">—</span>;
+  return <span className={`dv-rel is-${r}`}>{RELIAB_LABEL[r]}</span>;
+}

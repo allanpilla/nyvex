@@ -5,33 +5,38 @@ import type { IconName } from '../../ds/icons/icons';
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import {
-  CONN_LABEL, DEVICES, DEV_LOCAIS, KIND_ICON, KIND_LABEL, LICENSES, SIT_LABEL, STREAM_LABEL,
+  CONN_LABEL, DEVICES, DEV_LOCAIS, TYPES, KIND_ICON, KIND_LABEL, LICENSES, SIT_LABEL, STREAM_LABEL,
   type Conn, type Device, type Kind, type Situacao,
 } from './data';
 import { DeviceDrawer } from './DeviceDrawer';
-import { ago, ConnPill, copy, latTone, norm, SitBadge, sendToMural } from './parts';
+import { ago, ConnPill, copy, envOf, healthScore, latTone, norm, reliability, ReliabPill, SitBadge, sendToMural } from './parts';
+import { createPortal } from 'react-dom';
 import { DeviceForm } from './DeviceForm';
 import './devices.css';
 
 /* ───────────── filtros ───────────── */
 
-type FKey = 'local' | 'situacao' | 'conn' | 'stream' | 'cert' | 'env';
+type FKey = 'type' | 'situacao' | 'conn' | 'stream' | 'health' | 'env' | 'local' | 'cert';
 type Filters = Record<FKey, string[]>;
-const EMPTY: Filters = { local: [], situacao: [], conn: [], stream: [], cert: [], env: [] };
+const EMPTY: Filters = { type: [], situacao: [], conn: [], stream: [], health: [], env: [], local: [], cert: [] };
+/** Mesmos filtros da tela atual (Categoria fica nas abas) + Conexão, Local e Integração. */
 const F_GROUPS: { key: FKey; label: string; opts: [string, string][] }[] = [
-  { key: 'conn', label: 'Conexão', opts: [['online', 'Online'], ['instavel', 'Instável'], ['offline', 'Offline']] },
+  { key: 'type', label: 'Tipo', opts: TYPES.map((t) => [t.type, t.type]) },
   { key: 'situacao', label: 'Situação', opts: [['ativo', 'Ativo'], ['manutencao', 'Em manutenção'], ['inativo', 'Inativo']] },
-  { key: 'stream', label: 'Stream de vídeo', opts: [['live', 'Ao vivo'], ['sem', 'Sem vídeo']] },
-  { key: 'cert', label: 'Integração', opts: [['sim', 'Certificado'], ['nao', 'Genérico (ONVIF/RTSP)']] },
-  { key: 'env', label: 'Ambiente', opts: [['int', 'Interno'], ['ext', 'Externo']] },
+  { key: 'conn', label: 'Conexão', opts: [['online', 'Online'], ['instavel', 'Instável'], ['offline', 'Offline']] },
+  { key: 'stream', label: 'Stream', opts: [['live', 'Ao vivo'], ['sem', 'Sem vídeo'], ['na', 'Sem stream']] },
+  { key: 'health', label: 'Saúde', opts: [['confiavel', 'Confiável'], ['instavel', 'Instável'], ['nao', 'Não confiável']] },
+  { key: 'env', label: 'Ambiente', opts: [['Predial', 'Predial'], ['Perímetro', 'Perímetro'], ['Estacionamento', 'Estacionamento'], ['Esportivo', 'Esportivo']] },
   { key: 'local', label: 'Local', opts: DEV_LOCAIS.map((l) => [l, l]) },
+  { key: 'cert', label: 'Integração', opts: [['sim', 'Certificado'], ['nao', 'Genérico (ONVIF/RTSP)']] },
 ];
 const fLabel = (k: FKey, v: string) => F_GROUPS.find((g) => g.key === k)!.opts.find((o) => o[0] === v)?.[1] ?? v;
 
 function matches(d: Device, f: Filters) {
   const has = (k: FKey, v: string) => f[k].length === 0 || f[k].includes(v);
-  return has('local', d.local) && has('situacao', d.situacao) && (f.conn.length === 0 || (d.situacao !== 'inativo' && f.conn.includes(d.conn)))
-    && has('stream', d.stream) && has('cert', d.certified ? 'sim' : 'nao') && has('env', d.outdoor ? 'ext' : 'int');
+  return has('type', d.type) && has('local', d.local) && has('situacao', d.situacao) && (f.conn.length === 0 || (d.situacao !== 'inativo' && f.conn.includes(d.conn)))
+    && has('stream', d.stream) && has('cert', d.certified ? 'sim' : 'nao') && has('env', envOf(d.local))
+    && (f.health.length === 0 || f.health.includes(reliability(d) ?? '-'));
 }
 
 /** Atalhos do resumo: cada cartão é um filtro de um clique. */
@@ -51,7 +56,7 @@ function cmp(a: Device, b: Device, k: SortKey) {
     case 'situacao': return SIT_RANK[a.situacao] - SIT_RANK[b.situacao];
     case 'conn': return (a.situacao === 'inativo' ? 3 : CONN_RANK[a.conn]) - (b.situacao === 'inativo' ? 3 : CONN_RANK[b.conn]);
     case 'stream': return a.stream.localeCompare(b.stream);
-    case 'latency': return (a.latency ?? 1e6) - (b.latency ?? 1e6);
+    case 'latency': return (healthScore(a) ?? 999) - (healthScore(b) ?? 999);
   }
 }
 
@@ -73,7 +78,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [form, setForm] = useState<{ edit?: Device } | null>(null);
   const [del, setDel] = useState<string[] | null>(null);
-  const [filterBtn, setFilterBtn] = useState<HTMLElement | null>(null);
+  const [filterBtn, setFilterBtn] = useState<{ key: FKey; el: HTMLElement } | null>(null);
   const [rowMenu, setRowMenu] = useState<{ el: HTMLElement; d: Device } | null>(null);
   const [refreshed, setRefreshed] = useState(() => Date.now());
   const [spin, setSpin] = useState(false);
@@ -109,10 +114,6 @@ export function DevicesPage({ screen }: { screen: Screen }) {
   const nFilters = Object.values(f).reduce((n, a) => n + a.length, 0);
   const anyFilter = nFilters > 0 || q.trim() !== '' || quick !== 'all';
   const open = openId ? devs.find((d) => d.id === openId) ?? null : null;
-  // Mantém o conteúdo enquanto o painel fecha (animação).
-  const lastOpen = useRef<Device | null>(null);
-  if (open) lastOpen.current = open;
-  const shownDrawer = open ?? lastOpen.current;
 
   const toggleF = (k: FKey, v: string) => setF((o) => ({ ...o, [k]: o[k].includes(v) ? o[k].filter((x) => x !== v) : [...o[k], v] }));
   const clearAll = () => { setF(EMPTY); setQ(''); setQuick('all'); };
@@ -204,12 +205,12 @@ export function DevicesPage({ screen }: { screen: Screen }) {
                 const n = count(c.k);
                 const on = quick === c.k;
                 return (
-                  <button key={c.k} type="button" aria-pressed={on} title={c.hint}
+                  <CardBtn key={c.k} hint={c.hint} aria-pressed={on}
                     className={`dv-card is-${c.tone}${on ? ' is-on' : ''}${c.k === 'offline' && n > 0 ? ' is-alarm' : ''}${n === 0 && c.k !== 'all' ? ' is-zero' : ''}`}
                     onClick={() => setQuick(on || c.k === 'all' ? 'all' : c.k)}>
                     <span className="dv-card__top"><Icon name={c.icon} size={16} />{c.label}</span>
                     <b>{n}</b>
-                  </button>
+                  </CardBtn>
                 );
               })}
             </div>
@@ -237,12 +238,20 @@ export function DevicesPage({ screen }: { screen: Screen }) {
                 onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
               {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
             </label>
-            <Button icon="filter" className={nFilters ? 'is-active' : undefined} aria-expanded={!!filterBtn} onClick={(e) => setFilterBtn(filterBtn ? null : e.currentTarget)}>
-              Filtros{nFilters > 0 && <span className="dv-fcount">{nFilters}</span>}
-            </Button>
             <span className="dv-tools__sp" />
             <span className="dv-upd" aria-live="polite">{spin ? 'Atualizando…' : `Atualizado ${ago((Date.now() - refreshed) / 1000)}`}</span>
             <IconButton icon="refresh" label="Atualizar status" className={spin ? 'is-spin' : undefined} onClick={refresh} tipPlace="bottom" />
+          </div>
+
+          <div className="dv-filters" role="group" aria-label="Filtros">
+            {F_GROUPS.map((g) => (
+              <button key={g.key} type="button" className={`dv-fdrop${f[g.key].length ? ' is-on' : ''}${filterBtn?.key === g.key ? ' is-open' : ''}`} aria-haspopup="true" aria-expanded={filterBtn?.key === g.key}
+                onClick={(e) => setFilterBtn(filterBtn?.key === g.key ? null : { key: g.key, el: e.currentTarget })}>
+                <span className="dv-fdrop__k">{g.label}:</span>
+                <span className="dv-fdrop__v">{f[g.key].length === 0 ? 'todos' : f[g.key].length === 1 ? fLabel(g.key, f[g.key][0]) : `${f[g.key].length} selecionados`}</span>
+                <Icon name="chevron" size={14} />
+              </button>
+            ))}
           </div>
 
           {anyFilter && (
@@ -267,7 +276,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
               <Th k="situacao" sort={sort} onSort={sortBy} cls="dv-c--sit">Situação</Th>
               <Th k="conn" sort={sort} onSort={sortBy} cls="dv-c--conn">Conexão</Th>
               <Th k="stream" sort={sort} onSort={sortBy} cls="dv-c--stream">Stream · IP</Th>
-              <Th k="latency" sort={sort} onSort={sortBy} cls="dv-c--lat">Latência</Th>
+              <Th k="latency" sort={sort} onSort={sortBy} cls="dv-c--lat">Saúde</Th>
               <span className="dv-c dv-c--act" role="columnheader"><span className="nx-sr">Ações</span></span>
             </div>
 
@@ -278,6 +287,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
                 onMural={() => toMural(d)}
                 onRestart={() => restart([d.id])}
                 onTest={() => toast(`${d.name}: respondeu em ${d.latency ?? '—'} ms`)}
+                onEdit={() => setForm({ edit: d })}
                 onCopy={() => copy(d.ip, toast, 'IP copiado')}
                 onMore={(el) => setRowMenu(rowMenu?.d.id === d.id ? null : { el, d })}
               />
@@ -325,39 +335,41 @@ export function DevicesPage({ screen }: { screen: Screen }) {
         )}
       </div>
 
-      <div className={`dv-side${open ? ' is-open' : ''}`} {...({ inert: open ? undefined : '' } as object)}>
-        {shownDrawer && (
-          <DeviceDrawer key={shownDrawer.id} d={shownDrawer} onClose={() => setOpenId(null)}
-            onMural={() => toMural(shownDrawer)}
-            onRestart={() => restart([shownDrawer.id])}
-            onEdit={() => setForm({ edit: shownDrawer })}
-            onSituacao={(s) => setSituacao([shownDrawer.id], s)}
-            onDelete={() => setDel([shownDrawer.id])}
-          />
-        )}
-      </div>
-
-      {filterBtn && (
-        <Menu anchor={filterBtn} align="left" onClose={() => setFilterBtn(null)} className="dv-fmenu">
-          <div className="dv-fmenu__body">
-            {F_GROUPS.map((g) => (
-              <div key={g.key} className="dv-fmenu__grp">
-                <div className="nx-menu__title">{g.label}</div>
-                {g.opts.map(([v, l]) => (
-                  <Checkbox key={v} label={l} checked={f[g.key].includes(v)} onChange={() => toggleF(g.key, v)}>
-                    <span className="dv-fmenu__l">{l}</span>
-                    <span className="dv-fmenu__n">{inKind.filter((d) => matches(d, { ...f, [g.key]: [v] })).length}</span>
-                  </Checkbox>
-                ))}
-              </div>
-            ))}
+      {open && createPortal(
+        <div className="nx-sheet-back is-soft" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpenId(null); }}>
+          <div className="nx-sheet dv-dsheet" style={{ width: 'min(480px, 100%)' }}>
+            <DeviceDrawer key={open.id} d={open} onClose={() => setOpenId(null)}
+              onMural={() => toMural(open)}
+              onRestart={() => restart([open.id])}
+              onEdit={() => setForm({ edit: open })}
+              onSituacao={(st) => setSituacao([open.id], st)}
+              onDelete={() => setDel([open.id])}
+            />
           </div>
-          <div className="dv-fmenu__foot">
-            <Button disabled={!nFilters} onClick={() => setF(EMPTY)}>Limpar</Button>
-            <Button variant="primary" onClick={() => setFilterBtn(null)}>Ver {rows.length} {rows.length === 1 ? 'resultado' : 'resultados'}</Button>
-          </div>
-        </Menu>
+        </div>,
+        document.body,
       )}
+
+      {filterBtn && (() => {
+        const g = F_GROUPS.find((x) => x.key === filterBtn.key)!;
+        return (
+          <Menu anchor={filterBtn.el} align="left" onClose={() => setFilterBtn(null)} className="dv-fmenu">
+            <div className="dv-fmenu__body">
+              <div className="nx-menu__title">{g.label}</div>
+              {g.opts.map(([v, l]) => (
+                <Checkbox key={v} label={l} checked={f[g.key].includes(v)} onChange={() => toggleF(g.key, v)}>
+                  <span className="dv-fmenu__l">{l}</span>
+                  <span className="dv-fmenu__n">{inKind.filter((d) => matches(d, { ...f, [g.key]: [v] })).length}</span>
+                </Checkbox>
+              ))}
+            </div>
+            <div className="dv-fmenu__foot">
+              <Button disabled={!f[g.key].length} onClick={() => setF((o) => ({ ...o, [g.key]: [] }))}>Limpar</Button>
+              <Button variant="primary" onClick={() => setFilterBtn(null)}>Ver {rows.length}</Button>
+            </div>
+          </Menu>
+        );
+      })()}
 
       {rowMenu && (
         <Menu anchor={rowMenu.el} onClose={() => setRowMenu(null)}>
@@ -453,12 +465,14 @@ function Th({ k, sort, onSort, cls, children }: { k: SortKey; sort: { k: SortKey
 
 type RowProps = {
   d: Device; sel: boolean; open: boolean;
-  onSel: (v: boolean) => void; onOpen: () => void; onMural: () => void; onRestart: () => void; onTest: () => void; onCopy: () => void; onMore: (el: HTMLElement) => void;
+  onSel: (v: boolean) => void; onOpen: () => void; onMural: () => void; onRestart: () => void; onTest: () => void; onEdit: () => void; onCopy: () => void; onMore: (el: HTMLElement) => void;
 };
 
-function Row({ d, sel, open, onSel, onOpen, onMural, onRestart, onTest, onCopy, onMore }: RowProps) {
+function Row({ d, sel, open, onSel, onOpen, onMural, onRestart, onTest, onEdit, onCopy, onMore }: RowProps) {
   const certTip = useTooltip(d.certified ? 'Integração certificada pela Nyvex' : 'Integração genérica (ONVIF/RTSP): recursos avançados podem não funcionar', undefined, true, 'top');
+  const ipTip = useTooltip('Copiar IP', undefined, true, 'top');
   const inactive = d.situacao === 'inativo';
+  const score = healthScore(d);
   return (
     <div role="row" tabIndex={0} aria-selected={sel}
       className={`dv-tr${sel ? ' is-sel' : ''}${open ? ' is-open' : ''}${inactive ? ' is-inactive' : ''}`}
@@ -468,13 +482,13 @@ function Row({ d, sel, open, onSel, onOpen, onMural, onRestart, onTest, onCopy, 
       <span className="dv-c dv-c--name" role="cell">
         <span className={`dv-kind is-${d.kind}`}><Icon name={KIND_ICON[d.kind]} size={16} /></span>
         <span className="dv-name">
-          <b title={d.name}>{d.name}</b>
+          <b>{d.name}</b>
           <span>{d.type} · {d.vendor === 'Genérico' ? '' : `${d.vendor} `}{d.model}
             <span className={`dv-cert${d.certified ? ' is-on' : ''}`} {...certTip}>{d.certified ? <Icon name="check" size={12} /> : null}{d.certified ? 'Certificado' : 'Genérico'}</span>
           </span>
         </span>
       </span>
-      <span className="dv-c dv-c--local" role="cell"><span className="dv-two"><b>{d.local}</b><span>{d.area}</span></span></span>
+      <span className="dv-c dv-c--local" role="cell"><span className="dv-two"><b>{d.local}</b><span>{d.area} · {envOf(d.local)}</span></span></span>
       <span className="dv-c dv-c--sit" role="cell"><SitBadge s={d.situacao} /></span>
       <span className="dv-c dv-c--conn" role="cell">
         <span className="dv-two">
@@ -487,10 +501,15 @@ function Row({ d, sel, open, onSel, onOpen, onMural, onRestart, onTest, onCopy, 
           {d.stream === 'live' ? <span className="dv-live"><Icon name="live" size={14} />Ao vivo</span>
             : d.stream === 'sem' ? <span className="dv-nolive"><Icon name="nosignal" size={14} />Sem vídeo</span>
               : <span className="dv-nostream">Sem stream</span>}
-          <button type="button" className="dv-ip" onClick={(e) => { e.stopPropagation(); onCopy(); }} title="Copiar IP">{d.ip}<Icon name="copy" size={12} /></button>
+          <button type="button" className="dv-ip" onClick={(e) => { e.stopPropagation(); onCopy(); }} {...ipTip}>{d.ip}<Icon name="copy" size={12} /></button>
         </span>
       </span>
-      <span className={`dv-c dv-c--lat ${latTone(d.latency)}`} role="cell">{d.latency == null ? '—' : <><b>{d.latency}</b> ms</>}</span>
+      <span className={`dv-c dv-c--lat ${latTone(d.latency)}`} role="cell">
+        <span className="dv-two">
+          <span className="dv-health"><ReliabPill d={d} />{score != null && <em>{score}</em>}</span>
+          <span>{d.latency == null ? 'Latência —' : <>Latência <b>{d.latency}</b> ms</>}</span>
+        </span>
+      </span>
       <span className="dv-c dv-c--act" role="cell" onClick={(e) => e.stopPropagation()}>
         {d.camId
           ? <>
@@ -498,8 +517,14 @@ function Row({ d, sel, open, onSel, onOpen, onMural, onRestart, onTest, onCopy, 
               <IconButton icon="replay" label="Reiniciar stream" onClick={onRestart} tipPlace="top" disabled={inactive} />
             </>
           : <IconButton icon="activity" label="Testar conexão" onClick={onTest} tipPlace="top" disabled={inactive} />}
+        <IconButton icon="edit" label="Editar" onClick={onEdit} tipPlace="top" />
         <IconButton icon="more" label="Mais ações" onClick={(e) => onMore(e.currentTarget)} tipPlace="top" />
       </span>
     </div>
   );
+}
+
+function CardBtn({ hint, ...rest }: { hint: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const tip = useTooltip(hint, undefined, true, 'bottom');
+  return <button type="button" {...tip} {...rest} />;
 }
