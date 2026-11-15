@@ -122,3 +122,7 @@
 .lc-coords > .nx-btn:last-child:nth-child(4) { grid-column: 1 / -1; justify-self: start; }
 .dv-card2 .nx-seg { align-self: flex-start; }
 @media (max-width: 640px) { .lc-half { max-width: none; } .lc-coords { grid-template-columns: 1fr 1fr; } }
+.lc-meta { gap: 6px 12px; font-size: 12px; color: var(--nx-text-soft); }
+.lc-meta__id { font-family: var(--nx-font-mono, ui-monospace, monospace); font-size: 11px; color: var(--nx-text-soft); padding: 1px 4px; border-radius: 4px; }
+.lc-meta__id:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
+.dv-dsheet .lc-mapc { aspect-ratio: 16 / 8; min-height: 180px; }
