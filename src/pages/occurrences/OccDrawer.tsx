@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Combobox, Icon, IconButton, Menu, NavItem, Segmented } from '../../ds/components';
+import { Button, Combobox, Icon, IconButton, Menu, NavItem, Segmented, Select } from '../../ds/components';
 import { copy } from '../devices/parts';
 import { FaceImg } from '../faces/FaceImg';
 import {
@@ -83,10 +83,11 @@ export function OccDrawer({ o, all, now, busy, onClose, onMove, onNote, onAdd, o
         </div>
 
         {o.stage !== 'arquivada' && (
-          <ol className="oc-steps" aria-label="Andamento">
-            {STAGES.slice(0, 4).map((s, i) => (
-              <li key={s} className={i < idx ? 'is-done' : i === idx ? 'is-on' : undefined}><i>{i < idx ? <Icon name="check" size={10} /> : null}</i><span>{STAGE_LABEL[s]}</span></li>
-            ))}
+          <ol className={`oc-steps${o.stage === 'concluida' ? ' is-complete' : ''}`} aria-label="Andamento">
+            {STAGES.slice(0, 4).map((s, i) => {
+              const done = i < idx || o.stage === 'concluida';
+              return <li key={s} className={[done && 'is-done', i === idx && 'is-on'].filter(Boolean).join(' ') || undefined}><i>{done ? <Icon name="check" size={10} /> : null}</i><span>{STAGE_LABEL[s]}</span></li>;
+            })}
           </ol>
         )}
 
@@ -114,18 +115,16 @@ export function OccDrawer({ o, all, now, busy, onClose, onMove, onNote, onAdd, o
                     render={(op) => <span className="oc-topt"><b>{op.label}</b><span className={busy.has(op.value) && op.value !== o.team ? 'is-busy' : 'is-free'}>{busy.has(op.value) && op.value !== o.team ? 'Em atendimento' : 'Disponível'}</span></span>} />
                 </div>
                 <label className="dv-field"><span className="dv-field__l">Orientação <span className="al-opt">opcional</span></span>
-                  <textarea className="al-textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="O que a equipe deve verificar" />
+                  <textarea className="nx-textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="O que a equipe deve verificar" />
                 </label>
               </>
             ) : (
               <>
-                <label className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho</span>
-                  <select className="nx-select" value={outcome ?? ''} onChange={(e) => setOutcome(e.target.value || null)}>
-                    <option value="">Selecione…</option>{OUTCOMES.map((x) => <option key={x}>{x}</option>)}
-                  </select>
-                </label>
+                <div className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho</span>
+                  <Select label="Desfecho" value={outcome} onChange={setOutcome} invalid={tried && !outcome} options={OUTCOMES.map((x) => ({ value: x, label: x }))} />
+                </div>
                 <label className={`dv-field${tried && !text.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Relato</span>
-                  <textarea className="al-textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="O que foi encontrado e o que foi feito" />
+                  <textarea className="nx-textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="O que foi encontrado e o que foi feito" />
                   {tried && !text.trim() && <span className="dv-field__h">Obrigatório para concluir.</span>}
                 </label>
               </>
@@ -175,10 +174,10 @@ export function OccDrawer({ o, all, now, busy, onClose, onMove, onNote, onAdd, o
             {adding ? (
               <div className="al-form">
                 <label className="dv-field"><span className="dv-field__l">{adding === 'pessoa' ? 'Nome ou descrição' : adding === 'veiculo' ? 'Placa' : 'Objeto'}</span>
-                  <input className="oc-in" autoFocus value={pName} onChange={(e) => setPName(e.target.value)} placeholder={adding === 'veiculo' ? 'ABC1D23' : adding === 'pessoa' ? 'Ex.: Pessoa não identificada' : 'Ex.: Mochila preta'} />
+                  <span className="nx-input"><input autoFocus value={pName} onChange={(e) => setPName(e.target.value)} placeholder={adding === 'veiculo' ? 'ABC1D23' : adding === 'pessoa' ? 'Ex.: Pessoa não identificada' : 'Ex.: Mochila preta'} /></span>
                 </label>
                 <label className="dv-field"><span className="dv-field__l">Detalhe <span className="al-opt">opcional</span></span>
-                  <input className="oc-in" value={pSub} onChange={(e) => setPSub(e.target.value)} placeholder="Papel na ocorrência, características…" />
+                  <span className="nx-input"><input value={pSub} onChange={(e) => setPSub(e.target.value)} placeholder="Papel na ocorrência, características…" /></span>
                 </label>
                 <div className="al-form__foot"><span className="al-form__hint" />
                   <Button onClick={() => { setAdding(null); setPName(''); setPSub(''); }}>Cancelar</Button>
@@ -232,7 +231,7 @@ export function OccDrawer({ o, all, now, busy, onClose, onMove, onNote, onAdd, o
       </div>
 
       <footer className="oc-compose">
-        <textarea ref={noteRef} className="al-textarea" rows={1} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Adicionar nota à linha do tempo…"
+        <textarea ref={noteRef} className="nx-textarea" rows={1} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Adicionar nota à linha do tempo…"
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} aria-label="Nota" />
         <IconButton icon="enter" label="Enviar nota" shortcut="Enter" disabled={!note.trim()} onClick={send} tipPlace="top" className="oc-send" />
       </footer>
@@ -327,14 +326,13 @@ export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stag
         {step === 0 && (
           <>
             <label className={`dv-field${tried && !title.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Título <span className="oc-req">*</span></span>
-              <input className="oc-in" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(1); }} placeholder="O que está acontecendo, em poucas palavras" />
+              <span className="nx-input"><input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(1); }} placeholder="O que está acontecendo, em poucas palavras" /></span>
               {tried && !title.trim() && <span className="dv-field__h">Dê um título para seguir.</span>}
             </label>
-            <label className="dv-field"><span className="dv-field__l">Tipo</span>
-              <select className="nx-select" value={kind} onChange={(e) => setKind(e.target.value as Kind)}>
-                {(Object.keys(KIND_LABEL) as Kind[]).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
-              </select>
-            </label>
+            <div className="dv-field"><span className="dv-field__l">Tipo</span>
+              <Select<Kind> label="Tipo" value={kind} onChange={setKind}
+                options={(Object.keys(KIND_LABEL) as Kind[]).map((k) => ({ value: k, label: <><Icon name={KIND_ICON[k]} size={14} />{KIND_LABEL[k]}</> }))} />
+            </div>
             <div className="dv-field"><span className="dv-field__l">Prioridade</span>
               <div className="oc-prioopts" role="radiogroup" aria-label="Prioridade">
                 {(['critica', 'alta', 'media', 'baixa'] as Prio[]).map((p) => (
@@ -345,7 +343,7 @@ export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stag
               </div>
             </div>
             <label className="dv-field"><span className="dv-field__l">Descrição <span className="al-opt">opcional</span></span>
-              <textarea className="al-textarea oc-tall" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Detalhes para quem vai atender" />
+              <textarea className="nx-textarea oc-tall" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Detalhes para quem vai atender" />
             </label>
           </>
         )}
@@ -356,16 +354,16 @@ export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stag
               <Combobox label="Local cadastrado" value={local} onChange={setLocal} placeholder="Bloco, portaria, estacionamento…" options={LOCAIS.map((l) => ({ value: l, label: l }))} />
               <span className="dv-field__h">Ou preencha o endereço abaixo para um local fora do cadastro.</span>
             </div>
-            <label className="dv-field"><span className="dv-field__l">Endereço</span><input className="oc-in" autoFocus {...P('address')} placeholder="Rua, número, complemento" /></label>
+            <label className="dv-field"><span className="dv-field__l">Endereço</span><span className="nx-input"><input autoFocus {...P('address')} placeholder="Rua, número, complemento" /></span></label>
             <div className="oc-2col">
-              <label className="dv-field"><span className="dv-field__l">Bairro</span><input className="oc-in" {...P('district')} /></label>
-              <label className="dv-field"><span className="dv-field__l">Cidade</span><input className="oc-in" {...P('city')} placeholder="Curitiba" /></label>
+              <label className="dv-field"><span className="dv-field__l">Bairro</span><span className="nx-input"><input {...P('district')} /></span></label>
+              <label className="dv-field"><span className="dv-field__l">Cidade</span><span className="nx-input"><input {...P('city')} placeholder="Curitiba" /></span></label>
             </div>
             <div className="oc-2col">
-              <label className="dv-field"><span className="dv-field__l">Estado</span>
-                <select className="nx-select" {...P('uf')}><option value="">Selecione…</option>{UFS.map((u) => <option key={u}>{u}</option>)}</select>
-              </label>
-              <label className="dv-field"><span className="dv-field__l">Área / zona</span><input className="oc-in" {...P('zone')} /><span className="dv-field__h">Área policial ou zona de ronda</span></label>
+              <div className="dv-field"><span className="dv-field__l">Estado</span>
+                <Combobox label="Estado" value={pl.uf || null} onChange={(v) => setPl({ ...pl, uf: v })} placeholder="UF" options={UFS.map((u) => ({ value: u, label: u }))} />
+              </div>
+              <label className="dv-field"><span className="dv-field__l">Área / zona</span><span className="nx-input"><input {...P('zone')} /></span><span className="dv-field__h">Área policial ou zona de ronda</span></label>
             </div>
           </>
         )}
@@ -373,13 +371,13 @@ export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stag
         {step === 2 && (
           <>
             <p className="oc-wnote">Quem relatou a ocorrência. Tudo opcional; pule se veio de uma câmera.</p>
-            <label className="dv-field"><span className="dv-field__l">Nome</span><input className="oc-in" autoFocus {...R('name')} placeholder="Quem relatou" /></label>
-            <label className="dv-field"><span className="dv-field__l">Relação</span>
-              <select className="nx-select" {...R('relation')}><option value="">Selecione…</option>{RELATIONS.map((r) => <option key={r}>{r}</option>)}</select>
-            </label>
+            <label className="dv-field"><span className="dv-field__l">Nome</span><span className="nx-input"><input autoFocus {...R('name')} placeholder="Quem relatou" /></span></label>
+            <div className="dv-field"><span className="dv-field__l">Relação</span>
+              <Select label="Relação" value={rp.relation} onChange={(v) => setRp({ ...rp, relation: v })} options={RELATIONS.map((r) => ({ value: r, label: r }))} />
+            </div>
             <div className="oc-2col">
-              <label className="dv-field"><span className="dv-field__l">Telefone</span><input className="oc-in" inputMode="tel" {...R('phone')} placeholder="(41) 99999-9999" /></label>
-              <label className="dv-field"><span className="dv-field__l">Documento</span><input className="oc-in" {...R('doc')} placeholder="RG ou CPF" /></label>
+              <label className="dv-field"><span className="dv-field__l">Telefone</span><span className="nx-input"><input inputMode="tel" {...R('phone')} placeholder="(41) 99999-9999" /></span></label>
+              <label className="dv-field"><span className="dv-field__l">Documento</span><span className="nx-input"><input {...R('doc')} placeholder="RG ou CPF" /></span></label>
             </div>
           </>
         )}
@@ -387,9 +385,9 @@ export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stag
         {step === 3 && (
           <>
             {stage === 'concluida' && (
-              <label className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho <span className="oc-req">*</span></span>
-                <select className="nx-select" value={outcome ?? ''} onChange={(e) => setOutcome(e.target.value || null)}><option value="">Selecione…</option>{OUTCOMES.map((x) => <option key={x}>{x}</option>)}</select>
-              </label>
+              <div className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho <span className="oc-req">*</span></span>
+                <Select label="Desfecho" value={outcome} onChange={setOutcome} invalid={tried && !outcome} options={OUTCOMES.map((x) => ({ value: x, label: x }))} />
+              </div>
             )}
             <div className={`dv-field${tried && needTeam && !team ? ' is-err' : ''}`}><span className="dv-field__l">{needTeam ? <>Equipe <span className="oc-req">*</span></> : stage === 'concluida' ? <>Equipe <span className="al-opt">opcional</span></> : <>Despachar agora <span className="al-opt">opcional</span></>}</span>
               <Combobox label="Equipe" value={team} onChange={setTeam} invalid={tried && needTeam && !team} placeholder={needTeam ? 'Quem está atendendo' : stage === 'concluida' ? 'Quem atendeu' : 'Deixe vazio para despachar depois'}

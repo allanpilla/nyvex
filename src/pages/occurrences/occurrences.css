@@ -162,7 +162,7 @@
 .oc-topt .is-free { color: var(--nx-success); }
 .oc-topt .is-busy { color: #f2ae40; }
 .oc-compose { flex: none; display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--nx-stroke); }
-.oc-compose .al-textarea { min-height: 36px; max-height: 120px; resize: none; }
+.oc-compose .nx-textarea { min-height: 36px; max-height: 120px; resize: none; }
 .oc-send { flex: none; }
 .oc-formfoot { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--nx-stroke); }
 .oc-formfoot .al-form__hint { flex: 1; }
@@ -190,9 +190,20 @@
 .oc-tall { min-height: 96px; }
 .oc-prioopts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .oc-prioopt { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; border-radius: var(--nx-radius-md); border: 1px solid var(--nx-stroke); text-align: left; transition: border-color .12s, background .12s; }
+.oc-prioopt { position: relative; padding-right: 32px; }
+.oc-prioopt::after { content: ''; position: absolute; top: 12px; right: 12px; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--nx-stroke); box-sizing: border-box; transition: border-color .12s, border-width .12s; }
 .oc-prioopt:hover { background: var(--nx-bg-hover); }
-.oc-prioopt.is-on { border-color: var(--nx-primary); background: color-mix(in srgb, var(--nx-primary) 8%, transparent); }
+.oc-prioopt.is-on { border-color: var(--nx-text-soft); background: var(--nx-bg-hover); }
+.oc-prioopt.is-on::after { border: 4px solid var(--nx-text-main); }
+.oc-prioopt:focus-visible { outline: 0; border-color: var(--nx-text-sub); }
 .oc-prioopt .oc-prio { font-size: 13px; font-weight: 500; }
 .oc-prioopt small { font-size: 11px; line-height: 15px; color: var(--nx-text-soft); }
 .oc-review .dv-info__row { grid-template-columns: 96px minmax(0, 1fr); }
 .oc-wcount { text-align: center; }
+
+/* Concluída: andamento completo em verde */
+.oc-steps.is-complete li::before, .oc-steps.is-complete li.is-done i { background: var(--nx-success); border-color: var(--nx-success); }
+.oc-steps.is-complete li.is-on i { box-shadow: 0 0 0 3px color-mix(in srgb, var(--nx-success) 25%, transparent); }
+.oc-steps.is-complete li.is-on span { color: var(--nx-success); }
+.dv-field.is-err .nx-textarea { border-color: var(--nx-error); }
+.oc-in:focus-visible, .al-textarea:focus-visible { outline: 0; }

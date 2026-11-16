@@ -21,3 +21,5 @@ export { Alert } from './Alert';
 export { Sheet } from './Sheet';
 export { Combobox } from './Combobox';
 export type { ComboOption } from './Combobox';
+export { Select } from './Select';
+export type { SelectOption } from './Select';
