@@ -12,7 +12,7 @@
 /* Resumo */
 .dv-sum { display: flex; gap: 8px; align-items: stretch; }
 .dv-cards { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
-.dv-card { min-width: 0; text-align: left; padding: 10px 12px; border-radius: var(--nx-radius-lg); border: 1px solid var(--nx-stroke); display: flex; flex-direction: column; gap: 2px; transition: background .12s, border-color .12s; }
+.dv-card { min-width: 0; text-align: left; padding: 10px 12px; border-radius: var(--nx-radius-lg); border: 1px solid var(--nx-stroke); display: flex; flex-direction: column; justify-content: center; gap: 2px; transition: background .12s, border-color .12s; }
 .dv-card:hover { background: var(--nx-bg-hover); }
 .dv-card.is-on { background: var(--nx-bg-hover); border-color: var(--nx-bg-badge); box-shadow: inset 0 0 0 1px var(--nx-bg-badge); }
 .dv-card__top { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--nx-text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -26,7 +26,7 @@
 @keyframes dv-blink { 50% { opacity: .35; } }
 .dv-card.is-zero b { color: var(--nx-text-soft); }
 .dv-meters { display: flex; gap: 8px; flex: none; }
-.dv-meter { width: 220px; min-width: 0; padding: 10px 12px; border-radius: var(--nx-radius-lg); border: 1px solid var(--nx-stroke); display: flex; flex-direction: column; gap: 2px; }
+.dv-meter { width: 220px; min-width: 0; padding: 10px 12px; border-radius: var(--nx-radius-lg); border: 1px solid var(--nx-stroke); display: flex; flex-direction: column; justify-content: center; gap: 2px; }
 .dv-meter__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; line-height: 16px; color: var(--nx-text-soft); white-space: nowrap; }
 .dv-meter__val { display: flex; align-items: baseline; gap: 4px; font-variant-numeric: tabular-nums; }
 .dv-meter__val b { font-size: 22px; line-height: 28px; font-weight: 500; }
