@@ -40,7 +40,7 @@ ${glasses ? `<g fill="none" stroke="#111" stroke-width="1.1" opacity=".85"><circ
 
 /**
  * Foto de rosto gerado por IA (StyleGAN, conjunto “100k-faces” de ozgrozer): pessoas que não existem.
- * As 64 fotos são baixadas no build (scripts/fetch-faces.sh) e servidas junto com o protótipo.
+ * As 200 fotos são baixadas no build (scripts/fetch-faces.sh) e servidas junto com o protótipo.
  */
-export const PHOTOS = 64;
-export const photoUrl = (seed: number) => `./faces/${String(seed % PHOTOS).padStart(2, '0')}.jpg`;
+export const PHOTOS = 200;
+export const photoUrl = (seed: number) => `./faces/${String(seed % PHOTOS).padStart(3, '0')}.jpg`;

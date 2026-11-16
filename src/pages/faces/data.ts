@@ -45,41 +45,46 @@ function rng(seed: number) {
   };
 }
 
-/** Pessoas de watchlist que aparecem no feed (ligadas à lista “Acompanhamento QA Faces”). */
+/** Pessoas de watchlist que aparecem no feed (lista “Acompanhamento QA Faces”); cada uma tem a sua foto. */
 const WL = [
-  { person: 'Andrei', list: 'Acompanhamento QA Faces', seed: 9101 },
-  { person: 'Elisa Santos', list: 'Acompanhamento QA Faces', seed: 9102 },
+  { person: 'Andrei', list: 'Acompanhamento QA Faces', seed: 0 },
+  { person: 'Elisa Santos', list: 'Acompanhamento QA Faces', seed: 1 },
 ];
 
 const live = SOURCES.filter((s) => s.status !== 'offline');
 let trackN = 8000;
 let idN = 0;
+/** Fotos 2…199 são usadas em sequência: cada captura tem uma foto diferente. */
+let photoN = 1;
+const nextPhoto = () => { photoN = photoN >= 199 ? 2 : photoN + 1; return photoN; };
+/** Máximo de faces na tela: menor que o nº de fotos, para nenhuma imagem se repetir. */
+export const FEED_MAX = 150;
 
-/** Gera uma captura; `r` decide fonte, tipo e confiança. */
-export function makeFace(at: number, r: () => number): Face {
+/** Gera uma captura. Um match de watchlist só sai se aquela pessoa ainda não estiver na tela. */
+export function makeFace(at: number, r: () => number, shown: Face[] = []): Face {
   const s = live[Math.floor(r() * live.length)];
   const x = r();
-  const kind: FaceKind = x < 0.035 ? 'watchlist' : x < 0.42 ? 'observacao' : 'comum';
-  const w = kind === 'watchlist' ? WL[Math.floor(r() * WL.length)] : null;
+  const free = WL.filter((w) => !shown.some((f) => f.match?.person === w.person));
+  const kind: FaceKind = x < 0.04 && free.length ? 'watchlist' : x < 0.42 ? 'observacao' : 'comum';
+  const w = kind === 'watchlist' ? free[Math.floor(r() * free.length)] : null;
   return {
     id: `f${++idN}`, src: s.id, at, det: Math.round((64 + r() * 22 + (r() > 0.9 ? 8 : 0)) * 10) / 10,
-    track: ++trackN, kind, seed: w ? w.seed : Math.floor(r() * 400),
+    track: ++trackN, kind, seed: w ? w.seed : nextPhoto(),
     match: w ? { person: w.person, list: w.list, score: Math.round(72 + r() * 20) } : undefined,
   };
 }
 
-/** Capturas iniciais: as últimas ~5 h, em rajadas (a mesma pessoa aparece em sequência). */
+/** Capturas iniciais das últimas horas, todas com fotos diferentes. */
 export function initialFaces(now: number): Face[] {
   const r = rng(42);
   const out: Face[] = [];
   let t = now - 40e3;
-  while (out.length < 118) {
-    const f = makeFace(t, r);
-    out.push(f);
-    const burst = r() < 0.55;
-    if (burst) { const n = 1 + Math.floor(r() * 2); for (let i = 0; i < n && out.length < 118; i++) { t -= 1000 + r() * 40e3; out.push({ ...f, id: `f${++idN}`, at: t, det: Math.round((f.det + (r() - 0.5) * 6) * 10) / 10, track: ++trackN }); } }
-    t -= 30e3 + r() * 260e3;
+  while (out.length < 72) {
+    out.push(makeFace(t, r, out));
+    t -= 40e3 + r() * 240e3;
   }
+  // garante um match de cada pessoa da watchlist na amostra inicial
+  WL.forEach((w, i) => { if (!out.some((f) => f.match?.person === w.person)) { const f = out[3 + i * 9]; Object.assign(f, { kind: 'watchlist', seed: w.seed, match: { person: w.person, list: w.list, score: 84 - i * 6 } }); } });
   return out;
 }
 export const rand = rng(7);

@@ -5,7 +5,7 @@ import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import { FaceDrawer } from './FaceDrawer';
 import { FaceImg } from './FaceImg';
-import { initialFaces, KIND_LABEL, LOCAIS, makeFace, rand, SOURCES, SRC, srcName, STATUS_LABEL, hms, type Face, type SrcStatus } from './data';
+import { FEED_MAX, initialFaces, KIND_LABEL, LOCAIS, makeFace, rand, SOURCES, SRC, srcName, STATUS_LABEL, hms, type Face, type SrcStatus } from './data';
 import '../mural/mural.css';
 import '../devices/devices.css';
 import './faces.css';
@@ -32,15 +32,17 @@ export function FacesPage({ screen }: { screen: Screen }) {
   const [fps, setFps] = useState(4.0);
   const [now, setNow] = useState(Date.now());
   const wallRef = useRef<HTMLDivElement>(null);
+  const facesRef = useRef(faces); facesRef.current = faces;
+  const queuedRef = useRef(queued); queuedRef.current = queued;
 
   // Feed ao vivo: novas faces chegam em intervalos irregulares; pausado, elas ficam na fila.
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
     const tick = () => {
-      const f = makeFace(Date.now(), rand);
-      if (paused) setQueued((q) => [f, ...q]);
+      const f = makeFace(Date.now(), rand, [...facesRef.current, ...queuedRef.current]);
+      if (paused) setQueued((q) => [f, ...q].slice(0, FEED_MAX));
       else {
-        setFaces((l) => [f, ...l].slice(0, 400));
+        setFaces((l) => [f, ...l].slice(0, FEED_MAX));
         setFresh((s) => new Set(s).add(f.id));
         setTimeout(() => setFresh((s) => { const n = new Set(s); n.delete(f.id); return n; }), 1600);
       }
@@ -55,7 +57,7 @@ export function FacesPage({ screen }: { screen: Screen }) {
   }, []);
 
   const resume = () => {
-    setFaces((l) => [...queued, ...l].slice(0, 400));
+    setFaces((l) => [...queued, ...l].slice(0, FEED_MAX));
     setFresh(new Set(queued.map((f) => f.id)));
     setTimeout(() => setFresh(new Set()), 1600);
     setQueued([]); setPaused(false);

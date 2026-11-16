@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Baixa 64 rostos gerados por IA (StyleGAN, conjunto "100k-faces" de ozgrozer: pessoas que não existem)
-# para public/faces/00.jpg … 63.jpg. Roda no build do GitHub Pages; o protótipo não depende do site externo.
+# Baixa 200 rostos gerados por IA (StyleGAN, conjunto "100k-faces" de ozgrozer: pessoas que não existem)
+# para public/faces/000.jpg … 199.jpg. Roda no build do GitHub Pages; o protótipo não depende do site externo.
 set -u
-OUT=public/faces; N=64; mkdir -p "$OUT"
+OUT=public/faces; N=200; mkdir -p "$OUT"
 i=0; n=0
-while [ "$i" -lt "$N" ] && [ "$n" -lt 600 ]; do
+while [ "$i" -lt "$N" ] && [ "$n" -lt 1500 ]; do
   id=$(printf '%06d' "$n")
   url="https://ozgrozer.github.io/100k-faces/$((n / 10000))/$(((n / 1000) % 10))/$id.jpg"
-  f="$OUT/$(printf '%02d' "$i").jpg"
+  f="$OUT/$(printf '%03d' "$i").jpg"
   if curl -fsSL --retry 3 --retry-delay 1 -o "$f" "$url" && [ "$(head -c 3 "$f" | od -An -tx1 | tr -d ' ')" = "ffd8ff" ]; then
     i=$((i + 1))
   else
