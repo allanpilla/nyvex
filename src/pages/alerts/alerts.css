@@ -145,3 +145,9 @@
 .al-cmodal__foot { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--nx-text-soft); }
 .al-cmodal__foot > span { flex: 1; }
 .is-t2.dv-tcard .al-table .dv-c--act .al-qa { opacity: 1; }
+.al-reason.is-violet { background: rgba(167, 139, 250, .14); color: #b9a3fb; }
+[data-theme='light'] .al-reason.is-violet { color: #6d4fd8; }
+.dv-cards.al-cards { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+@container dvmain (max-width: 1100px) { .dv-cards.al-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@container dvmain (max-width: 720px) { .dv-cards.al-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.al-acts-row .al-ack { min-width: 124px; justify-content: center; }

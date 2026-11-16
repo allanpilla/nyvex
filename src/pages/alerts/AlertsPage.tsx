@@ -8,7 +8,7 @@ import { FilterToggle, SortButton } from '../devices/tableModel';
 import { Thumb } from './Thumb';
 import {
   ago, ALERTS, CAMS, camName, FP_REASONS, groupAlerts, KIND, makeAlert, ME, PRIO_LABEL, PRIO_RANK, rand, REASON, span, STATUS_LABEL, subtitle, target, targetSub, title, when,
-  type Alert, type Group, type Kind, type Prio, type Status,
+  type Alert, type Cat, type Group, type Kind, type Prio, type Status,
 } from './data';
 import { AlertDrawer, type Act, type Form } from './AlertDrawer';
 import { ClipChip, ClipModal } from './Clip';
@@ -24,10 +24,18 @@ const F_GROUPS: { key: FKey; label: string; opts: [string, string][] }[] = [
   { key: 'cam', label: 'Câmera', opts: Object.entries(CAMS).map(([k, c]) => [k, camName(c)]) },
 ];
 const fLabel = (k: FKey, v: string) => F_GROUPS.find((g) => g.key === k)!.opts.find((o) => o[0] === v)?.[1] ?? v;
-type Quick = 'all' | Kind;
+type Quick = 'all' | Cat;
 type SortKey = 'prio' | 'recent' | 'count';
 const SORT_OPTS: [SortKey, string][] = [['prio', 'Prioridade'], ['recent', 'Mais recente'], ['count', 'Ocorrências']];
 const PAGE = 40;
+const LIVE_MIX: [Kind, string, Partial<Alert>][] = [
+  ['permanencia', 'c8', { note: 'Parado há 4 min na porta' }],
+  ['aglomeracao', 'c6', { note: '12 pessoas · limite 10' }],
+  ['objeto', 'c3', { note: 'Mochila sem dono há 5 min' }],
+  ['contramao', 'c10', { note: 'Veículo na contramão da saída' }],
+  ['face', 'c7', { person: 'Marcos Vieira Lopes', score: 87, list: 'Mandados em aberto', seed: 148 }],
+  ['placa', 'c10', { plate: 'RVK2C19', list: 'Furto e roubo · SINESP', score: 98 }],
+];
 const prioOf = (a: Alert): Prio => KIND[a.kind].prio;
 
 export function AlertsPage({ screen }: { screen: Screen }) {
@@ -40,7 +48,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   const [f, setF] = useState<Filters>(EMPTY);
   const [showF, setShowF] = useState(false);
   const [grouped, setGrouped] = useState(true);
-  const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'prio', dir: 1 });
+  const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'recent', dir: 1 });
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [filterBtn, setFilterBtn] = useState<{ key: FKey; el: HTMLElement } | null>(null);
@@ -64,7 +72,8 @@ export function AlertsPage({ screen }: { screen: Screen }) {
     const tick = () => {
       if (!pausedRef.current) {
         const r = rand();
-        const a = r < 0.62 ? makeAlert('perimetro', r < 0.4 ? 'c1' : 'c3', Date.now()) : makeAlert('linha', r < 0.85 ? 'c2' : 'c4', Date.now());
+        const v = LIVE_MIX[Math.floor(rand() * LIVE_MIX.length)];
+        const a = r < 0.5 ? makeAlert('perimetro', r < 0.3 ? 'c1' : 'c3', Date.now()) : r < 0.75 ? makeAlert('linha', r < 0.65 ? 'c2' : 'c4', Date.now()) : makeAlert(v[0], v[1], Date.now(), v[2]);
         setAlerts((l) => [a, ...l]);
         setFresh((s) => new Set(s).add(a.id));
         setTimeout(() => setFresh((s) => { const n = new Set(s); n.delete(a.id); return n; }), 2200);
@@ -82,7 +91,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   const mineMatch = (a: Alert) => !mine || a.fwdTo === ME || a.ackBy === ME;
   const inTab = useMemo(() => alerts.filter((a) => a.status === tab), [alerts, tab]);
   const base = useMemo(() => inTab.filter((a) => mineMatch(a) && fMatch(a, f) && textMatch(a)), [inTab, mine, f, nq]); // eslint-disable-line react-hooks/exhaustive-deps
-  const hits = useMemo(() => base.filter((a) => quick === 'all' || a.kind === quick), [base, quick]);
+  const hits = useMemo(() => base.filter((a) => quick === 'all' || KIND[a.kind].cat === quick), [base, quick]);
   const groups = useMemo(() => {
     const g = groupAlerts(hits, grouped);
     return g.sort((a, b) => {
@@ -94,7 +103,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   const shown = groups.slice(0, limit);
   const open = openKey ? groups.find((g) => g.key === openKey) ?? null : null;
   const counts = (st: Status) => alerts.filter((a) => a.status === st).length;
-  const kcount = (k: Quick) => base.filter((a) => k === 'all' || a.kind === k).length;
+  const kcount = (k: Quick) => base.filter((a) => k === 'all' || KIND[a.kind].cat === k).length;
   const anyFilter = Object.values(f).some((a) => a.length) || !!nq || quick !== 'all' || mine;
   const nF = F_GROUPS.filter((g) => f[g.key].length).length;
   const lastHour = alerts.filter((a) => a.status === 'pendente' && now - a.at < 3600e3).length;
@@ -138,13 +147,14 @@ export function AlertsPage({ screen }: { screen: Screen }) {
     toast(`${rows.length} alertas exportados (CSV)`);
   };
 
-  const cards: { k: Quick; label: string; icon: 'alert' | 'eye' | 'car' | 'shield' | 'activity' | 'nosignal'; hint: string }[] = [
+  const cards: { k: Quick; label: string; icon: 'alert' | 'eye' | 'car' | 'shield' | 'activity' | 'people' | 'nosignal'; hint: string }[] = [
     { k: 'all', label: 'Todos', icon: 'alert', hint: 'Todos os alertas desta aba' },
     { k: 'face', label: 'Watchlist', icon: 'eye', hint: 'Match de face com pessoa de uma watchlist' },
     { k: 'placa', label: 'Placas', icon: 'car', hint: 'Placa de uma watchlist lida por câmera LPR' },
     { k: 'perimetro', label: 'Perímetro', icon: 'shield', hint: 'Pessoa em área de divisa' },
     { k: 'linha', label: 'Linha', icon: 'activity', hint: 'Cruzamento de linha virtual' },
-    { k: 'camera', label: 'Câmeras', icon: 'nosignal', hint: 'Câmera parou de enviar vídeo' },
+    { k: 'comport', label: 'Comportamento', icon: 'people', hint: 'Permanência, objeto abandonado, aglomeração e sentido proibido' },
+    { k: 'camera', label: 'Câmeras', icon: 'nosignal', hint: 'Câmera sem vídeo ou com a imagem obstruída' },
   ];
   const allOn = shown.length > 0 && shown.every((g) => sel.has(g.key));
   const someOn = shown.some((g) => sel.has(g.key));

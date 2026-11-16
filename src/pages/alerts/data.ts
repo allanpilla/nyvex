@@ -5,7 +5,11 @@
  * de face (watchlist) de 3 a 6 dias atrás, nenhum alerta de placa e 5 reconhecidos.
  */
 
-export type Kind = 'face' | 'placa' | 'perimetro' | 'linha' | 'camera';
+import type { IconName } from '../../ds/icons/icons';
+
+export type Kind = 'face' | 'placa' | 'perimetro' | 'linha' | 'permanencia' | 'objeto' | 'aglomeracao' | 'contramao' | 'adulteracao' | 'camera';
+/** Categorias dos cards de resumo. */
+export type Cat = 'face' | 'placa' | 'perimetro' | 'linha' | 'comport' | 'camera';
 export type Status = 'pendente' | 'reconhecido' | 'encerrado';
 export type Prio = 'alta' | 'media' | 'baixa';
 
@@ -25,6 +29,8 @@ export type Alert = {
   plate?: string;
   /** câmera sem vídeo: minutos sem sinal */
   mins?: number;
+  /** detalhe da analítica (ex.: "14 pessoas · limite 10") */
+  note?: string;
   ackBy?: string; ackAt?: number;
   closedBy?: string; closedAt?: number;
   outcome?: string; justification?: string;
@@ -49,12 +55,17 @@ export const CAMS: Record<string, Cam> = {
 };
 export const camName = (c: Cam) => c.name ?? `Câmera ${c.id.slice(0, 8)}`;
 
-export const KIND: Record<Kind, { label: string; short: string; icon: 'eye' | 'car' | 'shield' | 'activity' | 'nosignal'; prio: Prio }> = {
-  face: { label: 'Match de watchlist', short: 'Watchlist', icon: 'eye', prio: 'alta' },
-  placa: { label: 'Placa monitorada', short: 'Placa', icon: 'car', prio: 'alta' },
-  perimetro: { label: 'Invasão de perímetro', short: 'Perímetro', icon: 'shield', prio: 'media' },
-  linha: { label: 'Cruzamento de linha', short: 'Linha', icon: 'activity', prio: 'baixa' },
-  camera: { label: 'Câmera sem vídeo', short: 'Câmera', icon: 'nosignal', prio: 'media' },
+export const KIND: Record<Kind, { label: string; short: string; icon: IconName; prio: Prio; cat: Cat }> = {
+  face: { label: 'Match de watchlist', short: 'Watchlist', icon: 'eye', prio: 'alta', cat: 'face' },
+  placa: { label: 'Placa monitorada', short: 'Placa', icon: 'car', prio: 'alta', cat: 'placa' },
+  perimetro: { label: 'Invasão de perímetro', short: 'Perímetro', icon: 'shield', prio: 'media', cat: 'perimetro' },
+  linha: { label: 'Cruzamento de linha', short: 'Linha', icon: 'activity', prio: 'baixa', cat: 'linha' },
+  permanencia: { label: 'Permanência suspeita', short: 'Permanência', icon: 'clock', prio: 'media', cat: 'comport' },
+  objeto: { label: 'Objeto abandonado', short: 'Objeto', icon: 'stack', prio: 'alta', cat: 'comport' },
+  aglomeracao: { label: 'Aglomeração', short: 'Aglomeração', icon: 'people', prio: 'media', cat: 'comport' },
+  contramao: { label: 'Sentido proibido', short: 'Sentido', icon: 'arrowLeft', prio: 'baixa', cat: 'comport' },
+  adulteracao: { label: 'Câmera obstruída', short: 'Obstrução', icon: 'eyeOff', prio: 'alta', cat: 'camera' },
+  camera: { label: 'Câmera sem vídeo', short: 'Câmera', icon: 'nosignal', prio: 'media', cat: 'camera' },
 };
 export const PRIO_LABEL: Record<Prio, string> = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
 export const PRIO_RANK: Record<Prio, number> = { alta: 0, media: 1, baixa: 2 };
@@ -106,6 +117,36 @@ function build(now: number): Alert[] {
   // Placas: a homologação não tem nenhuma hoje; dois exemplos para o modelo ficar completo.
   out.push(makeAlert('placa', 'c10', now - 38 * MIN, { plate: 'QWE7J81', list: 'Veículos com restrição · Estacionamento', score: 97 }));
   out.push(makeAlert('placa', 'c10', now - 2 * D - 5 * H, { plate: 'TAU1F42', list: 'Acompanhamento QA Faces', score: 92 }));
+
+  // Outras analíticas e matches recentes, espalhados nas últimas 30 h para a fila mostrar a variedade de motivos.
+  // (A homologação de hoje só tem perímetro, linha e face; estes ilustram o restante do catálogo.)
+  const mix: [Kind, string, number, Partial<Alert>][] = [
+    ['face', 'c7', 3, { person: 'Marcos Vieira Lopes', score: 88, list: 'Mandados em aberto', seed: 148 }],
+    ['objeto', 'c3', 7, { note: 'Mochila sem dono há 6 min' }],
+    ['placa', 'c10', 12, { plate: 'RVK2C19', list: 'Furto e roubo · SINESP', score: 99 }],
+    ['aglomeracao', 'c6', 17, { note: '14 pessoas · limite 10' }],
+    ['permanencia', 'c8', 21, { note: 'Parado há 4 min na porta' }],
+    ['adulteracao', 'c5', 26, { note: 'Lente coberta ou desfocada' }],
+    ['face', 'c5', 33, { person: 'Rafael Antunes', score: 79, list: 'Ex-funcionários · acesso bloqueado', seed: 154 }],
+    ['contramao', 'c10', 41, { note: 'Veículo na contramão da saída' }],
+    ['permanencia', 'c4', 49, { note: 'Parado há 7 min no corredor' }],
+    ['objeto', 'c6', 57, { note: 'Caixa deixada perto da escada' }],
+    ['placa', 'c10', 64, { plate: 'GHT4E07', list: 'Veículos com restrição · Estacionamento', score: 94 }],
+    ['aglomeracao', 'c3', 78, { note: '22 pessoas · limite 15' }],
+    ['face', 'c6', 95, { person: 'Carla Mendes Rocha', score: 83, list: 'Medida protetiva', seed: 166 }],
+    ['contramao', 'c2', 120, { note: 'Pessoa no sentido proibido da catraca' }],
+    ['adulteracao', 'c7', 150, { note: 'Câmera deslocada · cena mudou' }],
+    ['permanencia', 'c1', 190, { note: 'Parado há 5 min na divisa' }],
+    ['objeto', 'c8', 260, { note: 'Sacola sem dono há 9 min' }],
+    ['face', 'c7', 330, { person: 'Marcos Vieira Lopes', score: 86, list: 'Mandados em aberto', seed: 148 }],
+    ['aglomeracao', 'c6', 420, { note: '18 pessoas · limite 10' }],
+    ['placa', 'c10', 600, { plate: 'RVK2C19', list: 'Furto e roubo · SINESP', score: 98 }],
+    ['contramao', 'c10', 780, { note: 'Veículo na contramão da saída' }],
+    ['permanencia', 'c5', 1000, { note: 'Parado há 6 min na rampa' }],
+    ['objeto', 'c4', 1300, { note: 'Mala sem dono há 12 min' }],
+    ['adulteracao', 'c3', 1650, { note: 'Imagem escura · possível spray' }],
+  ];
+  for (const [k, cam, m, x] of mix) out.push(makeAlert(k, cam, now - m * MIN - Math.round(rand() * 40e3), x));
 
   // Reconhecidos (como na homologação) e alguns encerrados.
   const ack = (a: Alert, by: string, after: number) => Object.assign(a, { status: 'reconhecido' as Status, ackBy: by, ackAt: a.at + after });
@@ -178,15 +219,21 @@ export function subtitle(a: Alert) {
   if (a.kind === 'face') return `Watchlist · ${a.score}% · ${a.list}`;
   if (a.kind === 'placa') return `Placa monitorada · ${a.list}`;
   if (a.kind === 'camera') return `Sem vídeo há ${a.mins} min`;
+  if (a.note) return a.note;
   return a.kind === 'perimetro' && CAMS[a.cam].ptz ? 'Pessoa detectada · PTZ de divisa' : 'Pessoa detectada';
 }
 
 /** Motivo do alerta, com tom de destaque (coluna Motivo). */
-export const REASON: Record<Kind, { label: string; tone: 'red' | 'amber' | 'blue' | 'gray' }> = {
+export const REASON: Record<Kind, { label: string; tone: 'red' | 'amber' | 'blue' | 'violet' | 'gray' }> = {
   face: { label: 'Match de watchlist', tone: 'blue' },
   placa: { label: 'Placa monitorada', tone: 'blue' },
   perimetro: { label: 'Invasão de perímetro', tone: 'red' },
+  objeto: { label: 'Objeto abandonado', tone: 'red' },
   linha: { label: 'Linha cruzada', tone: 'amber' },
+  contramao: { label: 'Sentido proibido', tone: 'amber' },
+  permanencia: { label: 'Permanência suspeita', tone: 'violet' },
+  aglomeracao: { label: 'Aglomeração', tone: 'violet' },
+  adulteracao: { label: 'Câmera obstruída', tone: 'gray' },
   camera: { label: 'Câmera sem vídeo', tone: 'gray' },
 };
 /** Alvo do alerta (o que foi detectado), como na coluna Target da tela atual. */
@@ -194,11 +241,16 @@ export function target(a: Alert) {
   if (a.kind === 'face') return a.person ?? 'Pessoa sem nome no cadastro';
   if (a.kind === 'placa') return a.plate!;
   if (a.kind === 'camera') return 'Sem sinal de vídeo';
+  if (a.kind === 'adulteracao') return 'Imagem comprometida';
+  if (a.kind === 'objeto') return 'Objeto';
+  if (a.kind === 'aglomeracao') return 'Grupo de pessoas';
+  if (a.kind === 'contramao') return a.note?.startsWith('Veículo') ? 'Veículo' : 'Pessoa';
   return 'Pessoa';
 }
 export function targetSub(a: Alert) {
   if (a.kind === 'face') return `${a.score}% · ${a.list}`;
   if (a.kind === 'placa') return `Leitura ${a.score}% · ${a.list}`;
   if (a.kind === 'camera') return `Há ${a.mins} min`;
+  if (a.note) return a.note;
   return a.kind === 'perimetro' && CAMS[a.cam].ptz ? 'Detecção humana · PTZ de divisa' : 'Detecção humana';
 }
