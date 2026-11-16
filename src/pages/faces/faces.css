@@ -86,3 +86,4 @@
 .fc-solo { width: 26px; height: 26px; opacity: 0; transition: opacity .12s; }
 .fc-srow:hover .fc-solo, .fc-solo:focus-visible { opacity: 1; }
 .fc-srow:not(.is-on) .mv-row__txt b { color: var(--nx-text-soft); }
+.fc-chips { grid-template-columns: auto auto; justify-content: start; }

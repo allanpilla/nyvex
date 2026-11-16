@@ -89,12 +89,9 @@ export function FacesPage({ screen }: { screen: Screen }) {
         ) : (
           <aside className="mv-rail" aria-label="Fontes">
             <div className="mv-rail__head"><IconButton icon="panel" label="Mostrar fontes" onClick={() => setPanel(true)} /></div>
-            <div className="mv-rail__group" aria-label="Situação das fontes">
-              {(['online', 'atencao', 'offline'] as SrcStatus[]).map((st) => (
-                <RailBtn key={st} label={`Fontes: ${STATUS_LABEL[st]}`} onClick={() => setPanel(true)}>
-                  <span className={`mv-dot is-${st}`} /><b>{SOURCES.filter((s) => s.status === st).length}</b>
-                </RailBtn>
-              ))}
+            <div className="mv-rail__group" aria-label="Fontes">
+              <RailBtn label={`${SOURCES.length} fontes`} onClick={() => setPanel(true)}><Icon name="camera" size={16} /><b>{SOURCES.length}</b></RailBtn>
+              <RailBtn label="Fontes que pedem atenção" onClick={() => setPanel(true)}><span className="mv-dot is-atencao" /><b>{SOURCES.filter((s) => s.status === 'atencao').length}</b></RailBtn>
             </div>
             <div className="mv-rail__sep" />
             <RailBtn label="Buscar fonte" onClick={() => setPanel(true)}><Icon name="search" size={18} /></RailBtn>
@@ -229,12 +226,13 @@ function SourcePanel({ faces, off, setOff, onHide }: { faces: Face[]; off: Set<s
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar fonte, local ou ID" aria-label="Buscar fonte" />
           {q && <button type="button" className="mv-clear" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={16} /></button>}
         </label>
-        <div className="mv-chips" role="group" aria-label="Filtrar por situação">
-          {(['online', 'atencao', 'offline'] as SrcStatus[]).map((st) => (
-            <button key={st} type="button" aria-pressed={status === st} className={`mv-chip${status === st ? ' is-on' : ''}`} onClick={() => setStatus(status === st ? null : st)}>
-              <span className={`mv-dot is-${st}`} />{STATUS_LABEL[st]}<span className="mv-chip__n">{SOURCES.filter((s) => s.status === st).length}</span>
-            </button>
-          ))}
+        <div className="mv-chips fc-chips" role="group" aria-label="Filtrar fontes">
+          <button type="button" aria-pressed={!status} className={`mv-chip${!status ? ' is-on' : ''}`} onClick={() => setStatus(null)}>
+            Todas<span className="mv-chip__n">{SOURCES.length}</span>
+          </button>
+          <button type="button" aria-pressed={status === 'atencao'} className={`mv-chip${status === 'atencao' ? ' is-on' : ''}`} onClick={() => setStatus(status === 'atencao' ? null : 'atencao')}>
+            <span className="mv-dot is-atencao" />Atenção<span className="mv-chip__n">{SOURCES.filter((s) => s.status === 'atencao').length}</span>
+          </button>
         </div>
       </div>
       <div className="mv-list">
