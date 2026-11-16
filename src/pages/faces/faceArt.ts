@@ -40,10 +40,7 @@ ${glasses ? `<g fill="none" stroke="#111" stroke-width="1.1" opacity=".85"><circ
 
 /**
  * Foto de rosto gerado por IA (StyleGAN, conjunto “100k-faces” de ozgrozer): pessoas que não existem.
- * Se a imagem não carregar, o card cai no retrato sintético acima.
+ * As 64 fotos são baixadas no build (scripts/fetch-faces.sh) e servidas junto com o protótipo.
  */
-export function photoUrl(seed: number): string {
-  const n = (seed * 7919 + 1237) % 100000;
-  const id = String(n).padStart(6, '0');
-  return `https://ozgrozer.github.io/100k-faces/${Math.floor(n / 10000)}/${Math.floor(n / 1000) % 10}/${id}.jpg`;
-}
+export const PHOTOS = 64;
+export const photoUrl = (seed: number) => `./faces/${String(seed % PHOTOS).padStart(2, '0')}.jpg`;
