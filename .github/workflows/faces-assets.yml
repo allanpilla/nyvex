@@ -1,0 +1,22 @@
+name: Rostos para o Figma
+
+# Publica as fotos geradas por IA (scripts/fetch-faces.sh) no ramo assets-faces,
+# para poderem ser usadas fora do build (ex.: telas no Figma).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  faces:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/fetch-faces.sh
+      - run: |
+          cd public/faces
+          git init -q -b assets-faces
+          git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "Rostos gerados por IA (100k-faces)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" assets-faces
