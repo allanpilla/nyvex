@@ -189,13 +189,14 @@
 .oc-wnote { margin: 0; font-size: 12px; color: var(--nx-text-soft); }
 .oc-tall { min-height: 96px; }
 .oc-prioopts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.oc-prioopt { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; border-radius: var(--nx-radius-md); border: 1px solid var(--nx-stroke); text-align: left; transition: border-color .12s, background .12s; }
-.oc-prioopt { position: relative; padding-right: 32px; }
-.oc-prioopt::after { content: ''; position: absolute; top: 12px; right: 12px; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--nx-stroke); box-sizing: border-box; transition: border-color .12s, border-width .12s; }
-.oc-prioopt:hover { background: var(--nx-bg-hover); }
-.oc-prioopt.is-on { border-color: var(--nx-text-soft); background: var(--nx-bg-hover); }
-.oc-prioopt.is-on::after { border: 4px solid var(--nx-text-main); }
-.oc-prioopt:focus-visible { outline: 0; border-color: var(--nx-text-sub); }
+.oc-prioopt { --pc: var(--nx-text-soft); position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 32px 10px 12px; border-radius: var(--nx-radius-md); border: 1px solid var(--nx-stroke); text-align: left; transition: border-color .15s, background .15s; }
+.oc-prioopt.is-critica { --pc: #f2556f; }
+.oc-prioopt.is-alta { --pc: #f2ae40; }
+.oc-prioopt.is-media { --pc: #4d9bff; }
+.oc-prioopt:hover { background: color-mix(in srgb, var(--nx-bg-hover) 55%, transparent); }
+.oc-prioopt.is-on { border-color: color-mix(in srgb, var(--pc) 45%, var(--nx-stroke)); background: color-mix(in srgb, var(--pc) 7%, transparent); }
+.oc-prioopt > .nx-icon { position: absolute; top: 11px; right: 11px; color: var(--pc); }
+.oc-prioopt:focus-visible { outline: 0; border-color: color-mix(in srgb, var(--pc) 60%, var(--nx-stroke)); }
 .oc-prioopt .oc-prio { font-size: 13px; font-weight: 500; }
 .oc-prioopt small { font-size: 11px; line-height: 15px; color: var(--nx-text-soft); }
 .oc-review .dv-info__row { grid-template-columns: 96px minmax(0, 1fr); }

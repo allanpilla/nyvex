@@ -336,8 +336,8 @@ export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stag
             <div className="dv-field"><span className="dv-field__l">Prioridade</span>
               <div className="oc-prioopts" role="radiogroup" aria-label="Prioridade">
                 {(['critica', 'alta', 'media', 'baixa'] as Prio[]).map((p) => (
-                  <button key={p} type="button" role="radio" aria-checked={prio === p} className={`oc-prioopt${prio === p ? ' is-on' : ''}`} onClick={() => setPrio(p)}>
-                    <span className={`oc-prio is-${p}`}><i />{PRIO_LABEL[p]}</span><small>{PRIO_HINT[p]}</small>
+                  <button key={p} type="button" role="radio" aria-checked={prio === p} className={`oc-prioopt is-${p}${prio === p ? ' is-on' : ''}`} onClick={() => setPrio(p)}>
+                    <span className={`oc-prio is-${p}`}><i />{PRIO_LABEL[p]}</span><small>{PRIO_HINT[p]}</small>{prio === p && <Icon name="check" size={14} />}
                   </button>
                 ))}
               </div>
