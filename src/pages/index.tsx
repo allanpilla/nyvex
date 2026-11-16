@@ -4,6 +4,7 @@ import { MuralPage } from './mural/MuralPage';
 import { DevicesPage } from './devices/DevicesPage';
 import { LocationsPage } from './locations/LocationsPage';
 import { WatchlistsPage } from './watchlists/WatchlistsPage';
+import { FacesPage } from './faces/FacesPage';
 
 /**
  * Telas já desenhadas, por id do menu. Ao criar uma tela nova:
@@ -16,4 +17,5 @@ export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> =
   disp: DevicesPage,
   locais: LocationsPage,
   watch: WatchlistsPage,
+  faces: FacesPage,
 };
