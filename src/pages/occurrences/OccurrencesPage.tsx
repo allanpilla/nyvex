@@ -112,7 +112,7 @@ export function OccurrencesPage({ screen }: { screen: Screen }) {
   const create = (n: NewOcc) => {
     const t = Date.now();
     const o: Occ = {
-      id: `new${t}`, code: nextCode(), title: n.title, kind: n.kind, prio: n.prio, stage: n.team ? 'despachada' : 'nova', local: n.local, cam: n.cam, desc: n.desc, team: n.team,
+      id: `new${t}`, code: nextCode(), title: n.title, kind: n.kind, prio: n.prio, stage: n.team ? 'despachada' : 'nova', local: n.local, cam: n.cam, desc: n.desc, team: n.team, place: n.place, reporter: n.reporter,
       at: t, updated: t, by: ME, alerts: 0, evidence: 0, parties: [], x: 20 + Math.random() * 60, y: 20 + Math.random() * 60,
       events: [...(n.team ? [{ at: t + 1, who: ME, what: `Despachada para ${n.team}`, kind: 'dispatch' as const }] : []), { at: t, who: ME, what: 'Ocorrência registrada', kind: 'create' as const }],
     };

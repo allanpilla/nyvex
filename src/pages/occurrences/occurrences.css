@@ -166,3 +166,11 @@
 .oc-send { flex: none; }
 .oc-formfoot { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--nx-stroke); }
 .oc-formfoot .al-form__hint { flex: 1; }
+.oc-newbody { gap: 12px; }
+.oc-fsec { display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1px solid var(--nx-stroke); border-radius: var(--nx-radius-lg); }
+.oc-fsec h3 { margin: 0; font-size: 13px; line-height: 18px; font-weight: 500; color: var(--nx-text-main); }
+.oc-fsec .nx-seg--sm { display: flex; }
+.oc-fsec .nx-seg--sm .nx-seg__opt { flex: 1; justify-content: center; padding: 0 4px; }
+.oc-req { color: #f2556f; }
+@media (max-width: 480px) { .oc-2col { grid-template-columns: 1fr; } }
+.oc-2col.is-wide2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }

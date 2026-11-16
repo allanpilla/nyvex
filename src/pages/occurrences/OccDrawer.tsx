@@ -4,8 +4,8 @@ import { Button, Combobox, Icon, IconButton, Menu, NavItem, Segmented } from '..
 import { copy } from '../devices/parts';
 import { FaceImg } from '../faces/FaceImg';
 import {
-  ago, CAMS, dur, fullDate, hm, KIND_ICON, KIND_LABEL, LOCAIS, ME, NEXT, OUTCOMES, PRIO_LABEL, STAGE_LABEL, STAGES, TEAMS,
-  late, inStage, type Kind, type Occ, type Party, type Prio, type Stage,
+  ago, CAMS, dur, fullDate, hm, KIND_ICON, KIND_LABEL, LOCAIS, NEXT, OUTCOMES, PRIO_LABEL, STAGE_LABEL, STAGES, TEAMS,
+  late, inStage, type Kind, type Occ, type Party, type Place, type Prio, type Reporter, type Stage,
 } from './data';
 
 export type Move = { to: Stage; team?: string; outcome?: string; note?: string };
@@ -218,6 +218,9 @@ export function OccDrawer({ o, all, now, busy, onClose, onMove, onNote, onAdd, o
 
         <dl className="dv-info">
           <div className="dv-info__row"><dt>Local</dt><dd>{o.local}</dd></div>
+          {o.place && (o.place.address || o.place.city) && <div className="dv-info__row"><dt>Endereço</dt><dd className="al-wrap">{[o.place.address, o.place.district, [o.place.city, o.place.uf].filter(Boolean).join('/')].filter(Boolean).join(' · ')}</dd></div>}
+          {o.place?.zone && <div className="dv-info__row"><dt>Área / zona</dt><dd>{o.place.zone}</dd></div>}
+          {o.reporter && <div className="dv-info__row"><dt>Solicitante</dt><dd className="al-wrap">{[o.reporter.name, o.reporter.relation, o.reporter.phone, o.reporter.doc].filter(Boolean).join(' · ')}</dd></div>}
           {o.cam && <div className="dv-info__row"><dt>Câmera de origem</dt><dd>{o.cam}</dd></div>}
           <div className="dv-info__row"><dt>Equipe</dt><dd>{o.team ?? <span className="al-muted">Sem equipe</span>}</dd></div>
           {o.outcome && <div className="dv-info__row"><dt>Desfecho</dt><dd>{o.outcome}</dd></div>}
@@ -251,65 +254,115 @@ export function OccDrawer({ o, all, now, busy, onClose, onMove, onNote, onAdd, o
 
 /* ───────────── nova ocorrência ───────────── */
 
-export type NewOcc = { title: string; kind: Kind; prio: Prio; local: string; cam?: string; desc?: string; team?: string };
+export type NewOcc = { title: string; kind: Kind; prio: Prio; local: string; cam?: string; desc?: string; team?: string; place?: Place; reporter?: Reporter };
+
+const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+const RELATIONS = ['Vítima', 'Testemunha', 'Funcionário', 'Aluno', 'Visitante', 'Vigilante / segurança', 'Anônimo', 'Outro'];
+const phoneMask = (v: string) => { const d = v.replace(/\D/g, '').slice(0, 11); return d.length <= 2 ? d : d.length <= 6 ? `(${d.slice(0, 2)}) ${d.slice(2)}` : d.length <= 10 ? `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}` : `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`; };
 
 export function NewOccDrawer({ busy, onClose, onCreate }: { busy: Set<string>; onClose: () => void; onCreate: (n: NewOcc) => void }) {
   const [title, setTitle] = useState('');
-  const [kind, setKind] = useState<Kind | ''>('');
+  const [kind, setKind] = useState<Kind>('outro');
   const [prio, setPrio] = useState<Prio>('media');
-  const [local, setLocal] = useState<string | null>(null);
-  const [cam, setCam] = useState<string | null>(null);
   const [desc, setDesc] = useState('');
+  const [local, setLocal] = useState<string | null>(null);
+  const [pl, setPl] = useState<Place>({ address: '', district: '', city: '', uf: '', zone: '' });
+  const [rp, setRp] = useState<Reporter>({ name: '', relation: '', phone: '', doc: '' });
+  const [cam, setCam] = useState<string | null>(null);
   const [team, setTeam] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
-  const ok = title.trim() && kind && local;
+  const ok = !!title.trim();
 
   useEffect(() => {
-    const k = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('.nx-menu')) onClose(); };
+    const k = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !document.querySelector('.nx-menu')) onClose();
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) create();
+    };
     document.addEventListener('keydown', k);
     return () => document.removeEventListener('keydown', k);
-  }, [onClose]);
+  });
 
   const create = () => {
     setTried(true);
     if (!ok) return;
-    onCreate({ title: title.trim(), kind: kind as Kind, prio, local: local!, cam: cam ?? undefined, desc: desc.trim() || undefined, team: team ?? undefined });
+    const place = Object.values(pl).some((v) => v.trim()) ? pl : undefined;
+    const reporter = rp.name.trim() || rp.phone.trim() ? rp : undefined;
+    onCreate({ title: title.trim(), kind, prio, local: local ?? (pl.address.trim() || 'Sem local definido'), cam: cam ?? undefined, desc: desc.trim() || undefined, team: team ?? undefined, place, reporter });
   };
+  const P = (k: keyof Place) => ({ value: pl[k], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setPl({ ...pl, [k]: e.target.value }) });
+  const R = (k: keyof Reporter) => ({ value: rp[k], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setRp({ ...rp, [k]: k === 'phone' ? phoneMask(e.target.value) : e.target.value }) });
 
   return (
     <aside className="dv-drawer oc-drawer" aria-label="Nova ocorrência">
       <header className="dv-drawer__head">
-        <div className="dv-drawer__title"><h2>Nova ocorrência</h2><p>Registrada por {ME} · entra como Nova</p></div>
+        <div className="dv-drawer__title"><h2>Nova ocorrência</h2><p>Registre o caso; a linha do tempo segue com os eventos vinculados.</p></div>
         <IconButton icon="close" label="Fechar" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
       </header>
-      <div className="dv-drawer__body">
-        <label className={`dv-field${tried && !title.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Título</span>
-          <input className="oc-in" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="O que está acontecendo, em poucas palavras" />
-        </label>
-        <div className="oc-2col">
-          <label className={`dv-field${tried && !kind ? ' is-err' : ''}`}><span className="dv-field__l">Tipo</span>
-            <select className="nx-select" value={kind} onChange={(e) => setKind(e.target.value as Kind)}>
-              <option value="">Selecione…</option>{(Object.keys(KIND_LABEL) as Kind[]).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
-            </select>
+      <div className="dv-drawer__body oc-newbody">
+        <section className="oc-fsec" aria-label="Informações básicas">
+          <h3>Informações básicas</h3>
+          <label className={`dv-field${tried && !title.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Título <span className="oc-req">*</span></span>
+            <input className="oc-in" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="O que está acontecendo, em poucas palavras" />
+            {tried && !title.trim() && <span className="dv-field__h">Obrigatório.</span>}
           </label>
-          <div className={`dv-field${tried && !local ? ' is-err' : ''}`}><span className="dv-field__l">Local</span>
-            <Combobox label="Local" value={local} onChange={setLocal} invalid={tried && !local} options={LOCAIS.map((l) => ({ value: l, label: l }))} />
+          <div className="oc-2col is-wide2">
+            <label className="dv-field"><span className="dv-field__l">Tipo</span>
+              <select className="nx-select" value={kind} onChange={(e) => setKind(e.target.value as Kind)}>
+                {(Object.keys(KIND_LABEL) as Kind[]).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
+              </select>
+            </label>
+            <div className="dv-field"><span className="dv-field__l">Prioridade</span>
+              <Segmented<Prio> label="Prioridade" size="sm" value={prio} onChange={setPrio} options={(['critica', 'alta', 'media', 'baixa'] as Prio[]).map((p) => ({ value: p, label: <span className={`oc-prio is-${p}`}><i />{PRIO_LABEL[p]}</span> }))} />
+            </div>
           </div>
-        </div>
-        <div className="dv-field"><span className="dv-field__l">Prioridade</span>
-          <Segmented<Prio> label="Prioridade" value={prio} onChange={setPrio} options={(['critica', 'alta', 'media', 'baixa'] as Prio[]).map((p) => ({ value: p, label: <span className={`oc-prio is-${p}`}><i />{PRIO_LABEL[p]}</span> }))} />
-        </div>
-        <div className="dv-field"><span className="dv-field__l">Câmera <span className="al-opt">opcional</span></span>
-          <Combobox label="Câmera" value={cam} onChange={setCam} placeholder="Vincular uma câmera" options={CAMS.map((c) => ({ value: c, label: c }))} />
-        </div>
-        <label className="dv-field"><span className="dv-field__l">Descrição <span className="al-opt">opcional</span></span>
-          <textarea className="al-textarea" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Detalhes para quem vai atender" />
-        </label>
-        <div className="dv-field"><span className="dv-field__l">Despachar agora <span className="al-opt">opcional</span></span>
-          <Combobox label="Equipe" value={team} onChange={setTeam} placeholder="Deixe vazio para despachar depois"
-            options={TEAMS.map((t) => ({ value: t.name, label: t.name }))}
-            render={(op) => <span className="oc-topt"><b>{op.label}</b><span className={busy.has(op.value) ? 'is-busy' : 'is-free'}>{busy.has(op.value) ? 'Em atendimento' : 'Disponível'}</span></span>} />
-        </div>
+          <label className="dv-field"><span className="dv-field__l">Descrição</span>
+            <textarea className="al-textarea" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Detalhes para quem vai atender" />
+          </label>
+        </section>
+
+        <section className="oc-fsec" aria-label="Local">
+          <h3>Local</h3>
+          <div className="dv-field"><span className="dv-field__l">Local cadastrado <span className="al-opt">opcional</span></span>
+            <Combobox label="Local cadastrado" value={local} onChange={setLocal} placeholder="Bloco, portaria, estacionamento…" options={LOCAIS.map((l) => ({ value: l, label: l }))} />
+          </div>
+          <label className="dv-field"><span className="dv-field__l">Endereço</span><input className="oc-in" {...P('address')} placeholder="Rua, número, complemento" /></label>
+          <div className="oc-2col">
+            <label className="dv-field"><span className="dv-field__l">Bairro</span><input className="oc-in" {...P('district')} /></label>
+            <label className="dv-field"><span className="dv-field__l">Cidade</span><input className="oc-in" {...P('city')} placeholder="Curitiba" /></label>
+          </div>
+          <div className="oc-2col">
+            <label className="dv-field"><span className="dv-field__l">Estado</span>
+              <select className="nx-select" {...P('uf')}><option value="">Selecione…</option>{UFS.map((u) => <option key={u}>{u}</option>)}</select>
+            </label>
+            <label className="dv-field"><span className="dv-field__l">Área / zona</span><input className="oc-in" {...P('zone')} /><span className="dv-field__h">Área policial ou zona de ronda</span></label>
+          </div>
+        </section>
+
+        <section className="oc-fsec" aria-label="Solicitante">
+          <h3>Solicitante <span className="al-opt">opcional</span></h3>
+          <div className="oc-2col">
+            <label className="dv-field"><span className="dv-field__l">Nome</span><input className="oc-in" {...R('name')} placeholder="Quem relatou" /></label>
+            <label className="dv-field"><span className="dv-field__l">Relação</span>
+              <select className="nx-select" {...R('relation')}><option value="">Selecione…</option>{RELATIONS.map((r) => <option key={r}>{r}</option>)}</select>
+            </label>
+          </div>
+          <div className="oc-2col">
+            <label className="dv-field"><span className="dv-field__l">Telefone</span><input className="oc-in" inputMode="tel" {...R('phone')} placeholder="(41) 99999-9999" /></label>
+            <label className="dv-field"><span className="dv-field__l">Documento</span><input className="oc-in" {...R('doc')} placeholder="RG ou CPF" /></label>
+          </div>
+        </section>
+
+        <section className="oc-fsec" aria-label="Vínculos e despacho">
+          <h3>Vínculos e despacho <span className="al-opt">opcional</span></h3>
+          <div className="dv-field"><span className="dv-field__l">Câmera</span>
+            <Combobox label="Câmera" value={cam} onChange={setCam} placeholder="Vincular uma câmera" options={CAMS.map((c) => ({ value: c, label: c }))} />
+          </div>
+          <div className="dv-field"><span className="dv-field__l">Despachar agora</span>
+            <Combobox label="Equipe" value={team} onChange={setTeam} placeholder="Deixe vazio para despachar depois"
+              options={TEAMS.map((t) => ({ value: t.name, label: t.name }))}
+              render={(op) => <span className="oc-topt"><b>{op.label}</b><span className={busy.has(op.value) ? 'is-busy' : 'is-free'}>{busy.has(op.value) ? 'Em atendimento' : 'Disponível'}</span></span>} />
+          </div>
+        </section>
       </div>
       <footer className="oc-formfoot">
         <span className="al-form__hint">{team ? `Entra como Despachada para ${team}.` : 'Entra na coluna Nova.'}</span>

@@ -11,6 +11,9 @@ export type Kind = 'invasao' | 'furto' | 'watchlist' | 'veiculo' | 'agressao' | 
 export type Ev = { at: number; who: string; what: string; note?: string; kind: 'create' | 'stage' | 'note' | 'link' | 'dispatch' | 'add' };
 export type Party = { kind: 'pessoa' | 'veiculo' | 'objeto'; label: string; sub: string; seed?: number };
 
+export type Place = { address: string; district: string; city: string; uf: string; zone: string };
+export type Reporter = { name: string; relation: string; phone: string; doc: string };
+
 export type Occ = {
   id: string;
   code: string;
@@ -25,6 +28,8 @@ export type Occ = {
   by: string;
   team?: string;
   desc?: string;
+  place?: Place;
+  reporter?: Reporter;
   outcome?: string;
   alerts: number;
   evidence: number;
@@ -115,6 +120,8 @@ export function build(now: number): Occ[] {
       steps: [['despachada', 9 * MIN]] }),
     make(now, { title: 'Furto de celular relatado na cantina', kind: 'furto', prio: 'media', stage: 'concluida', local: 'Bloco 06', cam: 'Bloco 06 Externa 2', team: 'Viatura 02', ago: 3.2 * H, alerts: 0, evidence: 4, x: 56, y: 70,
       outcome: 'Encaminhada à polícia', steps: [['despachada', 6 * MIN], ['no_local', 14 * MIN], ['concluida', 52 * MIN]],
+      reporter: { name: 'Ana Ribeiro', relation: 'Vítima', phone: '(41) 99812-4410', doc: 'RG 9.876.543-2' },
+      place: { address: 'R. Prof. Pedro Viriato Parigot de Souza, 5300', district: 'Campo Comprido', city: 'Curitiba', uf: 'PR', zone: '4º Distrito Policial' },
       parties: [{ kind: 'pessoa', label: 'Vítima', sub: 'Estudante · B.O. registrado' }, { kind: 'objeto', label: 'Celular', sub: 'iPhone 13 azul' }] }),
     make(now, { title: 'Pessoa no telhado do Bloco 02', kind: 'invasao', prio: 'alta', stage: 'concluida', local: 'Bloco 02', cam: 'Bloco 02 BWC 1A', team: 'Viatura 01', ago: 6 * H, alerts: 4, evidence: 1, x: 24, y: 44,
       outcome: 'Sem ocorrência no local (falso alarme)', steps: [['despachada', 2 * MIN], ['no_local', 8 * MIN], ['concluida', 20 * MIN]], notes: [[18 * MIN, 'Viatura 01', 'Era um técnico da manutenção do ar-condicionado, com ordem de serviço.']] }),
