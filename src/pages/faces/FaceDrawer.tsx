@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Badge, Button, Icon, IconButton, Menu, NavItem } from '../../ds/components';
 import { copy } from '../devices/parts';
-import { faceUrl } from './faceArt';
+import { FaceImg } from './FaceImg';
 import { hms, KIND_LABEL, SRC, srcName, STATUS_LABEL, type Face } from './data';
 
 type Props = { f: Face; all: Face[]; onOpen: (id: string) => void; onClose: () => void; onOnlySource: () => void; toast: (m: string) => void };
@@ -35,7 +35,7 @@ export function FaceDrawer({ f, all, onOpen, onClose, onOnlySource, toast }: Pro
 
       <div className="dv-drawer__body">
         <div className={`fc-hero is-${f.kind}`}>
-          <img src={faceUrl(f.seed, s.night)} alt="Recorte da face" />
+          <FaceImg seed={f.seed} night={s.night} alt="Recorte da face" />
           <span className="fc-hero__det">Detecção {f.det.toLocaleString('pt-BR')}%</span>
         </div>
 
@@ -109,7 +109,7 @@ function Strip({ list, onOpen }: { list: Face[]; onOpen: (id: string) => void })
     <div className="fc-strip">
       {list.map((x) => (
         <button key={x.id} type="button" className={`fc-mini is-${x.kind}`} onClick={() => onOpen(x.id)} aria-label={`${srcName(SRC[x.src])}, ${hms(x.at)}`}>
-          <img src={faceUrl(x.seed, SRC[x.src].night)} alt="" />
+          <FaceImg seed={x.seed} night={SRC[x.src].night} />
           <span>{hms(x.at).slice(0, 5)}</span>
         </button>
       ))}

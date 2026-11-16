@@ -87,3 +87,8 @@
 .fc-srow:hover .fc-solo, .fc-solo:focus-visible { opacity: 1; }
 .fc-srow:not(.is-on) .mv-row__txt b { color: var(--nx-text-soft); }
 .fc-chips { grid-template-columns: auto auto; justify-content: start; }
+/* Fotos geradas por IA com aparência de captura de câmera */
+.fc-img { object-fit: cover; filter: saturate(.7) contrast(.92) brightness(.92) blur(.25px); }
+.fc-img.is-night { filter: grayscale(1) contrast(1.05) brightness(.9) blur(.35px); }
+.fc-img.is-art { filter: none; }
+.fc-hero .fc-img, .fc-mini .fc-img { width: 100%; height: 100%; display: block; }

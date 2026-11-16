@@ -4,7 +4,7 @@ import { Button, Icon, IconButton, PageHeader, Segmented, Switch, useTooltip, us
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import { FaceDrawer } from './FaceDrawer';
-import { faceUrl } from './faceArt';
+import { FaceImg } from './FaceImg';
 import { initialFaces, KIND_LABEL, LOCAIS, makeFace, rand, SOURCES, SRC, srcName, STATUS_LABEL, hms, type Face, type SrcStatus } from './data';
 import '../mural/mural.css';
 import '../devices/devices.css';
@@ -180,7 +180,7 @@ function FaceCard({ f, fresh, on, onOpen }: { f: Face; fresh: boolean; on: boole
   return (
     <button type="button" className={`fc-card is-${f.kind}${fresh ? ' is-fresh' : ''}${on ? ' is-on' : ''}`} onClick={onOpen}
       aria-label={`${KIND_LABEL[f.kind]}, ${srcName(s)}, ${hms(f.at)}, detecção ${f.det}%`}>
-      <img src={faceUrl(f.seed, s.night)} alt="" draggable={false} />
+      <FaceImg seed={f.seed} night={s.night} />
       <span className="fc-card__top">
         <span className="fc-det">{f.det.toLocaleString('pt-BR')}%</span>
         {f.kind !== 'comum' && (
