@@ -13,17 +13,17 @@ export type Act =
   | { type: 'close'; outcome: string; note: string }
   | { type: 'fwd'; to: string; note: string };
 
-type Props = { g: Group; now: number; pos: [number, number]; onPrev: () => void; onNext: () => void; onClose: () => void; onAct: (a: Act) => void; toast: (m: string) => void };
-type Form = null | 'fp' | 'close' | 'fwd';
+type Props = { startForm?: Form; onClip: () => void; g: Group; now: number; pos: [number, number]; onPrev: () => void; onNext: () => void; onClose: () => void; onAct: (a: Act) => void; toast: (m: string) => void };
+export type Form = null | 'fp' | 'close' | 'fwd';
 
 /** Detalhe do alerta (ou do grupo de repetidos). Na tela atual não há painel: só um modal de detalhes nos reconhecidos. */
-export function AlertDrawer({ g, now, pos, onPrev, onNext, onClose, onAct, toast }: Props) {
+export function AlertDrawer({ startForm = null, onClip, g, now, pos, onPrev, onNext, onClose, onAct, toast }: Props) {
   const navigate = useNavigate();
   const a = g.head;
   const c = CAMS[a.cam];
   const n = g.items.length;
   const [more, setMore] = useState<HTMLElement | null>(null);
-  const [form, setForm] = useState<Form>(null);
+  const [form, setForm] = useState<Form>(startForm);
   const [reason, setReason] = useState(FP_REASONS[3]);
   const [reeval, setReeval] = useState(true);
   const [outcome, setOutcome] = useState<string | null>(null);
@@ -37,6 +37,7 @@ export function AlertDrawer({ g, now, pos, onPrev, onNext, onClose, onAct, toast
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest('input, textarea, select') || document.querySelector('.nx-menu, .nx-smodal')) return;
+      if (document.querySelector('.al-cmodal')) return;
       if (e.key === 'Escape') { if (form) setForm(null); else onClose(); }
       if (!form && pend && (e.key === 'a' || e.key === 'A')) onAct({ type: 'ack' });
     };
@@ -82,9 +83,10 @@ export function AlertDrawer({ g, now, pos, onPrev, onNext, onClose, onAct, toast
             <>
               <figure><FaceImg seed={a.seed} night={false} alt="Captura" /><figcaption>Captura · {hms(a.at)}</figcaption></figure>
               <figure className="is-ref"><FaceImg seed={a.seed} night={false} alt="Foto do cadastro" /><figcaption>Cadastro</figcaption></figure>
+              <button type="button" className="al-cline" onClick={onClip}><span className="al-clip__play is-sm"><Icon name="play" size={12} /></span><b>Clipe 20 s</b><span>10 s antes e depois · {hms(a.at)}</span></button>
             </>
           ) : (
-            <button type="button" className="al-clip" onClick={() => toast('Player de clipe · ainda não desenhado no protótipo')}>
+            <button type="button" className="al-clip" onClick={() => (a.kind === 'camera' ? toast('Câmera sem vídeo: não há clipe') : onClip())}>
               <span className="al-clip__grid" />
               {a.kind === 'camera' ? <Icon name="nosignal" size={28} /> : <span className="al-clip__play"><Icon name="play" size={18} /></span>}
               <span className="al-clip__meta">{a.kind === 'camera' ? `Sem vídeo há ${a.mins} min` : `Clipe 20 s · ${hms(a.at)}`}</span>

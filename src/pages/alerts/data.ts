@@ -180,3 +180,25 @@ export function subtitle(a: Alert) {
   if (a.kind === 'camera') return `Sem vídeo há ${a.mins} min`;
   return a.kind === 'perimetro' && CAMS[a.cam].ptz ? 'Pessoa detectada · PTZ de divisa' : 'Pessoa detectada';
 }
+
+/** Motivo do alerta, com tom de destaque (coluna Motivo). */
+export const REASON: Record<Kind, { label: string; tone: 'red' | 'amber' | 'blue' | 'gray' }> = {
+  face: { label: 'Match de watchlist', tone: 'blue' },
+  placa: { label: 'Placa monitorada', tone: 'blue' },
+  perimetro: { label: 'Invasão de perímetro', tone: 'red' },
+  linha: { label: 'Linha cruzada', tone: 'amber' },
+  camera: { label: 'Câmera sem vídeo', tone: 'gray' },
+};
+/** Alvo do alerta (o que foi detectado), como na coluna Target da tela atual. */
+export function target(a: Alert) {
+  if (a.kind === 'face') return a.person ?? 'Pessoa sem nome no cadastro';
+  if (a.kind === 'placa') return a.plate!;
+  if (a.kind === 'camera') return 'Sem sinal de vídeo';
+  return 'Pessoa';
+}
+export function targetSub(a: Alert) {
+  if (a.kind === 'face') return `${a.score}% · ${a.list}`;
+  if (a.kind === 'placa') return `Leitura ${a.score}% · ${a.list}`;
+  if (a.kind === 'camera') return `Há ${a.mins} min`;
+  return a.kind === 'perimetro' && CAMS[a.cam].ptz ? 'Detecção humana · PTZ de divisa' : 'Detecção humana';
+}

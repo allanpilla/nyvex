@@ -7,10 +7,11 @@ import { norm } from '../devices/parts';
 import { FilterToggle, SortButton } from '../devices/tableModel';
 import { Thumb } from './Thumb';
 import {
-  ago, ALERTS, CAMS, camName, FP_REASONS, groupAlerts, KIND, makeAlert, ME, PRIO_LABEL, PRIO_RANK, rand, span, STATUS_LABEL, subtitle, title, when,
+  ago, ALERTS, CAMS, camName, FP_REASONS, groupAlerts, KIND, makeAlert, ME, PRIO_LABEL, PRIO_RANK, rand, REASON, span, STATUS_LABEL, subtitle, target, targetSub, title, when,
   type Alert, type Group, type Kind, type Prio, type Status,
 } from './data';
-import { AlertDrawer, type Act } from './AlertDrawer';
+import { AlertDrawer, type Act, type Form } from './AlertDrawer';
+import { ClipChip, ClipModal } from './Clip';
 import '../devices/devices.css';
 import '../locations/locations.css';
 import './alerts.css';
@@ -50,6 +51,11 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   const [now, setNow] = useState(Date.now());
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const [spin, setSpin] = useState(false);
+  const [sound, setSound] = useState(true);
+  const [startForm, setStartForm] = useState<Form>(null);
+  const [fpKeys, setFpKeys] = useState<string[] | null>(null);
+  const [clip, setClip] = useState<Alert | null>(null);
+  const openWith = (key: string, f: Form) => { setStartForm(f); setOpenKey(key); };
   const pausedRef = useRef(paused); pausedRef.current = paused;
 
   // Ao vivo: chegam alertas de perímetro e linha. Com agrupamento, eles somam no grupo da câmera em vez de virar linhas novas.
@@ -147,7 +153,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   // Atalhos: J/K ou ↑/↓ percorrem a fila com o painel aberto.
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
-      if (!open || (e.target as HTMLElement).closest('input, textarea, select, [contenteditable]') || document.querySelector('.nx-menu, .nx-smodal')) return;
+      if (!open || (e.target as HTMLElement).closest('input, textarea, select, [contenteditable]') || document.querySelector('.nx-menu, .nx-smodal, .al-cmodal')) return;
       const i = groups.findIndex((g) => g.key === open.key);
       if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); const n = groups[i + 1]; if (n) { setOpenKey(n.key); if (i + 1 >= limit) setLimit((x) => x + PAGE); } }
       if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); const n = groups[i - 1]; if (n) setOpenKey(n.key); }
@@ -168,6 +174,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
               <button type="button" className={`al-live${paused ? ' is-paused' : ''}`} onClick={() => setPaused((p) => !p)} aria-pressed={paused}>
                 <i />{paused ? 'Pausado' : 'Ao vivo'}<span>{paused ? 'Retomar' : 'Pausar'}</span>
               </button>
+              <SoundBtn on={sound} onClick={() => { setSound((v) => !v); toast(sound ? 'Alerta sonoro desativado' : 'Alerta sonoro ativado'); }} />
               <Button icon="download" onClick={() => exportCsv(groups)}>Exportar</Button>
             </>
           }
@@ -251,8 +258,8 @@ export function AlertsPage({ screen }: { screen: Screen }) {
                     onChange={() => setSel((s) => { const n = new Set(s); shown.forEach((g) => (allOn ? n.delete(g.key) : n.add(g.key))); return n; })} />
                 </span>
                 <span className="dv-c dv-c--name" role="columnheader">Alerta</span>
+                <span className="dv-c al-c--reason" role="columnheader">Motivo</span>
                 <span className="dv-c al-c--cam" role="columnheader">Câmera</span>
-                <span className="dv-c al-c--n" role="columnheader">Ocorrências</span>
                 <span className="dv-c al-c--when" role="columnheader">Quando</span>
                 <span className="dv-c al-c--trail" role="columnheader">{tab === 'pendente' ? 'Responsável' : tab === 'reconhecido' ? 'Reconhecido por' : 'Desfecho'}</span>
                 <span className="dv-c dv-c--act" role="columnheader"><span className="nx-sr">Ações</span></span>
@@ -260,8 +267,10 @@ export function AlertsPage({ screen }: { screen: Screen }) {
               {shown.map((g) => (
                 <Row key={g.key} g={g} now={now} tab={tab} sel={sel.has(g.key)} open={openKey === g.key} fresh={g.items.some((x) => fresh.has(x.id))}
                   onSel={(v) => setSel((s) => { const n = new Set(s); if (v) n.add(g.key); else n.delete(g.key); return n; })}
-                  onOpen={() => setOpenKey(openKey === g.key ? null : g.key)}
+                  onOpen={() => { setStartForm(null); setOpenKey(openKey === g.key ? null : g.key); }}
                   onAck={() => act([g.key], { type: 'ack' })}
+                  onQuick={(f) => (f === 'fp' ? setFpKeys([g.key]) : f === 'reopen' ? act([g.key], { type: 'reopen' }) : openWith(g.key, f))}
+                  onClip={() => setClip(g.head)}
                   onMore={(el) => setRowMenu(rowMenu?.key === g.key ? null : { el, key: g.key })} />
               ))}
               {groups.length > limit && (
@@ -290,7 +299,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
             <span className="dv-bulk__n"><b>{selN}</b> {selN === 1 ? 'alerta' : 'alertas'}</span>
             <span className="dv-bulk__sep" />
             {tab === 'pendente' && <Button icon="check" onClick={() => act([...sel], { type: 'ack' })}>Reconhecer</Button>}
-            {tab !== 'encerrado' && <Button icon="eyeOff" onClick={() => setBulkFp(true)}>Falso positivo</Button>}
+            {tab !== 'encerrado' && <Button icon="thumbDown" onClick={() => setBulkFp(true)}>Falso positivo</Button>}
             {tab === 'encerrado' && <Button icon="replay" onClick={() => act([...sel], { type: 'reopen' })}>Reabrir</Button>}
             <Button icon="download" onClick={() => exportCsv(groups.filter((g) => sel.has(g.key)))}>Exportar</Button>
             <span className="dv-bulk__sep" />
@@ -302,10 +311,10 @@ export function AlertsPage({ screen }: { screen: Screen }) {
       {open && createPortal(
         <div className="nx-sheet-back is-soft" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpenKey(null); }}>
           <div className="nx-sheet dv-dsheet" style={{ width: 'min(520px, 100%)' }}>
-            <AlertDrawer key={open.key} g={open} now={now} pos={[groups.findIndex((x) => x.key === open.key) + 1, groups.length]}
+            <AlertDrawer key={open.key + (startForm ?? '')} g={open} startForm={startForm} onClip={() => setClip(open.head)} now={now} pos={[groups.findIndex((x) => x.key === open.key) + 1, groups.length]}
               onPrev={() => { const i = groups.findIndex((x) => x.key === open.key); if (i > 0) setOpenKey(groups[i - 1].key); }}
               onNext={() => { const i = groups.findIndex((x) => x.key === open.key); if (groups[i + 1]) setOpenKey(groups[i + 1].key); }}
-              onClose={() => setOpenKey(null)} onAct={(a) => act([open.key], a)} toast={toast} />
+              onClose={() => { setOpenKey(null); setStartForm(null); }} onAct={(a) => act([open.key], a)} toast={toast} />
           </div>
         </div>,
         document.body,
@@ -339,8 +348,10 @@ export function AlertsPage({ screen }: { screen: Screen }) {
         return (
           <Menu anchor={rowMenu.el} onClose={() => setRowMenu(null)}>
             <NavItem role="menuitem" icon="panel" label="Abrir detalhes" onClick={close(() => setOpenKey(g.key))} />
-            {tab !== 'encerrado' && <NavItem role="menuitem" icon="eyeOff" label="Falso positivo…" onClick={close(() => { setSel(new Set([g.key])); setBulkFp(true); })} />}
-            {tab !== 'encerrado' && <NavItem role="menuitem" icon="share" label="Encaminhar…" onClick={close(() => setOpenKey(g.key))} />}
+            {tab !== 'encerrado' && <NavItem role="menuitem" icon="thumbDown" label="Falso positivo…" onClick={close(() => setFpKeys([g.key]))} />}
+            {tab !== 'encerrado' && <NavItem role="menuitem" icon="forward" label="Encaminhar…" onClick={close(() => openWith(g.key, 'fwd'))} />}
+            {tab !== 'encerrado' && <NavItem role="menuitem" icon="outcome" label="Encerrar com desfecho…" onClick={close(() => openWith(g.key, 'close'))} />}
+            {g.head.kind !== 'camera' && <NavItem role="menuitem" icon="play" label="Ver clipe de 20 s" onClick={close(() => setClip(g.head))} />}
             {tab === 'encerrado' && <NavItem role="menuitem" icon="replay" label="Reabrir" onClick={close(() => act([g.key], { type: 'reopen' }))} />}
             <div className="nx-menu__sep" />
             <NavItem role="menuitem" icon="filter" label="Só esta câmera" onClick={close(() => { setF({ ...EMPTY, cam: [g.head.cam] }); setShowF(true); })} />
@@ -349,6 +360,8 @@ export function AlertsPage({ screen }: { screen: Screen }) {
         );
       })()}
 
+      {fpKeys && <FpDialog n={groups.filter((g) => fpKeys.includes(g.key)).reduce((n, g) => n + g.items.length, 0)} onCancel={() => setFpKeys(null)} onConfirm={(reason, reeval) => { const k = fpKeys; setFpKeys(null); act(k, { type: 'fp', reason, reeval }); }} />}
+      {clip && <ClipModal a={clip} onClose={() => setClip(null)} toast={toast} />}
       {bulkFp && <FpDialog n={selN} onCancel={() => { setBulkFp(false); }} onConfirm={(reason, reeval) => { setBulkFp(false); act([...sel], { type: 'fp', reason, reeval }); }} />}
     </div>
   );
@@ -370,6 +383,18 @@ function FpDialog({ n, onCancel, onConfirm }: { n: number; onCancel: () => void;
   );
 }
 
+function SoundBtn({ on, onClick }: { on: boolean; onClick: () => void }) {
+  const t = useTooltip(on ? 'Desativar alerta sonoro' : 'Ativar alerta sonoro', undefined, true, 'bottom');
+  return (
+    <button type="button" className={`al-snd${on ? ' is-on' : ''}`} onClick={onClick} aria-pressed={on} aria-label="Alerta sonoro" {...t}>
+      <Icon name={on ? 'sound' : 'soundOff'} size={18} />
+    </button>
+  );
+}
+function QA({ icon, label, onClick, className }: { icon: 'outcome' | 'thumbDown' | 'forward'; label: string; onClick: () => void; className?: string }) {
+  return <IconButton icon={icon} label={label} onClick={onClick} tipPlace="top" className={className} />;
+}
+
 function Prio() {
   const t = useTooltip('Prioridade alta', undefined, true, 'top');
   return <span className="al-prio" {...t} />;
@@ -383,12 +408,14 @@ function CardBtn({ hint, ...rest }: { hint: string } & React.ButtonHTMLAttribute
 }
 
 
-type RowProps = { g: Group; now: number; tab: Status; sel: boolean; open: boolean; fresh: boolean; onSel: (v: boolean) => void; onOpen: () => void; onAck: () => void; onMore: (el: HTMLElement) => void };
-function Row({ g, now, tab, sel, open, fresh, onSel, onOpen, onAck, onMore }: RowProps) {
+type Quick2 = 'close' | 'fp' | 'fwd' | 'reopen';
+type RowProps = { g: Group; now: number; tab: Status; sel: boolean; open: boolean; fresh: boolean; onSel: (v: boolean) => void; onOpen: () => void; onAck: () => void; onQuick: (f: Quick2) => void; onClip: () => void; onMore: (el: HTMLElement) => void };
+function Row({ g, now, tab, sel, open, fresh, onSel, onOpen, onAck, onQuick, onClip, onMore }: RowProps) {
   const a = g.head;
   const c = CAMS[a.cam];
   const n = g.items.length;
   const p = prioOf(a);
+  const r = REASON[a.kind];
   return (
     <div role="row" tabIndex={0} aria-selected={sel}
       className={`dv-tr al-row is-${p}${sel ? ' is-sel' : ''}${open ? ' is-open' : ''}${fresh ? ' is-fresh' : ''}`}
@@ -398,24 +425,38 @@ function Row({ g, now, tab, sel, open, fresh, onSel, onOpen, onAck, onMore }: Ro
       <span className="dv-c dv-c--name" role="cell">
         <Thumb a={a} />
         <span className="dv-name">
-          <b>{a.kind === 'placa' ? <span className="al-plate">{a.plate}</span> : title(a)}{p === 'alta' && <Prio />}</b>
-          <span>{subtitle(a)}</span>
+          <b>
+            {a.kind === 'placa' ? <span className="al-plate">{a.plate}</span> : <span className={a.kind === 'face' && !a.person ? 'al-noname' : undefined}>{target(a)}</span>}
+            {n > 1 && <N n={n} sp={span(g.first, g.last)} />}
+            {p === 'alta' && <Prio />}
+          </b>
+          <span>{targetSub(a)}</span>
         </span>
+        {a.kind !== 'camera' && <ClipChip onClick={onClip} />}
       </span>
+      <span className="dv-c al-c--reason" role="cell"><span className={`al-reason is-${r.tone}`}><Icon name={KIND[a.kind].icon} size={14} />{r.label}</span></span>
       <span className="dv-c al-c--cam" role="cell"><span className="dv-two"><b className={c.name ? undefined : 'al-noname'}>{camName(c)}</b><span>{c.local}</span></span></span>
-      <span className="dv-c al-c--n" role="cell">
-        {n > 1 ? <span className="dv-two"><b>{n} ocorrências</b><span>{span(g.first, g.last)}</span></span> : <span className="lc-none">1</span>}
-      </span>
-      <span className="dv-c al-c--when" role="cell"><span className="dv-two"><b>{ago(g.last, now)}</b><span>{when(g.last, now)}</span></span></span>
+      <span className="dv-c al-c--when" role="cell"><span className="dv-two"><b>{ago(g.last, now)}</b><span>{n > 1 ? `${n}× ${span(g.first, g.last)}` : when(g.last, now)}</span></span></span>
       <span className="dv-c al-c--trail" role="cell">
-        {tab === 'pendente' ? (a.fwdTo ? <span className="dv-two"><b>{a.fwdTo}</b><span>Encaminhado</span></span> : <span className="lc-none">Ninguém ainda</span>)
+        {tab === 'pendente' ? (a.fwdTo ? <span className="dv-two"><b>{a.fwdTo}</b><span>Encaminhado</span></span> : <span className="lc-none">—</span>)
           : tab === 'reconhecido' ? <span className="dv-two"><b>{a.ackBy}</b><span>{ago(a.ackAt!, now)}</span></span>
           : <span className="dv-two"><b>{a.outcome}</b><span>{a.closedBy} · {ago(a.closedAt!, now)}</span></span>}
       </span>
-      <span className="dv-c dv-c--act" role="cell" onClick={(e) => e.stopPropagation()}>
-        {tab === 'pendente' && <IconButton icon="check" label={n > 1 ? `Reconhecer ${n}` : 'Reconhecer'} onClick={onAck} tipPlace="top" />}
+      <span className="dv-c dv-c--act al-acts-row" role="cell" onClick={(e) => e.stopPropagation()}>
+        {tab !== 'encerrado' && <>
+          <QA className="al-qa" icon="outcome" label="Encerrar com desfecho e justificativa" onClick={() => onQuick('close')} />
+          <QA className="al-qa" icon="thumbDown" label="Falso positivo" onClick={() => onQuick('fp')} />
+          <QA className="al-qa" icon="forward" label="Encaminhar" onClick={() => onQuick('fwd')} />
+        </>}
+        {tab === 'pendente' && <Button icon="check" className="al-ack" onClick={onAck}>{n > 1 ? `Reconhecer ${n}` : 'Reconhecer'}</Button>}
+        {tab === 'encerrado' && <Button icon="replay" className="al-ack" onClick={() => onQuick('reopen')}>Reabrir</Button>}
         <IconButton icon="more" label="Mais ações" onClick={(e) => onMore(e.currentTarget)} tipPlace="top" />
       </span>
     </div>
   );
+}
+
+function N({ n, sp }: { n: number; sp: string }) {
+  const t = useTooltip(`${n} ocorrências agrupadas ${sp}`, undefined, true, 'top');
+  return <span className="al-n" {...t}>×{n}</span>;
 }
