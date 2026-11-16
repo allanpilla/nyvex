@@ -140,7 +140,7 @@ export function Sidebar() {
       </div>
 
       <div className="nx-sb__search">
-        <NavItem icon="search" label="Buscar" trailing={<span className="nx-count">⌘K</span>} {...searchTip} onClick={() => { hide(); setPaletteOpen(true); }} />
+        <NavItem icon="search" label="Buscar" {...searchTip} onClick={() => { hide(); setPaletteOpen(true); }} />
       </div>
 
       <nav className="nx-sb__scroll" onScroll={hide}>
