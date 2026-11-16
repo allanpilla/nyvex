@@ -81,8 +81,8 @@
 .dv-tr.is-sel { background: color-mix(in srgb, var(--nx-primary) 9%, transparent); }
 .dv-tr.is-open { background: var(--nx-bg-hover); box-shadow: inset 3px 0 0 var(--nx-primary); }
 .dv-tr.is-inactive .dv-name b, .dv-tr.is-inactive .dv-kind { opacity: .55; }
-.dv-th { min-height: 38px; border-top: 0; position: sticky; top: calc(var(--pt) * -1); z-index: 2; background: var(--nx-bg-surface); cursor: default; border-radius: var(--nx-radius-lg) var(--nx-radius-lg) 0 0; box-shadow: 0 1px 0 var(--nx-stroke); }
-.dv-th:hover { background: var(--nx-bg-surface); }
+.dv-th { min-height: 38px; border-top: 0; position: sticky; top: calc(var(--pt) * -1); z-index: 2; background: color-mix(in srgb, var(--nx-bg-hover) 70%, var(--nx-bg-surface)); cursor: default; border-radius: var(--nx-radius-lg) var(--nx-radius-lg) 0 0; box-shadow: 0 1px 0 var(--nx-stroke); }
+.dv-th:hover { background: color-mix(in srgb, var(--nx-bg-hover) 70%, var(--nx-bg-surface)); }
 .dv-c { padding: 8px 10px; min-width: 0; font-size: 13px; color: var(--nx-text-sub); }
 .dv-c--chk { padding: 0 0 0 10px; display: flex; }
 .dv-sort { display: inline-flex; align-items: center; gap: 4px; height: 22px; font-size: 12px; font-weight: 500; color: var(--nx-text-soft); white-space: nowrap; border-radius: 4px; }
