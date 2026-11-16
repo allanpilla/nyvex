@@ -174,3 +174,5 @@
 .oc-req { color: #f2556f; }
 @media (max-width: 480px) { .oc-2col { grid-template-columns: 1fr; } }
 .oc-2col.is-wide2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+.oc-col__add { width: 28px !important; height: 28px !important; margin-left: auto; color: var(--nx-text-soft); }
+.oc-col__head .oc-col__add + .nx-icon-btn { margin-left: 0; }

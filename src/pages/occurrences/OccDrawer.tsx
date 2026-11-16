@@ -254,13 +254,13 @@ export function OccDrawer({ o, all, now, busy, onClose, onMove, onNote, onAdd, o
 
 /* ───────────── nova ocorrência ───────────── */
 
-export type NewOcc = { title: string; kind: Kind; prio: Prio; local: string; cam?: string; desc?: string; team?: string; place?: Place; reporter?: Reporter };
+export type NewOcc = { stage: Stage; outcome?: string; title: string; kind: Kind; prio: Prio; local: string; cam?: string; desc?: string; team?: string; place?: Place; reporter?: Reporter };
 
 const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
 const RELATIONS = ['Vítima', 'Testemunha', 'Funcionário', 'Aluno', 'Visitante', 'Vigilante / segurança', 'Anônimo', 'Outro'];
 const phoneMask = (v: string) => { const d = v.replace(/\D/g, '').slice(0, 11); return d.length <= 2 ? d : d.length <= 6 ? `(${d.slice(0, 2)}) ${d.slice(2)}` : d.length <= 10 ? `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}` : `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`; };
 
-export function NewOccDrawer({ busy, onClose, onCreate }: { busy: Set<string>; onClose: () => void; onCreate: (n: NewOcc) => void }) {
+export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stage?: Stage; busy: Set<string>; onClose: () => void; onCreate: (n: NewOcc) => void }) {
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState<Kind>('outro');
   const [prio, setPrio] = useState<Prio>('media');
@@ -271,7 +271,9 @@ export function NewOccDrawer({ busy, onClose, onCreate }: { busy: Set<string>; o
   const [cam, setCam] = useState<string | null>(null);
   const [team, setTeam] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
-  const ok = !!title.trim();
+  const [outcome, setOutcome] = useState<string | null>(null);
+  const needTeam = stage === 'despachada' || stage === 'no_local';
+  const ok = !!title.trim() && (!needTeam || !!team) && (stage !== 'concluida' || !!outcome);
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -287,7 +289,7 @@ export function NewOccDrawer({ busy, onClose, onCreate }: { busy: Set<string>; o
     if (!ok) return;
     const place = Object.values(pl).some((v) => v.trim()) ? pl : undefined;
     const reporter = rp.name.trim() || rp.phone.trim() ? rp : undefined;
-    onCreate({ title: title.trim(), kind, prio, local: local ?? (pl.address.trim() || 'Sem local definido'), cam: cam ?? undefined, desc: desc.trim() || undefined, team: team ?? undefined, place, reporter });
+    onCreate({ stage: stage === 'nova' && team ? 'despachada' : stage, outcome: outcome ?? undefined, title: title.trim(), kind, prio, local: local ?? (pl.address.trim() || 'Sem local definido'), cam: cam ?? undefined, desc: desc.trim() || undefined, team: team ?? undefined, place, reporter });
   };
   const P = (k: keyof Place) => ({ value: pl[k], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setPl({ ...pl, [k]: e.target.value }) });
   const R = (k: keyof Reporter) => ({ value: rp[k], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setRp({ ...rp, [k]: k === 'phone' ? phoneMask(e.target.value) : e.target.value }) });
@@ -295,7 +297,7 @@ export function NewOccDrawer({ busy, onClose, onCreate }: { busy: Set<string>; o
   return (
     <aside className="dv-drawer oc-drawer" aria-label="Nova ocorrência">
       <header className="dv-drawer__head">
-        <div className="dv-drawer__title"><h2>Nova ocorrência</h2><p>Registre o caso; a linha do tempo segue com os eventos vinculados.</p></div>
+        <div className="dv-drawer__title"><h2>Nova ocorrência</h2><p>{stage === 'nova' ? 'Registre o caso; a linha do tempo segue com os eventos vinculados.' : `Entra direto em ${STAGE_LABEL[stage]}`}</p></div>
         <IconButton icon="close" label="Fechar" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
       </header>
       <div className="dv-drawer__body oc-newbody">
@@ -353,19 +355,24 @@ export function NewOccDrawer({ busy, onClose, onCreate }: { busy: Set<string>; o
         </section>
 
         <section className="oc-fsec" aria-label="Vínculos e despacho">
-          <h3>Vínculos e despacho <span className="al-opt">opcional</span></h3>
+          <h3>{stage === 'concluida' ? 'Atendimento' : 'Vínculos e despacho'} {!needTeam && stage !== 'concluida' && <span className="al-opt">opcional</span>}</h3>
+          {stage === 'concluida' && (
+            <label className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho <span className="oc-req">*</span></span>
+              <select className="nx-select" value={outcome ?? ''} onChange={(e) => setOutcome(e.target.value || null)}><option value="">Selecione…</option>{OUTCOMES.map((x) => <option key={x}>{x}</option>)}</select>
+            </label>
+          )}
           <div className="dv-field"><span className="dv-field__l">Câmera</span>
             <Combobox label="Câmera" value={cam} onChange={setCam} placeholder="Vincular uma câmera" options={CAMS.map((c) => ({ value: c, label: c }))} />
           </div>
-          <div className="dv-field"><span className="dv-field__l">Despachar agora</span>
-            <Combobox label="Equipe" value={team} onChange={setTeam} placeholder="Deixe vazio para despachar depois"
+          <div className={`dv-field${tried && needTeam && !team ? ' is-err' : ''}`}><span className="dv-field__l">{needTeam || stage === 'concluida' ? <>Equipe {needTeam && <span className="oc-req">*</span>}</> : 'Despachar agora'}</span>
+            <Combobox label="Equipe" value={team} onChange={setTeam} invalid={tried && needTeam && !team} placeholder={needTeam ? 'Quem está atendendo' : stage === 'concluida' ? 'Quem atendeu (opcional)' : 'Deixe vazio para despachar depois'}
               options={TEAMS.map((t) => ({ value: t.name, label: t.name }))}
               render={(op) => <span className="oc-topt"><b>{op.label}</b><span className={busy.has(op.value) ? 'is-busy' : 'is-free'}>{busy.has(op.value) ? 'Em atendimento' : 'Disponível'}</span></span>} />
           </div>
         </section>
       </div>
       <footer className="oc-formfoot">
-        <span className="al-form__hint">{team ? `Entra como Despachada para ${team}.` : 'Entra na coluna Nova.'}</span>
+        <span className="al-form__hint">{stage !== 'nova' ? `Entra na coluna ${STAGE_LABEL[stage]}.` : team ? `Entra como Despachada para ${team}.` : 'Entra na coluna Nova.'}</span>
         <Button onClick={onClose}>Cancelar</Button>
         <Button variant="primary" onClick={create}>Registrar</Button>
       </footer>

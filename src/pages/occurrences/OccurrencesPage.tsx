@@ -54,7 +54,7 @@ export function OccurrencesPage({ screen }: { screen: Screen }) {
   const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'prio', dir: 1 });
   const [openId, setOpenId] = useState<string | null>(null);
   const [startForm, setStartForm] = useState<Stage | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<Stage | false>(false);
   const [showArch, setShowArch] = useState(false);
   const [drag, setDrag] = useState<string | null>(null);
   const [over, setOver] = useState<Stage | null>(null);
@@ -112,9 +112,12 @@ export function OccurrencesPage({ screen }: { screen: Screen }) {
   const create = (n: NewOcc) => {
     const t = Date.now();
     const o: Occ = {
-      id: `new${t}`, code: nextCode(), title: n.title, kind: n.kind, prio: n.prio, stage: n.team ? 'despachada' : 'nova', local: n.local, cam: n.cam, desc: n.desc, team: n.team, place: n.place, reporter: n.reporter,
+      id: `new${t}`, code: nextCode(), title: n.title, kind: n.kind, prio: n.prio, stage: n.stage, outcome: n.outcome, local: n.local, cam: n.cam, desc: n.desc, team: n.team, place: n.place, reporter: n.reporter,
       at: t, updated: t, by: ME, alerts: 0, evidence: 0, parties: [], x: 20 + Math.random() * 60, y: 20 + Math.random() * 60,
-      events: [...(n.team ? [{ at: t + 1, who: ME, what: `Despachada para ${n.team}`, kind: 'dispatch' as const }] : []), { at: t, who: ME, what: 'Ocorrência registrada', kind: 'create' as const }],
+      events: [
+        ...(n.stage === 'no_local' || n.stage === 'concluida' ? [{ at: t + 2, who: ME, what: `Movida para ${STAGE_LABEL[n.stage]}`, note: n.stage === 'concluida' ? n.outcome : undefined, kind: 'stage' as const }] : []),
+        ...(n.team ? [{ at: t + 1, who: ME, what: `Despachada para ${n.team}`, kind: 'dispatch' as const }] : []),
+        { at: t, who: ME, what: 'Ocorrência registrada', kind: 'create' as const }],
     };
     setList((l) => [o, ...l]);
     setCreating(false); setOpenId(o.id); setStartForm(null);
@@ -137,7 +140,7 @@ export function OccurrencesPage({ screen }: { screen: Screen }) {
           title={screen.label}
           description="Central de despacho: do registro ao encerramento."
           icon="ocor"
-          actions={<Button variant="primary" icon="plus" onClick={() => { setOpenId(null); setCreating(true); }}>Nova ocorrência</Button>}
+          actions={<Button variant="primary" icon="plus" onClick={() => { setOpenId(null); setCreating('nova'); }}>Nova ocorrência</Button>}
         />
 
         <div className="dv-body">
@@ -226,6 +229,7 @@ export function OccurrencesPage({ screen }: { screen: Screen }) {
                         <>
                           <header className="oc-col__head">
                             <ColTitle s={s} n={items.length} />
+                            {s !== 'arquivada' && <IconButton icon="plus" className="oc-col__add" label={`Nova ocorrência em ${STAGE_LABEL[s]}`} onClick={() => { setOpenId(null); setCreating(s); }} tipPlace="top" />}
                             {s === 'arquivada' && <IconButton icon="collapse" label="Recolher" onClick={() => setShowArch(false)} tipPlace="top" />}
                           </header>
                           <div className="oc-col__list">
@@ -341,7 +345,7 @@ export function OccurrencesPage({ screen }: { screen: Screen }) {
       {(open || creating) && createPortal(
         <div className="nx-sheet-back is-soft" onMouseDown={(e) => { if (e.target === e.currentTarget) { setOpenId(null); setCreating(false); } }}>
           <div className="nx-sheet dv-dsheet" style={{ width: 'min(500px, 100%)' }}>
-            {creating ? <NewOccDrawer busy={busy} onClose={() => setCreating(false)} onCreate={create} />
+            {creating ? <NewOccDrawer key={creating} stage={creating} busy={busy} onClose={() => setCreating(false)} onCreate={create} />
               : open && <OccDrawer key={open.id + (startForm ?? '')} o={open} all={list} now={now} busy={busy} startForm={startForm}
                 onClose={() => { setOpenId(null); setStartForm(null); }}
                 onMove={(m) => move(open.id, m)}
