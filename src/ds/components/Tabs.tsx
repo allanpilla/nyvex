@@ -22,7 +22,7 @@ export function Tabs<T extends string>({ value, options, onChange, label, classN
           <button key={o.value} type="button" role="tab" aria-selected={on} tabIndex={on ? 0 : -1} className={`nx-tab${on ? ' is-on' : ''}`} onClick={() => onChange(o.value)}>
             {o.icon && <Icon name={o.icon as never} size={16} />}
             <span>{o.label}</span>
-            {o.count != null && <span className="nx-tab__n">{o.count}</span>}
+            {o.count != null && <span className="nx-tab__n">{o.count.toLocaleString('pt-BR')}</span>}
           </button>
         );
       })}

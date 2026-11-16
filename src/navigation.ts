@@ -36,7 +36,7 @@ export const NAV: NavGroup[] = [
     { id: 'painel', path: '/painel', label: 'Painel operacional', icon: 'painel', description: 'KPIs, mapa de calor, ritmo de eventos e saúde dos sistemas.' },
     { id: 'watch', actions: ['Nova lista'], path: '/listas-de-observacao', label: 'Listas de observação', icon: 'eye', description: 'Listas de pessoas e veículos acompanhados (watchlists).' },
     { id: 'faces', path: '/faces-ao-vivo', label: 'Faces ao vivo', icon: 'faces', description: 'Grade de faces capturadas em tempo real.' },
-    { id: 'alertas', actions: ['Triar em lote'], path: '/alertas', label: 'Fila de alertas', icon: 'alert', count: '3.614', description: 'Alertas de face e placa aguardando triagem.' },
+    { id: 'alertas', actions: ['Triar em lote'], path: '/alertas', label: 'Fila de alertas', icon: 'alert', count: '3.772', description: 'Alertas de face, placa e vídeo aguardando triagem.' },
     { id: 'ocor', actions: ['Nova ocorrência'], path: '/ocorrencias', label: 'Ocorrências', icon: 'ocor', description: 'Central de despacho: kanban de ocorrências com mapa.' },
     { id: 'placas', path: '/rede-de-placas', label: 'Rede de placas', icon: 'share', description: 'Conexões entre placas, locais e passagens (Plate Network).' },
   ]),
