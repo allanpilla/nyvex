@@ -65,3 +65,8 @@
 .wl-macts { display: flex; gap: 6px; }
 .wl-macts .nx-btn { height: 28px; padding: 0 10px; font-size: 12px; }
 .wl-drawer .dv-sec > .nx-btn { align-self: flex-start; }
+/* Item aguardando revisão: borda amarela acompanhando o fundo */
+.wl-matches li.is-pendente { border-bottom-color: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, #f2ae40 45%, transparent); }
+.wl-matches li:has(+ li.is-pendente) { border-bottom-color: transparent; }
+.wl-matches li.is-pendente:first-child { border-top-left-radius: calc(var(--nx-radius-md) - 1px); border-top-right-radius: calc(var(--nx-radius-md) - 1px); }
+.wl-matches li.is-pendente:last-child { border-bottom-left-radius: calc(var(--nx-radius-md) - 1px); border-bottom-right-radius: calc(var(--nx-radius-md) - 1px); }
