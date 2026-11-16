@@ -12,6 +12,7 @@ import { DeviceDrawer } from './DeviceDrawer';
 import { ago, ConnPill, copy, envOf, healthScore, latTone, norm, reliability, ReliabPill, SitBadge, sendToMural } from './parts';
 import { createPortal } from 'react-dom';
 import { DeviceForm } from './DeviceForm';
+import { FilterToggle, SortButton, TableModelSwitch, useTableModel } from './tableModel';
 import './devices.css';
 
 /* ───────────── filtros ───────────── */
@@ -47,6 +48,7 @@ const quickMatch = (q: Quick, d: Device) =>
 /* ───────────── ordenação ───────────── */
 
 type SortKey = 'name' | 'local' | 'situacao' | 'conn' | 'stream' | 'latency';
+const SORT_OPTS: [SortKey, string][] = [['name', 'Dispositivo'], ['local', 'Local'], ['situacao', 'Situação'], ['conn', 'Conexão'], ['stream', 'Stream'], ['latency', 'Saúde']];
 const CONN_RANK: Record<Conn, number> = { offline: 0, instavel: 1, online: 2, na: 3 };
 const SIT_RANK: Record<Situacao, number> = { manutencao: 0, ativo: 1, inativo: 2 };
 function cmp(a: Device, b: Device, k: SortKey) {
@@ -117,6 +119,10 @@ export function DevicesPage({ screen }: { screen: Screen }) {
 
   const toggleF = (k: FKey, v: string) => setF((o) => ({ ...o, [k]: o[k].includes(v) ? o[k].filter((x) => x !== v) : [...o[k], v] }));
   const clearAll = () => { setF(EMPTY); setQ(''); setQuick('all'); };
+  const [model, setModel] = useTableModel();
+  const t2 = model === 'novo';
+  const [showF, setShowF] = useState(false);
+  const nF = F_GROUPS.filter((g) => f[g.key].length).length;
   const sortBy = (k: SortKey) => setSort((s) => (s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: 1 }));
 
   const update = (ids: string[], patch: Partial<Device> | ((d: Device) => Partial<Device>)) =>
@@ -180,6 +186,15 @@ export function DevicesPage({ screen }: { screen: Screen }) {
     { k: 'inativo', label: 'Inativos', icon: 'eyeOff', tone: 'neutral', hint: 'Fora do monitoramento' },
   ];
 
+  const search = (
+    <label className="nx-input dv-search">
+      <Icon name="search" size={16} />
+      <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome, IP, modelo ou local" aria-label="Buscar dispositivos"
+        onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
+      {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
+    </label>
+  );
+
   return (
     <div className="dv">
       <div className="dv-main">
@@ -221,6 +236,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
             </div>
           </section>
 
+          <section className={`dv-tcard${t2 ? ' is-t2' : ''}`} aria-label="Lista de dispositivos">
           {/* Barra de ferramentas */}
           <div className="dv-tools">
             <Segmented
@@ -232,18 +248,16 @@ export function DevicesPage({ screen }: { screen: Screen }) {
                 label: <>{k === 'all' ? 'Todos' : KIND_LABEL[k]}<span className="nx-seg__n">{kindCount(k)}</span></>,
               }))}
             />
-            <label className="nx-input dv-search">
-              <Icon name="search" size={16} />
-              <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome, IP, modelo ou local" aria-label="Buscar dispositivos"
-                onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
-              {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
-            </label>
+            {!t2 && search}
             <span className="dv-tools__sp" />
-            <span className="dv-upd" aria-live="polite">{spin ? 'Atualizando…' : `Atualizado ${ago((Date.now() - refreshed) / 1000)}`}</span>
+            {t2 && search}
+            {t2 && <FilterToggle on={showF} count={nF} onClick={() => setShowF((v) => !v)} />}
+            {t2 && <SortButton options={SORT_OPTS} sort={sort} onChange={(v) => { setSort(v); setPage(0); }} />}
+            {!t2 && <span className="dv-upd" aria-live="polite">{spin ? 'Atualizando…' : `Atualizado ${ago((Date.now() - refreshed) / 1000)}`}</span>}
             <IconButton icon="refresh" label="Atualizar status" className={spin ? 'is-spin' : undefined} onClick={refresh} tipPlace="bottom" />
           </div>
 
-          <div className="dv-filters" role="group" aria-label="Filtros">
+          {(!t2 || showF) && <div className="dv-filters" role="group" aria-label="Filtros">
             {F_GROUPS.map((g) => (
               <button key={g.key} type="button" className={`dv-fdrop${f[g.key].length ? ' is-on' : ''}${filterBtn?.key === g.key ? ' is-open' : ''}`} aria-haspopup="true" aria-expanded={filterBtn?.key === g.key}
                 onClick={(e) => setFilterBtn(filterBtn?.key === g.key ? null : { key: g.key, el: e.currentTarget })}>
@@ -252,7 +266,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
                 <Icon name="chevron" size={14} />
               </button>
             ))}
-          </div>
+          </div>}
 
           {anyFilter && (
             <div className="dv-chips">
@@ -302,11 +316,13 @@ export function DevicesPage({ screen }: { screen: Screen }) {
               </div>
             )}
           </div>
+          </section>
         </div>
 
         {/* Rodapé com paginação */}
         <footer className="dv-foot">
           <span>{rows.length ? `${pg * size + 1}–${Math.min(rows.length, pg * size + size)} de ${rows.length}` : '0 dispositivos'}</span>
+          <TableModelSwitch value={model} onChange={setModel} />
           <span className="dv-tools__sp" />
           <label className="dv-size">Por página
             <select className="nx-select" value={size} onChange={(e) => setSize(Number(e.target.value))} aria-label="Itens por página">

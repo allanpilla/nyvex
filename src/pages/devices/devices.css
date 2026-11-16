@@ -397,3 +397,49 @@ b.is-ok { color: var(--nx-success); }
 .dv-stat__v small { font-size: 12px; font-weight: 400; color: var(--nx-text-soft); }
 .dv-stat__v .dv-rel { font-size: 16px; font-weight: 500; }
 .dv-stat__s { font-size: 12px; color: var(--nx-text-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ───── TESTE: novo modelo de tabela (Dispositivos e Locais) ─────
+   Ativado por .dv-tcard.is-t2. No modelo atual o wrapper não altera o layout. */
+.dv-tcard { display: contents; }
+.dv-tcard.is-t2 { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--nx-stroke); border-radius: 16px; background: var(--nx-bg-surface); }
+.is-t2 .dv-tools { gap: 8px; }
+.is-t2 .dv-search { flex: 0 1 320px; }
+.is-t2 .dv-ftoggle .dv-fcount { margin-left: 2px; }
+.dv-sortbtn { gap: 6px; }
+.dv-sortbtn__l { white-space: nowrap; color: var(--nx-text-soft); }
+.dv-sortbtn__l b { font-weight: 500; color: var(--nx-text-main); }
+.dv-sortbtn > .nx-icon:last-child { opacity: .6; }
+.dv-sortchk { margin-left: auto; color: var(--nx-primary); }
+.dv-dir.is-asc .nx-item__ic { transform: rotate(-90deg); }
+.dv-dir.is-desc .nx-item__ic { transform: rotate(90deg); }
+.is-t2 .dv-filters { padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--nx-bg-hover) 45%, transparent); animation: nx-fade .15s; }
+
+.is-t2 .dv-table { border: 0; border-radius: 0; }
+.is-t2 .dv-tr { border-top: 0; border-bottom: 1px solid var(--nx-stroke); min-height: 68px; }
+.is-t2 .dv-tr:last-child { border-bottom: 0; }
+.is-t2 .dv-th { min-height: 40px; border-bottom: 0; border-radius: 10px; box-shadow: none; }
+.is-t2 .dv-sort { font-size: 13px; font-weight: 400; color: var(--nx-text-sub); }
+.is-t2 .dv-sort.is-on { color: var(--nx-text-main); font-weight: 500; }
+.is-t2 .dv-c { padding: 10px; }
+.is-t2 .dv-c--chk { padding: 0 0 0 12px; }
+.is-t2 .dv-kind { width: 40px; height: 40px; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1px var(--nx-stroke); }
+.is-t2 .dv-tr:hover .dv-kind, .is-t2 .dv-tr.is-open .dv-kind { background: var(--nx-bg-hover); }
+.is-t2 .dv-c--name { gap: 12px; }
+.is-t2 .dv-name { gap: 3px; }
+.is-t2 .dv-name b { font-size: 14px; line-height: 20px; }
+.is-t2 .dv-two b { font-size: 13px; line-height: 20px; color: var(--nx-text-main); }
+/* Ações: ⋯ sempre visível; as demais aparecem no hover */
+.is-t2 .dv-c--act { opacity: 1; }
+.is-t2 .dv-c--act .nx-icon-btn:not(:last-child) { opacity: 0; transition: opacity .12s; }
+.is-t2 .dv-tr:hover .dv-c--act .nx-icon-btn:not(:last-child):not(:disabled),
+.is-t2 .dv-tr:focus-within .dv-c--act .nx-icon-btn:not(:last-child):not(:disabled) { opacity: 1; }
+/* Status em badge contornado com ponto colorido */
+.is-t2 .dv-table .nx-badge { white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 6px; background: transparent; border: 1px solid var(--nx-stroke); color: var(--nx-text-sub); border-radius: 6px; }
+.is-t2 .dv-table .nx-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--tone, var(--nx-text-soft)); }
+.is-t2 .dv-table .nx-badge--success { --tone: var(--nx-success); }
+.is-t2 .dv-table .nx-badge--warning { --tone: #f2ae40; }
+.is-t2 .dv-table .nx-badge--danger { --tone: #f2556f; }
+.is-t2 .dv-table .nx-badge--info { --tone: var(--nx-primary); }
+
+.dv-tmodel { display: inline-flex; align-items: center; gap: 8px; padding-left: 12px; margin-left: 4px; border-left: 1px solid var(--nx-stroke); font-size: 12px; white-space: nowrap; }
+@container dvmain (max-width: 760px) { .dv-tmodel > span:first-child { display: none; } .dv-sortbtn__l { display: none; } }

@@ -16,6 +16,7 @@ import { LocationForm } from './LocationForm';
 import { DevCounts, EnvBadge, HealthPill, LayersButton, MapCanvas } from './parts';
 import '../devices/devices.css';
 import './locations.css';
+import { FilterToggle, SortButton, TableModelSwitch, useTableModel } from '../devices/tableModel';
 
 type View = 'arvore' | 'lista' | 'mapa';
 type FKey = 'env' | 'zone' | 'kind' | 'exposure' | 'placeType' | 'health';
@@ -34,6 +35,7 @@ const fLabel = (k: FKey, v: string) => F_GROUPS.find((g) => g.key === k)!.opts.f
 
 type Quick = 'all' | 'indoor' | 'outdoor' | 'com' | 'sem' | 'falha';
 type SortKey = 'name' | 'kind' | 'zone' | 'devs' | 'subs' | 'health';
+const SORT_OPTS: [SortKey, string][] = [['name', 'Local'], ['kind', 'Tipo'], ['zone', 'Zona'], ['devs', 'Dispositivos'], ['subs', 'Sub-locais'], ['health', 'Estado']];
 const H_RANK: Record<LocHealth, number> = { bad: 0, warn: 1, ok: 2, none: 3 };
 const byName = (a: Loc, b: Loc) => a.name.localeCompare(b.name, 'pt-BR', { numeric: true });
 
@@ -115,6 +117,10 @@ export function LocationsPage({ screen }: { screen: Screen }) {
 
   const toggleF = (k: FKey, v: string) => setF((o) => ({ ...o, [k]: o[k].includes(v) ? o[k].filter((x) => x !== v) : [...o[k], v] }));
   const clearAll = () => { setF(EMPTY); setQ(''); setQuick('all'); };
+  const [model, setModel] = useTableModel();
+  const t2 = model === 'novo';
+  const [showF, setShowF] = useState(false);
+  const nF = F_GROUPS.filter((g) => f[g.key].length).length;
   const sortBy = (k: SortKey) => setSort((s) => (s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: 1 }));
   const toggleTree = (id: string) => setExpanded((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
@@ -170,6 +176,15 @@ export function LocationsPage({ screen }: { screen: Screen }) {
     }));
   }, [mapLocs, openId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const search = (
+    <label className="nx-input dv-search">
+      <Icon name="search" size={16} />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome, zona, bairro ou rua" aria-label="Buscar locais"
+        onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
+      {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
+    </label>
+  );
+
   return (
     <div className="dv lc">
       <div className="dv-main">
@@ -214,19 +229,18 @@ export function LocationsPage({ screen }: { screen: Screen }) {
             </div>
           </section>
 
+          <section className={`dv-tcard${t2 ? ' is-t2' : ''}`} aria-label="Lista de locais">
           <div className="dv-tools">
             <Segmented label="Visualização" value={view} onChange={setView} options={[
               { value: 'lista', label: <><Icon name="grid" size={14} />Lista</> },
               { value: 'arvore', label: <><Icon name="nodes" size={14} />Árvore</> },
               { value: 'mapa', label: <><Icon name="map" size={14} />Mapa</> },
             ]} />
-            <label className="nx-input dv-search">
-              <Icon name="search" size={16} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome, zona, bairro ou rua" aria-label="Buscar locais"
-                onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
-              {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
-            </label>
+            {!t2 && search}
             <span className="dv-tools__sp" />
+            {t2 && search}
+            {t2 && <FilterToggle on={showF} count={nF} onClick={() => setShowF((v) => !v)} />}
+            {t2 && view !== 'mapa' && <SortButton options={SORT_OPTS} sort={sort} onChange={(v) => { setSort(v); setPage(0); }} />}
             {view === 'arvore' && (
               <>
                 <span className="dv-upd">{roots} raízes · {locs.length} locais</span>
@@ -234,11 +248,11 @@ export function LocationsPage({ screen }: { screen: Screen }) {
                 <IconButton icon="fold" label="Recolher tudo" onClick={() => setExpanded(new Set())} tipPlace="bottom" />
               </>
             )}
-            {view !== 'arvore' && <span className="dv-upd" aria-live="polite">{spin ? 'Atualizando…' : `Atualizado ${ago((Date.now() - refreshed) / 1000)}`}</span>}
+            {!t2 && view !== 'arvore' && <span className="dv-upd" aria-live="polite">{spin ? 'Atualizando…' : `Atualizado ${ago((Date.now() - refreshed) / 1000)}`}</span>}
             <IconButton icon="refresh" label="Atualizar" className={spin ? 'is-spin' : undefined} onClick={refresh} tipPlace="bottom" />
           </div>
 
-          <div className="dv-filters" role="group" aria-label="Filtros">
+          {(!t2 || showF) && <div className="dv-filters" role="group" aria-label="Filtros">
             {F_GROUPS.map((g) => (
               <button key={g.key} type="button" className={`dv-fdrop${f[g.key].length ? ' is-on' : ''}${filterBtn?.key === g.key ? ' is-open' : ''}`} aria-haspopup="true" aria-expanded={filterBtn?.key === g.key}
                 onClick={(e) => setFilterBtn(filterBtn?.key === g.key ? null : { key: g.key, el: e.currentTarget })}>
@@ -247,7 +261,7 @@ export function LocationsPage({ screen }: { screen: Screen }) {
                 <Icon name="chevron" size={14} />
               </button>
             ))}
-          </div>
+          </div>}
 
           {anyFilter && (
             <div className="dv-chips">
@@ -313,12 +327,14 @@ export function LocationsPage({ screen }: { screen: Screen }) {
               )}
             </div>
           )}
+          </section>
         </div>
 
         <footer className="dv-foot">
           {paged
             ? <span>{rows.length ? `${pg * size + 1}–${Math.min(rows.length, pg * size + size)} de ${rows.length}` : '0 locais'}</span>
             : <span>{view === 'mapa' ? `${mapLocs.length} locais no mapa` : `${hits.length} de ${locs.length} locais`}</span>}
+          <TableModelSwitch value={model} onChange={setModel} />
           <span className="dv-tools__sp" />
           {paged && (
             <>
