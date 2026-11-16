@@ -260,7 +260,12 @@ const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', '
 const RELATIONS = ['Vítima', 'Testemunha', 'Funcionário', 'Aluno', 'Visitante', 'Vigilante / segurança', 'Anônimo', 'Outro'];
 const phoneMask = (v: string) => { const d = v.replace(/\D/g, '').slice(0, 11); return d.length <= 2 ? d : d.length <= 6 ? `(${d.slice(0, 2)}) ${d.slice(2)}` : d.length <= 10 ? `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}` : `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`; };
 
+const WSTEPS = ['Ocorrência', 'Local', 'Solicitante', 'Despacho'] as const;
+const PRIO_HINT: Record<Prio, string> = { critica: 'Risco à vida ou crime em andamento', alta: 'Precisa de equipe logo', media: 'Atender assim que possível', baixa: 'Registro ou verificação' };
+
 export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stage?: Stage; busy: Set<string>; onClose: () => void; onCreate: (n: NewOcc) => void }) {
+  const [step, setStep] = useState(0);
+  const [seen, setSeen] = useState(0);
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState<Kind>('outro');
   const [prio, setPrio] = useState<Prio>('media');
@@ -273,7 +278,20 @@ export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stag
   const [tried, setTried] = useState(false);
   const [outcome, setOutcome] = useState<string | null>(null);
   const needTeam = stage === 'despachada' || stage === 'no_local';
-  const ok = !!title.trim() && (!needTeam || !!team) && (stage !== 'concluida' || !!outcome);
+  const stepOk = (i: number) => (i === 0 ? !!title.trim() : i === 3 ? (!needTeam || !!team) && (stage !== 'concluida' || !!outcome) : true);
+  const last = step === WSTEPS.length - 1;
+
+  const go = (i: number) => {
+    if (i > step && !stepOk(step)) { setTried(true); return; }
+    setTried(false); setStep(i); setSeen((x) => Math.max(x, i));
+  };
+  const create = () => {
+    if (!stepOk(0)) { setStep(0); setTried(true); return; }
+    if (!stepOk(3)) { setTried(true); return; }
+    const place = Object.values(pl).some((v) => v.trim()) ? pl : undefined;
+    const reporter = rp.name.trim() || rp.phone.trim() ? rp : undefined;
+    onCreate({ stage: stage === 'nova' && team ? 'despachada' : stage, outcome: outcome ?? undefined, title: title.trim(), kind, prio, local: local ?? (pl.address.trim() || 'Sem local definido'), cam: cam ?? undefined, desc: desc.trim() || undefined, team: team ?? undefined, place, reporter });
+  };
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -284,15 +302,9 @@ export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stag
     return () => document.removeEventListener('keydown', k);
   });
 
-  const create = () => {
-    setTried(true);
-    if (!ok) return;
-    const place = Object.values(pl).some((v) => v.trim()) ? pl : undefined;
-    const reporter = rp.name.trim() || rp.phone.trim() ? rp : undefined;
-    onCreate({ stage: stage === 'nova' && team ? 'despachada' : stage, outcome: outcome ?? undefined, title: title.trim(), kind, prio, local: local ?? (pl.address.trim() || 'Sem local definido'), cam: cam ?? undefined, desc: desc.trim() || undefined, team: team ?? undefined, place, reporter });
-  };
   const P = (k: keyof Place) => ({ value: pl[k], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setPl({ ...pl, [k]: e.target.value }) });
   const R = (k: keyof Reporter) => ({ value: rp[k], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setRp({ ...rp, [k]: k === 'phone' ? phoneMask(e.target.value) : e.target.value }) });
+  const where = local ?? ([pl.address, pl.city].filter(Boolean).join(', ') || '—');
 
   return (
     <aside className="dv-drawer oc-drawer" aria-label="Nova ocorrência">
@@ -300,81 +312,112 @@ export function NewOccDrawer({ stage = 'nova', busy, onClose, onCreate }: { stag
         <div className="dv-drawer__title"><h2>Nova ocorrência</h2><p>{stage === 'nova' ? 'Registre o caso; a linha do tempo segue com os eventos vinculados.' : `Entra direto em ${STAGE_LABEL[stage]}`}</p></div>
         <IconButton icon="close" label="Fechar" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
       </header>
-      <div className="dv-drawer__body oc-newbody">
-        <section className="oc-fsec" aria-label="Informações básicas">
-          <h3>Informações básicas</h3>
-          <label className={`dv-field${tried && !title.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Título <span className="oc-req">*</span></span>
-            <input className="oc-in" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="O que está acontecendo, em poucas palavras" />
-            {tried && !title.trim() && <span className="dv-field__h">Obrigatório.</span>}
-          </label>
-          <div className="oc-2col is-wide2">
+
+      <ol className="oc-steps oc-wsteps" aria-label="Etapas">
+        {WSTEPS.map((w, i) => (
+          <li key={w} className={i < step ? 'is-done' : i === step ? 'is-on' : undefined}>
+            <button type="button" disabled={i > seen && i > step + 1} onClick={() => go(i)} aria-current={i === step ? 'step' : undefined}>
+              <i>{i < step ? <Icon name="check" size={10} /> : i + 1}</i><span>{w}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      <div className="dv-drawer__body oc-newbody" key={step}>
+        {step === 0 && (
+          <>
+            <label className={`dv-field${tried && !title.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Título <span className="oc-req">*</span></span>
+              <input className="oc-in" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(1); }} placeholder="O que está acontecendo, em poucas palavras" />
+              {tried && !title.trim() && <span className="dv-field__h">Dê um título para seguir.</span>}
+            </label>
             <label className="dv-field"><span className="dv-field__l">Tipo</span>
               <select className="nx-select" value={kind} onChange={(e) => setKind(e.target.value as Kind)}>
                 {(Object.keys(KIND_LABEL) as Kind[]).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
               </select>
             </label>
             <div className="dv-field"><span className="dv-field__l">Prioridade</span>
-              <Segmented<Prio> label="Prioridade" size="sm" value={prio} onChange={setPrio} options={(['critica', 'alta', 'media', 'baixa'] as Prio[]).map((p) => ({ value: p, label: <span className={`oc-prio is-${p}`}><i />{PRIO_LABEL[p]}</span> }))} />
+              <div className="oc-prioopts" role="radiogroup" aria-label="Prioridade">
+                {(['critica', 'alta', 'media', 'baixa'] as Prio[]).map((p) => (
+                  <button key={p} type="button" role="radio" aria-checked={prio === p} className={`oc-prioopt${prio === p ? ' is-on' : ''}`} onClick={() => setPrio(p)}>
+                    <span className={`oc-prio is-${p}`}><i />{PRIO_LABEL[p]}</span><small>{PRIO_HINT[p]}</small>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <label className="dv-field"><span className="dv-field__l">Descrição</span>
-            <textarea className="al-textarea" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Detalhes para quem vai atender" />
-          </label>
-        </section>
-
-        <section className="oc-fsec" aria-label="Local">
-          <h3>Local</h3>
-          <div className="dv-field"><span className="dv-field__l">Local cadastrado <span className="al-opt">opcional</span></span>
-            <Combobox label="Local cadastrado" value={local} onChange={setLocal} placeholder="Bloco, portaria, estacionamento…" options={LOCAIS.map((l) => ({ value: l, label: l }))} />
-          </div>
-          <label className="dv-field"><span className="dv-field__l">Endereço</span><input className="oc-in" {...P('address')} placeholder="Rua, número, complemento" /></label>
-          <div className="oc-2col">
-            <label className="dv-field"><span className="dv-field__l">Bairro</span><input className="oc-in" {...P('district')} /></label>
-            <label className="dv-field"><span className="dv-field__l">Cidade</span><input className="oc-in" {...P('city')} placeholder="Curitiba" /></label>
-          </div>
-          <div className="oc-2col">
-            <label className="dv-field"><span className="dv-field__l">Estado</span>
-              <select className="nx-select" {...P('uf')}><option value="">Selecione…</option>{UFS.map((u) => <option key={u}>{u}</option>)}</select>
+            <label className="dv-field"><span className="dv-field__l">Descrição <span className="al-opt">opcional</span></span>
+              <textarea className="al-textarea oc-tall" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Detalhes para quem vai atender" />
             </label>
-            <label className="dv-field"><span className="dv-field__l">Área / zona</span><input className="oc-in" {...P('zone')} /><span className="dv-field__h">Área policial ou zona de ronda</span></label>
-          </div>
-        </section>
+          </>
+        )}
 
-        <section className="oc-fsec" aria-label="Solicitante">
-          <h3>Solicitante <span className="al-opt">opcional</span></h3>
-          <div className="oc-2col">
-            <label className="dv-field"><span className="dv-field__l">Nome</span><input className="oc-in" {...R('name')} placeholder="Quem relatou" /></label>
+        {step === 1 && (
+          <>
+            <div className="dv-field"><span className="dv-field__l">Local cadastrado</span>
+              <Combobox label="Local cadastrado" value={local} onChange={setLocal} placeholder="Bloco, portaria, estacionamento…" options={LOCAIS.map((l) => ({ value: l, label: l }))} />
+              <span className="dv-field__h">Ou preencha o endereço abaixo para um local fora do cadastro.</span>
+            </div>
+            <label className="dv-field"><span className="dv-field__l">Endereço</span><input className="oc-in" autoFocus {...P('address')} placeholder="Rua, número, complemento" /></label>
+            <div className="oc-2col">
+              <label className="dv-field"><span className="dv-field__l">Bairro</span><input className="oc-in" {...P('district')} /></label>
+              <label className="dv-field"><span className="dv-field__l">Cidade</span><input className="oc-in" {...P('city')} placeholder="Curitiba" /></label>
+            </div>
+            <div className="oc-2col">
+              <label className="dv-field"><span className="dv-field__l">Estado</span>
+                <select className="nx-select" {...P('uf')}><option value="">Selecione…</option>{UFS.map((u) => <option key={u}>{u}</option>)}</select>
+              </label>
+              <label className="dv-field"><span className="dv-field__l">Área / zona</span><input className="oc-in" {...P('zone')} /><span className="dv-field__h">Área policial ou zona de ronda</span></label>
+            </div>
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <p className="oc-wnote">Quem relatou a ocorrência. Tudo opcional; pule se veio de uma câmera.</p>
+            <label className="dv-field"><span className="dv-field__l">Nome</span><input className="oc-in" autoFocus {...R('name')} placeholder="Quem relatou" /></label>
             <label className="dv-field"><span className="dv-field__l">Relação</span>
               <select className="nx-select" {...R('relation')}><option value="">Selecione…</option>{RELATIONS.map((r) => <option key={r}>{r}</option>)}</select>
             </label>
-          </div>
-          <div className="oc-2col">
-            <label className="dv-field"><span className="dv-field__l">Telefone</span><input className="oc-in" inputMode="tel" {...R('phone')} placeholder="(41) 99999-9999" /></label>
-            <label className="dv-field"><span className="dv-field__l">Documento</span><input className="oc-in" {...R('doc')} placeholder="RG ou CPF" /></label>
-          </div>
-        </section>
+            <div className="oc-2col">
+              <label className="dv-field"><span className="dv-field__l">Telefone</span><input className="oc-in" inputMode="tel" {...R('phone')} placeholder="(41) 99999-9999" /></label>
+              <label className="dv-field"><span className="dv-field__l">Documento</span><input className="oc-in" {...R('doc')} placeholder="RG ou CPF" /></label>
+            </div>
+          </>
+        )}
 
-        <section className="oc-fsec" aria-label="Vínculos e despacho">
-          <h3>{stage === 'concluida' ? 'Atendimento' : 'Vínculos e despacho'} {!needTeam && stage !== 'concluida' && <span className="al-opt">opcional</span>}</h3>
-          {stage === 'concluida' && (
-            <label className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho <span className="oc-req">*</span></span>
-              <select className="nx-select" value={outcome ?? ''} onChange={(e) => setOutcome(e.target.value || null)}><option value="">Selecione…</option>{OUTCOMES.map((x) => <option key={x}>{x}</option>)}</select>
-            </label>
-          )}
-          <div className="dv-field"><span className="dv-field__l">Câmera</span>
-            <Combobox label="Câmera" value={cam} onChange={setCam} placeholder="Vincular uma câmera" options={CAMS.map((c) => ({ value: c, label: c }))} />
-          </div>
-          <div className={`dv-field${tried && needTeam && !team ? ' is-err' : ''}`}><span className="dv-field__l">{needTeam || stage === 'concluida' ? <>Equipe {needTeam && <span className="oc-req">*</span>}</> : 'Despachar agora'}</span>
-            <Combobox label="Equipe" value={team} onChange={setTeam} invalid={tried && needTeam && !team} placeholder={needTeam ? 'Quem está atendendo' : stage === 'concluida' ? 'Quem atendeu (opcional)' : 'Deixe vazio para despachar depois'}
-              options={TEAMS.map((t) => ({ value: t.name, label: t.name }))}
-              render={(op) => <span className="oc-topt"><b>{op.label}</b><span className={busy.has(op.value) ? 'is-busy' : 'is-free'}>{busy.has(op.value) ? 'Em atendimento' : 'Disponível'}</span></span>} />
-          </div>
-        </section>
+        {step === 3 && (
+          <>
+            {stage === 'concluida' && (
+              <label className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho <span className="oc-req">*</span></span>
+                <select className="nx-select" value={outcome ?? ''} onChange={(e) => setOutcome(e.target.value || null)}><option value="">Selecione…</option>{OUTCOMES.map((x) => <option key={x}>{x}</option>)}</select>
+              </label>
+            )}
+            <div className={`dv-field${tried && needTeam && !team ? ' is-err' : ''}`}><span className="dv-field__l">{needTeam ? <>Equipe <span className="oc-req">*</span></> : stage === 'concluida' ? <>Equipe <span className="al-opt">opcional</span></> : <>Despachar agora <span className="al-opt">opcional</span></>}</span>
+              <Combobox label="Equipe" value={team} onChange={setTeam} invalid={tried && needTeam && !team} placeholder={needTeam ? 'Quem está atendendo' : stage === 'concluida' ? 'Quem atendeu' : 'Deixe vazio para despachar depois'}
+                options={TEAMS.map((t) => ({ value: t.name, label: t.name }))}
+                render={(op) => <span className="oc-topt"><b>{op.label}</b><span className={busy.has(op.value) ? 'is-busy' : 'is-free'}>{busy.has(op.value) ? 'Em atendimento' : 'Disponível'}</span></span>} />
+            </div>
+            <div className="dv-field"><span className="dv-field__l">Câmera <span className="al-opt">opcional</span></span>
+              <Combobox label="Câmera" value={cam} onChange={setCam} placeholder="Vincular uma câmera" options={CAMS.map((c) => ({ value: c, label: c }))} />
+            </div>
+            <section className="dv-sec">
+              <div className="dv-sec__head"><h3>Resumo</h3></div>
+              <dl className="dv-info oc-review">
+                <div className="dv-info__row"><dt>Título</dt><dd className="al-wrap">{title || '—'}</dd></div>
+                <div className="dv-info__row"><dt>Tipo</dt><dd>{KIND_LABEL[kind]}</dd></div>
+                <div className="dv-info__row"><dt>Prioridade</dt><dd><PrioTag p={prio} /></dd></div>
+                <div className="dv-info__row"><dt>Local</dt><dd className="al-wrap">{where}</dd></div>
+                <div className="dv-info__row"><dt>Solicitante</dt><dd className="al-wrap">{[rp.name, rp.relation, rp.phone].filter(Boolean).join(' · ') || '—'}</dd></div>
+              </dl>
+            </section>
+          </>
+        )}
       </div>
+
       <footer className="oc-formfoot">
-        <span className="al-form__hint">{stage !== 'nova' ? `Entra na coluna ${STAGE_LABEL[stage]}.` : team ? `Entra como Despachada para ${team}.` : 'Entra na coluna Nova.'}</span>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="primary" onClick={create}>Registrar</Button>
+        {step > 0 ? <Button icon="arrowLeft" onClick={() => go(step - 1)}>Voltar</Button> : <Button onClick={onClose}>Cancelar</Button>}
+        <span className="al-form__hint oc-wcount">{step + 1} de {WSTEPS.length}</span>
+        {!last && step >= 1 && <Button onClick={() => go(WSTEPS.length - 1)}>Pular para despacho</Button>}
+        {last ? <Button variant="primary" onClick={create}>Registrar</Button> : <Button variant="primary" onClick={() => go(step + 1)}>Próximo</Button>}
       </footer>
     </aside>
   );
