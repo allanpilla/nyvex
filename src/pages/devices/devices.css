@@ -415,15 +415,23 @@ b.is-ok { color: var(--nx-success); }
 .is-t2 .dv-filters { padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--nx-bg-hover) 45%, transparent); animation: nx-fade .15s; }
 
 .is-t2 .dv-table { border: 0; border-radius: 0; }
-.is-t2 .dv-tr { border-top: 0; border-bottom: 1px solid var(--nx-stroke); min-height: 68px; }
-.is-t2 .dv-tr:last-child { border-bottom: 0; }
+.is-t2 .dv-tr { border-top: 0; min-height: 68px; border-radius: 10px; }
+/* Divisória desenhada à parte, para o hover poder ter cantos arredondados como o cabeçalho */
+.is-t2 .dv-tr:not(.dv-th)::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: 0; height: 1px; background: var(--nx-stroke); pointer-events: none; transition: opacity .1s; }
+.is-t2 .dv-tr:last-child::after,
+.is-t2 .dv-tr:hover::after, .is-t2 .dv-tr:has(+ .dv-tr:hover)::after,
+.is-t2 .dv-tr.is-open::after, .is-t2 .dv-tr:has(+ .dv-tr.is-open)::after,
+.is-t2 .dv-tr.is-sel::after, .is-t2 .dv-tr:has(+ .dv-tr.is-sel)::after { opacity: 0; }
+.is-t2 .dv-tr:not(.dv-th):hover { background: color-mix(in srgb, var(--nx-bg-hover) 50%, transparent); }
+.is-t2 .dv-tr.is-open { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nx-primary) 45%, transparent); }
+.is-t2 .dv-tr:focus-visible { box-shadow: inset 0 0 0 2px var(--nx-primary); }
 .is-t2 .dv-th { min-height: 40px; border-bottom: 0; border-radius: 10px; box-shadow: none; }
 .is-t2 .dv-sort { font-size: 13px; font-weight: 400; color: var(--nx-text-sub); }
 .is-t2 .dv-sort.is-on { color: var(--nx-text-main); font-weight: 500; }
 .is-t2 .dv-c { padding: 10px; }
 .is-t2 .dv-c--chk { padding: 0 0 0 12px; }
 .is-t2 .dv-kind { width: 40px; height: 40px; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1px var(--nx-stroke); }
-.is-t2 .dv-tr:hover .dv-kind, .is-t2 .dv-tr.is-open .dv-kind { background: var(--nx-bg-hover); }
+.is-t2 .dv-tr:hover .dv-kind, .is-t2 .dv-tr.is-open .dv-kind { background: transparent; box-shadow: inset 0 0 0 1px var(--nx-bg-badge); }
 .is-t2 .dv-c--name { gap: 12px; }
 .is-t2 .dv-name { gap: 3px; }
 .is-t2 .dv-name b { font-size: 14px; line-height: 20px; }
