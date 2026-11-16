@@ -82,3 +82,7 @@
 .fc-rev i { width: 8px; height: 8px; border-radius: 50%; background: var(--nx-text-soft); }
 .fc-rev.is-confirmado i { background: var(--nx-success); }
 .fc-grid:not(.is-grande) .fc-tag.is-observacao .fc-tag__l { display: none; }
+.fc-srow__end { display: inline-flex; align-items: center; gap: 4px; }
+.fc-solo { width: 26px; height: 26px; opacity: 0; transition: opacity .12s; }
+.fc-srow:hover .fc-solo, .fc-solo:focus-visible { opacity: 1; }
+.fc-srow:not(.is-on) .mv-row__txt b { color: var(--nx-text-soft); }

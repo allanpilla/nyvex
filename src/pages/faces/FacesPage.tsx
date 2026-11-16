@@ -140,7 +140,7 @@ export function FacesPage({ screen }: { screen: Screen }) {
                 {[0, 70, 75, 80].map((n) => <option key={n} value={n}>{n ? `${n}%` : 'Qualquer'}</option>)}
               </select>
             </label>
-            {off.size > 0 && <button type="button" className="dv-chip fc-offchip" onClick={() => setOff(new Set())}>{off.size} {off.size === 1 ? 'fonte oculta' : 'fontes ocultas'}<Icon name="close" size={12} /></button>}
+            {off.size > 0 && <button type="button" className="dv-chip fc-offchip" onClick={() => setOff(new Set())}>{SOURCES.length - off.size} de {SOURCES.length} fontes<Icon name="close" size={12} /></button>}
             <span className="dv-tools__sp" />
             {paused && queued.length > 0 && <Button variant="primary" icon="arrowRight" className="fc-newbtn" onClick={resume}>{queued.length} {queued.length === 1 ? 'nova face' : 'novas faces'}</Button>}
           </div>
@@ -256,8 +256,8 @@ function SourcePanel({ faces, off, setOff, onHide }: { faces: Face[]; off: Set<s
                 const on = !off.has(s.id);
                 const n = n1h(s.id);
                 return (
-                  <div key={s.id} role="button" tabIndex={0} className={`mv-row fc-srow${on ? ' is-on' : ''}`} onClick={() => solo(s.id)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') solo(s.id); }} title="Clique para ver só esta fonte">
+                  <div key={s.id} role="button" tabIndex={0} className={`mv-row fc-srow${on ? ' is-on' : ''}`} onClick={() => toggle(s.id, !on)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(s.id, !on); } }} aria-pressed={on}>
                     <span className={`mv-dot is-${s.status}`} aria-label={STATUS_LABEL[s.status]} />
                     <span className="mv-row__txt">
                       <b className={s.name ? undefined : 'is-id'}>{s.name ?? s.id.slice(0, 18) + '…'}</b>
@@ -265,7 +265,8 @@ function SourcePanel({ faces, off, setOff, onHide }: { faces: Face[]; off: Set<s
                         : s.status === 'atencao' ? <span className="is-atencao">FPS baixo · {n} na última hora</span>
                           : <span className="fc-srow__n">{n ? `${n} ${n === 1 ? 'face' : 'faces'} na última hora` : 'Nenhuma face na última hora'}</span>}
                     </span>
-                    <span onClick={(e) => e.stopPropagation()}>
+                    <span className="fc-srow__end" onClick={(e) => e.stopPropagation()}>
+                      <IconButton icon="filter" label="Ver só esta fonte" tipPlace="top" className="fc-solo" onClick={() => solo(s.id)} />
                       <Switch size="sm" checked={on} label={`${on ? 'Ocultar' : 'Mostrar'} ${srcName(s)} no feed`} onChange={(v) => toggle(s.id, v)} />
                     </span>
                   </div>
@@ -279,7 +280,7 @@ function SourcePanel({ faces, off, setOff, onHide }: { faces: Face[]; off: Set<s
       <div className="mv-panel__foot">
         <div className="mv-panel__acts fc-acts">
           <Button icon="check" disabled={off.size === 0} onClick={() => setOff(new Set())}>Mostrar todas</Button>
-          <Button icon="eyeOff" disabled={off.size === SOURCES.length} onClick={() => setOff(new Set(SOURCES.map((s) => s.id)))}>Ocultar</Button>
+          <Button icon="eyeOff" disabled={off.size === SOURCES.length} onClick={() => setOff(new Set(SOURCES.map((s) => s.id)))}>Desmarcar todas</Button>
         </div>
         <span className="mv-panel__hint fc-hint">{SOURCES.filter((s) => !s.name).length} fontes sem nome: cadastre-as em Dispositivos.</span>
       </div>
