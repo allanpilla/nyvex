@@ -1,23 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, Icon, IconButton, PageHeader, Segmented, Switch, useTooltip, useTooltipApi } from '../../ds/components';
+import { Button, Icon, IconButton, PageHeader, Segmented, useTooltip } from '../../ds/components';
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import { FaceDrawer } from './FaceDrawer';
 import { FaceImg } from './FaceImg';
-import { FEED_MAX, initialFaces, KIND_LABEL, LOCAIS, makeFace, rand, SOURCES, SRC, srcName, STATUS_LABEL, hms, type Face, type SrcStatus } from './data';
+import { FEED_MAX, initialFaces, KIND_LABEL, makeFace, rand, SOURCES, SRC, srcName, hms, type Face } from './data';
 import '../mural/mural.css';
 import '../devices/devices.css';
 import './faces.css';
 
 type Density = 'grande' | 'medio' | 'compacto';
 type KindF = 'todas' | 'observacao' | 'watchlist';
-const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const START = Date.now() - (3 * 86400e3 + 7 * 3600e3 + 12 * 60e3);
 
 export function FacesPage({ screen }: { screen: Screen }) {
   const { toast } = useUi();
-  const { hide: hideTip } = useTooltipApi();
   const [faces, setFaces] = useState<Face[]>(() => initialFaces(Date.now()));
   const [density, setDensity] = useState<Density>('medio');
   const [kind, setKind] = useState<KindF>('todas');
@@ -26,7 +24,6 @@ export function FacesPage({ screen }: { screen: Screen }) {
   const [paused, setPaused] = useState(false);
   const [queued, setQueued] = useState<Face[]>([]);
   const [fresh, setFresh] = useState<Set<string>>(new Set());
-  const [panel, setPanel] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
   const [frames, setFrames] = useState(7168715);
   const [fps, setFps] = useState(4.0);
@@ -85,22 +82,6 @@ export function FacesPage({ screen }: { screen: Screen }) {
 
   return (
     <div className="mv fc">
-      <div className={`mv-side${panel ? ' is-open' : ''}`}>
-        {panel ? (
-          <SourcePanel faces={faces} off={off} setOff={setOff} onHide={() => { hideTip(); setPanel(false); }} />
-        ) : (
-          <aside className="mv-rail" aria-label="Fontes">
-            <div className="mv-rail__head"><IconButton icon="panel" label="Mostrar fontes" onClick={() => setPanel(true)} /></div>
-            <div className="mv-rail__group" aria-label="Fontes">
-              <RailBtn label={`${SOURCES.length} fontes`} onClick={() => setPanel(true)}><Icon name="camera" size={16} /><b>{SOURCES.length}</b></RailBtn>
-              <RailBtn label="Fontes que pedem atenção" onClick={() => setPanel(true)}><span className="mv-dot is-atencao" /><b>{SOURCES.filter((s) => s.status === 'atencao').length}</b></RailBtn>
-            </div>
-            <div className="mv-rail__sep" />
-            <RailBtn label="Buscar fonte" onClick={() => setPanel(true)}><Icon name="search" size={18} /></RailBtn>
-          </aside>
-        )}
-      </div>
-
       <div className="mv-main">
         <PageHeader
           title={screen.label}
@@ -153,7 +134,7 @@ export function FacesPage({ screen }: { screen: Screen }) {
               <div className="mv-empty fc-empty">
                 <Icon name="faces" size={28} />
                 <b>Nenhuma face com esses filtros</b>
-                <span>Volte para “Todas”, reduza a detecção mínima ou mostre mais fontes.</span>
+                <span>Volte para “Todas”, reduza a detecção mínima ou mostre todas as fontes.</span>
                 <Button onClick={() => { setKind('todas'); setMinDet(0); setOff(new Set()); }}>Limpar filtros</Button>
               </div>
             )}
@@ -198,97 +179,4 @@ function FaceCard({ f, fresh, on, onOpen }: { f: Face; fresh: boolean; on: boole
       </span>
     </button>
   );
-}
-
-/* ───────────── painel de fontes (mesmo padrão do Mural) ───────────── */
-
-function SourcePanel({ faces, off, setOff, onHide }: { faces: Face[]; off: Set<string>; setOff: (s: Set<string>) => void; onHide: () => void }) {
-  const [q, setQ] = useState('');
-  const [status, setStatus] = useState<SrcStatus | null>(null);
-  const [closed, setClosed] = useState<Set<string>>(new Set());
-  const hour = Date.now() - 3600e3;
-  const n1h = (id: string) => faces.filter((f) => f.src === id && f.at > hour).length;
-  const list = SOURCES.filter((s) => (!status || s.status === status) && (!q || norm(`${srcName(s)} ${s.id} ${s.local}`).includes(norm(q))));
-  const filtering = !!q || !!status;
-  const toggle = (id: string, show: boolean) => { const n = new Set(off); if (show) n.delete(id); else n.add(id); setOff(n); };
-  const solo = (id: string) => setOff(off.size === SOURCES.length - 1 && !off.has(id) ? new Set() : new Set(SOURCES.filter((s) => s.id !== id).map((s) => s.id)));
-
-  return (
-    <aside className="mv-panel" aria-label="Fontes">
-      <div className="mv-panel__head">
-        <div>
-          <h2>Fontes</h2>
-          <p>{SOURCES.length} fontes · {SOURCES.length - off.size} no feed</p>
-        </div>
-        <IconButton icon="panel" label="Ocultar fontes" tipPlace="bottom" onClick={onHide} />
-      </div>
-      <div className="mv-panel__tools">
-        <label className="nx-input">
-          <Icon name="search" size={16} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar fonte, local ou ID" aria-label="Buscar fonte" />
-          {q && <button type="button" className="mv-clear" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={16} /></button>}
-        </label>
-        <div className="mv-chips fc-chips" role="group" aria-label="Filtrar fontes">
-          <button type="button" aria-pressed={!status} className={`mv-chip${!status ? ' is-on' : ''}`} onClick={() => setStatus(null)}>
-            Todas<span className="mv-chip__n">{SOURCES.length}</span>
-          </button>
-          <button type="button" aria-pressed={status === 'atencao'} className={`mv-chip${status === 'atencao' ? ' is-on' : ''}`} onClick={() => setStatus(status === 'atencao' ? null : 'atencao')}>
-            <span className="mv-dot is-atencao" />Atenção<span className="mv-chip__n">{SOURCES.filter((s) => s.status === 'atencao').length}</span>
-          </button>
-        </div>
-      </div>
-      <div className="mv-list">
-        {LOCAIS.map((local) => {
-          const items = list.filter((s) => s.local === local);
-          if (!items.length) return null;
-          const isOpen = filtering || !closed.has(local);
-          const total = SOURCES.filter((s) => s.local === local);
-          const shownN = total.filter((s) => !off.has(s.id)).length;
-          return (
-            <section key={local} className="mv-grp">
-              <button type="button" className={`mv-grp__head${isOpen ? ' is-open' : ''}`} aria-expanded={isOpen}
-                onClick={() => setClosed((p) => { const n = new Set(p); if (n.has(local)) n.delete(local); else n.add(local); return n; })}>
-                <Icon name="chevron" size={16} className="mv-grp__chev" />
-                <span className="mv-grp__name">{local}</span>
-                <span className="mv-grp__n">{shownN < total.length ? `${shownN}/${total.length}` : total.length}</span>
-              </button>
-              {isOpen && items.map((s) => {
-                const on = !off.has(s.id);
-                const n = n1h(s.id);
-                return (
-                  <div key={s.id} role="button" tabIndex={0} className={`mv-row fc-srow${on ? ' is-on' : ''}`} onClick={() => toggle(s.id, !on)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(s.id, !on); } }} aria-pressed={on}>
-                    <span className={`mv-dot is-${s.status}`} aria-label={STATUS_LABEL[s.status]} />
-                    <span className="mv-row__txt">
-                      <b className={s.name ? undefined : 'is-id'}>{s.name ?? s.id.slice(0, 18) + '…'}</b>
-                      {s.status === 'offline' ? <span className="is-offline">Sem sinal · sem novas faces</span>
-                        : s.status === 'atencao' ? <span className="is-atencao">FPS baixo · {n} na última hora</span>
-                          : <span className="fc-srow__n">{n ? `${n} ${n === 1 ? 'face' : 'faces'} na última hora` : 'Nenhuma face na última hora'}</span>}
-                    </span>
-                    <span className="fc-srow__end" onClick={(e) => e.stopPropagation()}>
-                      <IconButton icon="filter" label="Ver só esta fonte" tipPlace="top" className="fc-solo" onClick={() => solo(s.id)} />
-                      <Switch size="sm" checked={on} label={`${on ? 'Ocultar' : 'Mostrar'} ${srcName(s)} no feed`} onChange={(v) => toggle(s.id, v)} />
-                    </span>
-                  </div>
-                );
-              })}
-            </section>
-          );
-        })}
-        {list.length === 0 && <div className="mv-empty"><b>Nenhuma fonte encontrada</b><span>Tente outro nome ou limpe os filtros.</span></div>}
-      </div>
-      <div className="mv-panel__foot">
-        <div className="mv-panel__acts fc-acts">
-          <Button icon="check" disabled={off.size === 0} onClick={() => setOff(new Set())}>Mostrar todas</Button>
-          <Button icon="eyeOff" disabled={off.size === SOURCES.length} onClick={() => setOff(new Set(SOURCES.map((s) => s.id)))}>Desmarcar todas</Button>
-        </div>
-        <span className="mv-panel__hint fc-hint">{SOURCES.filter((s) => !s.name).length} fontes sem nome: cadastre-as em Dispositivos.</span>
-      </div>
-    </aside>
-  );
-}
-
-function RailBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
-  const tip = useTooltip(label);
-  return <button type="button" className="mv-rail__btn" aria-label={label} {...tip} onClick={onClick}>{children}</button>;
 }
