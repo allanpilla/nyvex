@@ -6,6 +6,7 @@ import { LocationsPage } from './locations/LocationsPage';
 import { WatchlistsPage } from './watchlists/WatchlistsPage';
 import { FacesPage } from './faces/FacesPage';
 import { AlertsPage } from './alerts/AlertsPage';
+import { OccurrencesPage } from './occurrences/OccurrencesPage';
 
 /**
  * Telas já desenhadas, por id do menu. Ao criar uma tela nova:
@@ -20,4 +21,5 @@ export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> =
   watch: WatchlistsPage,
   faces: FacesPage,
   alertas: AlertsPage,
+  ocor: OccurrencesPage,
 };
