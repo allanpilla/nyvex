@@ -16,7 +16,7 @@ import { LocationForm } from './LocationForm';
 import { DevCounts, EnvBadge, HealthPill, LayersButton, MapCanvas } from './parts';
 import '../devices/devices.css';
 import './locations.css';
-import { FilterToggle, SortButton, TableModelSwitch, useTableModel } from '../devices/tableModel';
+import { FilterToggle, SortButton, useTableModel } from '../devices/tableModel';
 
 type View = 'arvore' | 'lista' | 'mapa';
 type FKey = 'env' | 'zone' | 'kind' | 'exposure' | 'placeType' | 'health';
@@ -117,7 +117,7 @@ export function LocationsPage({ screen }: { screen: Screen }) {
 
   const toggleF = (k: FKey, v: string) => setF((o) => ({ ...o, [k]: o[k].includes(v) ? o[k].filter((x) => x !== v) : [...o[k], v] }));
   const clearAll = () => { setF(EMPTY); setQ(''); setQuick('all'); };
-  const [model, setModel] = useTableModel();
+  const [model] = useTableModel();
   const t2 = model === 'novo';
   const [showF, setShowF] = useState(false);
   const nF = F_GROUPS.filter((g) => f[g.key].length).length;
@@ -334,7 +334,6 @@ export function LocationsPage({ screen }: { screen: Screen }) {
           {paged
             ? <span>{rows.length ? `${pg * size + 1}–${Math.min(rows.length, pg * size + size)} de ${rows.length}` : '0 locais'}</span>
             : <span>{view === 'mapa' ? `${mapLocs.length} locais no mapa` : `${hits.length} de ${locs.length} locais`}</span>}
-          <TableModelSwitch value={model} onChange={setModel} />
           <span className="dv-tools__sp" />
           {paged && (
             <>

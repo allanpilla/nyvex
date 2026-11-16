@@ -12,7 +12,7 @@ import { DeviceDrawer } from './DeviceDrawer';
 import { ago, ConnPill, copy, envOf, healthScore, latTone, norm, reliability, ReliabPill, SitBadge, sendToMural } from './parts';
 import { createPortal } from 'react-dom';
 import { DeviceForm } from './DeviceForm';
-import { FilterToggle, SortButton, TableModelSwitch, useTableModel } from './tableModel';
+import { FilterToggle, SortButton, useTableModel } from './tableModel';
 import './devices.css';
 
 /* ───────────── filtros ───────────── */
@@ -119,7 +119,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
 
   const toggleF = (k: FKey, v: string) => setF((o) => ({ ...o, [k]: o[k].includes(v) ? o[k].filter((x) => x !== v) : [...o[k], v] }));
   const clearAll = () => { setF(EMPTY); setQ(''); setQuick('all'); };
-  const [model, setModel] = useTableModel();
+  const [model] = useTableModel();
   const t2 = model === 'novo';
   const [showF, setShowF] = useState(false);
   const nF = F_GROUPS.filter((g) => f[g.key].length).length;
@@ -322,7 +322,6 @@ export function DevicesPage({ screen }: { screen: Screen }) {
         {/* Rodapé com paginação */}
         <footer className="dv-foot">
           <span>{rows.length ? `${pg * size + 1}–${Math.min(rows.length, pg * size + size)} de ${rows.length}` : '0 dispositivos'}</span>
-          <TableModelSwitch value={model} onChange={setModel} />
           <span className="dv-tools__sp" />
           <label className="dv-size">Por página
             <select className="nx-select" value={size} onChange={(e) => setSize(Number(e.target.value))} aria-label="Itens por página">

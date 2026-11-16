@@ -113,8 +113,8 @@ dd .dv-cert { margin-left: 0; }
 .dv-conn.is-na i { background: var(--nx-bg-badge); }
 @keyframes dv-pulse { 0% { box-shadow: 0 0 0 0 rgba(223, 28, 65, .55); } 70%, 100% { box-shadow: 0 0 0 5px rgba(223, 28, 65, 0); } }
 .dv-live, .dv-nolive { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; line-height: 18px; font-weight: 500; white-space: nowrap; }
-.dv-live { color: var(--nx-success); }
-.dv-nolive { color: #f2556f; }
+.dv-live, .dv-two > .dv-live { color: var(--nx-success); }
+.dv-nolive, .dv-two > .dv-nolive { color: #f2556f; }
 .dv-nostream { font-size: 12px; line-height: 18px; color: var(--nx-text-soft); }
 .dv-ip { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px; line-height: 16px; color: var(--nx-text-soft); border-radius: 4px; }
 .dv-ip .nx-icon { opacity: 0; transition: opacity .1s; }

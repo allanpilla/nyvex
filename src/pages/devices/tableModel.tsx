@@ -3,7 +3,8 @@ import { Button, Icon, Menu, NavItem, Segmented } from '../../ds/components';
 import { storage } from '../../lib/storage';
 
 /**
- * TESTE de modelo de tabela (Dispositivos e Locais).
+ * Modelo de tabela (Dispositivos e Locais). O 'novo' foi aprovado e é o padrão;
+ * o 'atual' segue disponível só para referência (sem chave na interface).
  * 'novo': busca, Filtros e Ordenar dentro do card da tabela; cabeçalho arredondado, linhas mais altas.
  * 'atual': modelo anterior. A escolha fica salva no navegador.
  */
@@ -11,7 +12,7 @@ export type TableModel = 'atual' | 'novo';
 const KEY = 'nx-table-model';
 
 export function useTableModel(): [TableModel, (m: TableModel) => void] {
-  const [m, setM] = useState<TableModel>(() => (storage.get(KEY) === 'atual' ? 'atual' : 'novo'));
+  const [m, setM] = useState<TableModel>('novo');
   return [m, (v) => { storage.set(KEY, v); setM(v); }];
 }
 
