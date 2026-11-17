@@ -11,7 +11,7 @@ export function RolesMatrix({ roles, onToggle, onRename, onDelete }: Props) {
   const askDelete = (k: string) => { setConfirm(k); setTimeout(() => setConfirm((c) => (c === k ? null : c)), 3000); };
 
   return (
-    <div className="us-card us-mx">
+    <div className="dv-tcard is-t2 us-mx">
       <p className="us-intro">
         <Icon name="infoFill" size={14} />
         <span>{TOTAL} permissões que o sistema controla. Papéis <b>do sistema</b> são fixos; nos <b className="is-blue">seus papéis</b> clique nas células para conceder. Atribua o papel a um usuário na aba Usuários.</span>

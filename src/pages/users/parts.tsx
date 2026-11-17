@@ -21,46 +21,45 @@ export function Avatar({ name, size = 32 }: { name: string; size?: number }) {
   return <span className={`nx-avatar us-av is-${tone(name)}`} style={{ width: size, height: size, fontSize: size * 0.36 }}>{initials(name)}</span>;
 }
 
-/** Painel do usuário, ao lado da tabela: acesso, papéis atribuídos e Editar. */
+/** Painel do usuário (clique na linha): acesso, papéis atribuídos e Editar. Mesmo padrão de drawer das outras telas. */
 export function UserPanel({ u, roles, onClose, onEdit }: { u: User; roles: Record<string, Role>; onClose: () => void; onEdit: () => void }) {
   const main = u.roles[0];
   return (
-    <aside className="us-panel" aria-label="Usuário">
-      <header className="us-panel__head">
+    <aside className="dv-drawer us-drawer" aria-label={`Usuário ${u.full_name || u.email}`}>
+      <header className="dv-drawer__head">
         <Avatar name={u.full_name || u.email} size={40} />
-        <div className="us-panel__t">
+        <div className="dv-drawer__title">
           <h2>{u.full_name || u.email}</h2>
-          {u.full_name && <p>{u.email}</p>}
-          <Status active={u.is_active} />
+          <p>{u.full_name ? u.email : 'Usuário'}</p>
         </div>
-        <IconButton icon="close" label="Fechar painel" onClick={onClose} tipPlace="bottom" />
+        <IconButton icon="close" label="Fechar painel" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
       </header>
-      <div className="us-panel__body">
-        <section>
-          <h3>Acesso</h3>
-          <div className="us-kpis">
-            <div className="us-kpi">
-              <span className="us-kpi__l"><span className="us-kpi__ic is-blue"><Icon name="shield" size={14} /></span>Papel</span>
-              <b>{(main && roles[main]?.label) || main || '—'}</b>
-              <em>Papel principal</em>
-            </div>
-            <div className="us-kpi">
-              <span className="us-kpi__l"><span className="us-kpi__ic is-violet"><Icon name="wrench" size={14} /></span>Papéis</span>
-              <b>{u.roles.length}</b>
-              <em>Papéis atribuídos</em>
-            </div>
-          </div>
-        </section>
-        <section>
-          <h3>Papéis atribuídos <span>{u.roles.length}</span></h3>
+      <div className="dv-drawer__acts">
+        <Button variant="primary" icon="edit" onClick={onEdit}>Editar</Button>
+        <span className="dv-tools__sp" />
+        <Status active={u.is_active} />
+      </div>
+      <div className="wl-kpis us-kpis">
+        <div><span>Papel principal</span><b>{(main && roles[main]?.label) || main || '—'}</b></div>
+        <div><span>Papéis atribuídos</span><b>{u.roles.length}</b></div>
+        <div><span>Permissões</span><b>{main && roles[main] ? roles[main].granted.length : 0}</b></div>
+      </div>
+      <div className="dv-drawer__body">
+        <section className="dv-sec">
+          <div className="dv-sec__head"><h3>Papéis atribuídos</h3><span className="us-none">{u.roles.length}</span></div>
           {u.roles.length === 0 ? <p className="us-none">Nenhum papel</p> : (
-            <ul className="us-alist">
-              {u.roles.map((k) => <li key={k}><Icon name="shield" size={14} /><span className="us-alist__l">{roles[k]?.label ?? k}</span><code>{k}</code></li>)}
+            <ul className="lc-dlist us-alist">
+              {u.roles.map((k) => (
+                <li key={k}>
+                  <span className={`dv-kind us-rkind${roles[k]?.plane === 'platform' ? ' is-platform' : ''}`}><Icon name="shield" size={16} /></span>
+                  <span className="dv-name"><b>{roles[k]?.label ?? k}</b><span>{roles[k]?.plane === 'platform' ? 'Plataforma' : 'Cliente'} · {roles[k]?.granted.length ?? 0} permissões</span></span>
+                  <code>{k}</code>
+                </li>
+              ))}
             </ul>
           )}
         </section>
       </div>
-      <footer className="us-panel__foot"><Button variant="primary" icon="edit" onClick={onEdit}>Editar</Button></footer>
     </aside>
   );
 }
