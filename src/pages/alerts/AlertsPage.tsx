@@ -7,7 +7,7 @@ import { norm } from '../devices/parts';
 import { FilterToggle, SortButton } from '../devices/tableModel';
 import { Thumb } from './Thumb';
 import {
-  ago, ALERTS, CAMS, camName, FP_REASONS, groupAlerts, KIND, makeAlert, ME, PRIO_LABEL, PRIO_RANK, rand, REASON, span, STATUS_LABEL, subtitle, target, targetSub, title, when,
+  ago, ALERTS, CAMS, camName, FP_REASONS, groupAlerts, KIND, makeAlert, ME, PRIO_LABEL, PRIO_RANK, rand, REASON, span, STATUS_LABEL, subtitle, target, targetSub, title, USERS, when,
   type Alert, type Cat, type Group, type Kind, type Prio, type Status,
 } from './data';
 import { AlertDrawer, type Act, type Form } from './AlertDrawer';
@@ -62,6 +62,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   const [sound, setSound] = useState(true);
   const [startForm, setStartForm] = useState<Form>(null);
   const [fpKeys, setFpKeys] = useState<string[] | null>(null);
+  const [fwdKey, setFwdKey] = useState<string | null>(null);
   const [clip, setClip] = useState<Alert | null>(null);
   const openWith = (key: string, f: Form) => { setStartForm(f); setOpenKey(key); };
   const pausedRef = useRef(paused); pausedRef.current = paused;
@@ -119,7 +120,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
     setAlerts((l) => l.map((x) => {
       if (!ids.has(x.id)) return x;
       if (a.type === 'ack') return { ...x, status: 'reconhecido', ackBy: ME, ackAt: t };
-      if (a.type === 'fp') return { ...x, status: 'encerrado', closedBy: ME, closedAt: t, outcome: 'Falso positivo', fpReason: a.reason, reeval: a.reeval };
+      if (a.type === 'fp') return { ...x, status: 'encerrado', closedBy: ME, closedAt: t, outcome: 'Falso positivo', fpReason: a.reason, reeval: a.reeval, justification: a.note };
       if (a.type === 'close') return { ...x, status: 'encerrado', closedBy: ME, closedAt: t, outcome: a.outcome, justification: a.note };
       if (a.type === 'reopen') return { ...x, status: 'pendente', ackBy: undefined, ackAt: undefined, closedBy: undefined, closedAt: undefined, outcome: undefined, justification: undefined, fpReason: undefined, reeval: undefined };
       return { ...x, fwdTo: a.to, fwdNote: a.note, fwdAt: t };
@@ -279,7 +280,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
                   onSel={(v) => setSel((s) => { const n = new Set(s); if (v) n.add(g.key); else n.delete(g.key); return n; })}
                   onOpen={() => { setStartForm(null); setOpenKey(openKey === g.key ? null : g.key); }}
                   onAck={() => act([g.key], { type: 'ack' })}
-                  onQuick={(f) => (f === 'fp' ? setFpKeys([g.key]) : f === 'reopen' ? act([g.key], { type: 'reopen' }) : openWith(g.key, f))}
+                  onQuick={(f) => (f === 'fp' ? setFpKeys([g.key]) : f === 'fwd' ? setFwdKey(g.key) : f === 'reopen' ? act([g.key], { type: 'reopen' }) : openWith(g.key, f))}
                   onClip={() => setClip(g.head)}
                   onMore={(el) => setRowMenu(rowMenu?.key === g.key ? null : { el, key: g.key })} />
               ))}
@@ -359,7 +360,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
           <Menu anchor={rowMenu.el} onClose={() => setRowMenu(null)}>
             <NavItem role="menuitem" icon="panel" label="Abrir detalhes" onClick={close(() => setOpenKey(g.key))} />
             {tab !== 'encerrado' && <NavItem role="menuitem" icon="thumbDown" label="Falso positivo…" onClick={close(() => setFpKeys([g.key]))} />}
-            {tab !== 'encerrado' && <NavItem role="menuitem" icon="forward" label="Encaminhar…" onClick={close(() => openWith(g.key, 'fwd'))} />}
+            {tab !== 'encerrado' && <NavItem role="menuitem" icon="forward" label="Encaminhar…" onClick={close(() => setFwdKey(g.key))} />}
             {tab !== 'encerrado' && <NavItem role="menuitem" icon="outcome" label="Encerrar com desfecho…" onClick={close(() => openWith(g.key, 'close'))} />}
             {g.head.kind !== 'camera' && <NavItem role="menuitem" icon="play" label="Ver clipe de 20 s" onClick={close(() => setClip(g.head))} />}
             {tab === 'encerrado' && <NavItem role="menuitem" icon="replay" label="Reabrir" onClick={close(() => act([g.key], { type: 'reopen' }))} />}
@@ -370,26 +371,66 @@ export function AlertsPage({ screen }: { screen: Screen }) {
         );
       })()}
 
-      {fpKeys && <FpDialog n={groups.filter((g) => fpKeys.includes(g.key)).reduce((n, g) => n + g.items.length, 0)} onCancel={() => setFpKeys(null)} onConfirm={(reason, reeval) => { const k = fpKeys; setFpKeys(null); act(k, { type: 'fp', reason, reeval }); }} />}
+      {fpKeys && <FpDialog a={fpKeys.length === 1 ? groups.find((g) => g.key === fpKeys[0])?.head : undefined} n={groups.filter((g) => fpKeys.includes(g.key)).reduce((n, g) => n + g.items.length, 0)} onCancel={() => setFpKeys(null)} onConfirm={(reason, reeval, note) => { const k = fpKeys; setFpKeys(null); act(k, { type: 'fp', reason, reeval, note }); }} />}
+      {fwdKey && (() => { const g = groups.find((x) => x.key === fwdKey); return g && <FwdDialog a={g.head} n={g.items.length} onCancel={() => setFwdKey(null)} onConfirm={(to, note) => { setFwdKey(null); act([g.key], { type: 'fwd', to, note }); }} />; })()}
       {clip && <ClipModal a={clip} onClose={() => setClip(null)} toast={toast} />}
-      {bulkFp && <FpDialog n={selN} onCancel={() => { setBulkFp(false); }} onConfirm={(reason, reeval) => { setBulkFp(false); act([...sel], { type: 'fp', reason, reeval }); }} />}
+      {bulkFp && <FpDialog n={selN} onCancel={() => { setBulkFp(false); }} onConfirm={(reason, reeval, note) => { setBulkFp(false); act([...sel], { type: 'fp', reason, reeval, note }); }} />}
     </div>
   );
 }
 
 /* ───────────── peças ───────────── */
 
-function FpDialog({ n, onCancel, onConfirm }: { n: number; onCancel: () => void; onConfirm: (reason: string, reeval: boolean) => void }) {
+function FpDialog({ a, n, onCancel, onConfirm }: { a?: Alert; n: number; onCancel: () => void; onConfirm: (reason: string, reeval: boolean, note: string) => void }) {
   const [reason, setReason] = useState(FP_REASONS[3]);
   const [reeval, setReeval] = useState(true);
+  const [note, setNote] = useState('');
+  const ok = note.trim().length > 0;
   return (
     <StatusModal type="warning" title={n === 1 ? 'Encerrar como falso positivo?' : `Encerrar ${n} alertas como falso positivo?`}
       description={<span className="al-fpd">
-        <span>O alerta sai da fila e vai para Encerrados com o motivo abaixo.</span>
-        <select className="nx-select" value={reason} onChange={(e) => setReason(e.target.value)} aria-label="Motivo">{FP_REASONS.map((r) => <option key={r}>{r}</option>)}</select>
+        <span>{n === 1 ? 'O alerta sai' : 'Os alertas saem'} da fila e {n === 1 ? 'vai' : 'vão'} para Encerrados com a causa e a justificativa abaixo.</span>
+        {a && <AlertSum a={a} n={n} />}
+        <label className="dv-field"><span className="dv-field__l">Causa-raiz do falso positivo</span>
+          <select className="nx-select" value={reason} onChange={(e) => setReason(e.target.value)}>{FP_REASONS.map((r) => <option key={r}>{r}</option>)}</select>
+        </label>
         <Checkbox label="Enviar para reavaliação do modelo" checked={reeval} onChange={setReeval}><span>Enviar para reavaliação do modelo</span></Checkbox>
+        <label className="dv-field"><span className="dv-field__l">Justificativa<i>*</i></span>
+          <textarea className="nx-textarea" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que foi verificado e por que é falso positivo" />
+        </label>
       </span>}
-      confirm="Encerrar" onConfirm={() => onConfirm(reason, reeval)} onCancel={onCancel} />
+      confirm="Encerrar" confirmDisabled={!ok} onConfirm={() => ok && onConfirm(reason, reeval, note.trim())} onCancel={onCancel} />
+  );
+}
+
+/** Resumo do alerta no topo dos modais de ação. */
+function AlertSum({ a, n }: { a: Alert; n: number }) {
+  return (
+    <span className="al-sum">
+      <span><i>Alerta</i><b>{title(a)}</b>{n > 1 && <em>{n} ocorrências</em>}</span>
+      <span><i>Câmera</i><b>{camName(CAMS[a.cam])}</b></span>
+    </span>
+  );
+}
+
+function FwdDialog({ a, n, onCancel, onConfirm }: { a: Alert; n: number; onCancel: () => void; onConfirm: (to: string, note: string) => void }) {
+  const [to, setTo] = useState('');
+  const [note, setNote] = useState('');
+  return (
+    <StatusModal type="information" title="Encaminhar alerta"
+      description={<span className="al-fpd">
+        <span>O alerta continua pendente, agora com responsável.</span>
+        <AlertSum a={a} n={n} />
+        <label className="dv-field"><span className="dv-field__l">Para<i>*</i></span>
+          <select className="nx-select" value={to} onChange={(e) => setTo(e.target.value)}>
+            <option value="">Escolha quem recebe</option>{USERS.filter((u) => u !== ME).map((u) => <option key={u}>{u}</option>)}
+          </select>
+        </label>
+        <label className="dv-field"><span className="dv-field__l">Nota <span className="al-opt">opcional</span></span>
+          <textarea className="nx-textarea" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que a pessoa precisa saber ou verificar" />
+        </label>
+      </span>}
+      confirm="Encaminhar" confirmDisabled={!to} onConfirm={() => to && onConfirm(to, note.trim())} onCancel={onCancel} />
   );
 }
 
