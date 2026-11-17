@@ -9,7 +9,7 @@ import { Thumb } from './Thumb';
 export type Act =
   | { type: 'ack' }
   | { type: 'reopen' }
-  | { type: 'fp'; reason: string; reeval: boolean }
+  | { type: 'fp'; reason: string; reeval: boolean; note: string }
   | { type: 'close'; outcome: string; note: string }
   | { type: 'fwd'; to: string; note: string };
 
@@ -48,7 +48,7 @@ export function AlertDrawer({ startForm = null, onClip, g, now, pos, onPrev, onN
   const openForm = (f: Form) => { setForm(form === f ? null : f); setTried(false); setNote(''); };
   const submit = () => {
     setTried(true);
-    if (form === 'fp') onAct({ type: 'fp', reason, reeval });
+    if (form === 'fp') { if (!note.trim()) return; onAct({ type: 'fp', reason, reeval, note: note.trim() }); }
     if (form === 'close') { if (!outcome || !note.trim()) return; onAct({ type: 'close', outcome, note: note.trim() }); }
     if (form === 'fwd') { if (!to) return; onAct({ type: 'fwd', to, note: note.trim() }); setForm(null); }
   };
@@ -121,20 +121,24 @@ export function AlertDrawer({ startForm = null, onClip, g, now, pos, onPrev, onN
           <section className="al-form" aria-label={form === 'fp' ? 'Falso positivo' : form === 'close' ? 'Encerrar com desfecho' : 'Encaminhar'}>
             {form === 'fp' && (
               <>
-                <label className="dv-field"><span className="dv-field__l">Motivo</span>
+                <label className="dv-field"><span className="dv-field__l">Causa-raiz do falso positivo</span>
                   <select className="nx-select" value={reason} onChange={(e) => setReason(e.target.value)}>{FP_REASONS.map((r) => <option key={r}>{r}</option>)}</select>
                 </label>
                 <Checkbox label="Enviar para reavaliação do modelo" checked={reeval} onChange={setReeval}><span className="al-chk">Enviar para reavaliação do modelo</span></Checkbox>
+                <label className={`dv-field${tried && !note.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Justificativa<i>*</i></span>
+                  <textarea className="al-textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que foi verificado e por que é falso positivo" />
+                  {tried && !note.trim() && <span className="dv-field__h">Obrigatória para encerrar.</span>}
+                </label>
               </>
             )}
             {form === 'close' && (
               <>
-                <label className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho</span>
+                <label className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho<i>*</i></span>
                   <select className="nx-select" value={outcome ?? ''} onChange={(e) => setOutcome(e.target.value || null)}>
                     <option value="">Selecione…</option>{OUTCOMES.map((o) => <option key={o}>{o}</option>)}
                   </select>
                 </label>
-                <label className={`dv-field${tried && !note.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Justificativa</span>
+                <label className={`dv-field${tried && !note.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Justificativa<i>*</i></span>
                   <textarea className="al-textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que foi verificado e o que foi feito" />
                   {tried && !note.trim() && <span className="dv-field__h">Obrigatória para encerrar.</span>}
                 </label>

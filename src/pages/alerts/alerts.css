@@ -151,3 +151,10 @@
 @container dvmain (max-width: 1100px) { .dv-cards.al-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @container dvmain (max-width: 720px) { .dv-cards.al-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .al-acts-row .al-ack { min-width: 124px; justify-content: center; }
+
+/* Resumo do alerta nos modais de ação (Encaminhar, Falso positivo) */
+.al-sum { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: var(--nx-radius-md); border: 1px solid var(--nx-stroke); background: var(--nx-bg-canvas); font-size: 13px; line-height: 18px; }
+.al-sum > span { display: flex; gap: 6px; min-width: 0; align-items: baseline; }
+.al-sum i { font-style: normal; color: var(--nx-text-soft); flex: none; width: 52px; }
+.al-sum b { font-weight: 500; color: var(--nx-text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.al-sum em { font-style: normal; color: var(--nx-text-soft); flex: none; }
