@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Button, Checkbox, ConfirmDialog, Icon, IconButton, Segmented } from '../../ds/components';
+import { Badge, Checkbox, ConfirmDialog, Icon, IconButton, Segmented } from '../../ds/components';
 import { CATALOG, TOTAL, type Module, type Role } from './data';
 
 type Props = {
@@ -164,30 +164,25 @@ function RoleDetail({ role, set, users, open, q, show, setQ, toggleMod, setOpen,
         <span className={`us-rd__ic${edit ? ' is-custom' : ''}`}><Icon name={edit ? 'shield' : 'lock'} size={16} /></span>
         <div className="us-rd__title">
           <h2>{role.label} <Badge tone="neutral">{users} {users === 1 ? 'usuário' : 'usuários'}</Badge></h2>
-          <p>{role.plane === 'platform' ? 'Plataforma' : 'Cliente'} · {edit ? 'Personalizado · clique nas bolinhas para conceder ou revogar' : 'Permissões fixas'}</p>
+          <p>{role.plane === 'platform' ? 'Plataforma' : 'Cliente'} · {edit ? 'Personalizado · clique nas bolinhas para editar' : 'Permissões fixas'}</p>
         </div>
+        <label className="nx-input dv-search us-rd__search">
+          <Icon name="search" size={16} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar permissão ou recurso" aria-label="Buscar permissões"
+            onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
+          {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
+        </label>
         <div className="us-rd__count" title={`${n} de ${TOTAL} permissões`}>
           <span><b>{n}</b>/{TOTAL} permissões</span>
           <span className="us-bar"><i style={{ width: `${pct(n, TOTAL)}%` }} /></span>
         </div>
-        {edit && (
-          <div className="us-rd__acts">
-            <IconButton icon="edit" label="Renomear" onClick={() => onRename(role)} tipPlace="bottom" />
-            <IconButton icon="trash" label="Excluir" className="us-danger" onClick={onDelete} tipPlace="bottom" />
-          </div>
-        )}
+        <div className="us-rd__acts">
+          <IconButton icon={allOpen ? 'collapse' : 'expand'} label={allOpen ? 'Recolher todos os módulos' : 'Expandir todos os módulos'} tipPlace="bottom"
+            onClick={() => setOpen(allOpen ? new Set() : new Set(CATALOG.map((m) => m.label)))} />
+          {edit && <IconButton icon="edit" label="Renomear" onClick={() => onRename(role)} tipPlace="bottom" />}
+          {edit && <IconButton icon="trash" label="Excluir" className="us-danger" onClick={onDelete} tipPlace="bottom" />}
+        </div>
       </header>
-
-      <div className="dv-tools us-rd__tools">
-        <label className="nx-input dv-search">
-          <Icon name="search" size={16} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar permissão, recurso ou chave" aria-label="Buscar permissões"
-            onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
-          {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
-        </label>
-        <span className="dv-tools__sp" />
-        <Button icon={allOpen ? 'collapse' : 'expand'} onClick={() => setOpen(allOpen ? new Set() : new Set(CATALOG.map((m) => m.label)))}>{allOpen ? 'Recolher' : 'Expandir'} tudo</Button>
-      </div>
 
       <div className="us-rd__body">
         {mods.length > 0 && (
