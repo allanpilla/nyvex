@@ -310,3 +310,59 @@ export const EXAMPLES: { label: string; text: string }[] = [
   { label: 'Homem de boné e roupa preta', text: 'homem de boné, camisa preta' },
   { label: 'Óculos e blusa branca', text: 'blusa branca e óculos' },
 ];
+
+/* ───────────── execução e histórico de buscas ───────────── */
+
+export type Result = {
+  exact: Obs[];
+  near: { o: Obs; miss: TraitKey }[];
+  buckets: { from: number; to: number; n: number }[];
+  cams: [string, number][];
+  people: number;
+};
+
+/** Roda a busca sobre as observações, no período relativo ao momento da consulta. */
+export function runSearch(all: Obs[], f: Filters, at: number): Result {
+  const [a, b] = range(f, at);
+  const base = all.filter((o) => o.at >= a && o.at <= b && (!f.locais.length || f.locais.includes(camOf(o.src).local)));
+  const keys = TRAIT_KEYS.filter((k) => isSet(f, k));
+  const exact: Obs[] = [], near: { o: Obs; miss: TraitKey }[] = [];
+  for (const o of base) {
+    const miss = keys.filter((k) => !traitOk(o, f, k));
+    if (!miss.length) exact.push(o);
+    else if (miss.length === 1 && keys.length >= 2 && miss[0] !== 'gender') near.push({ o, miss: miss[0] });
+  }
+  const n = f.period === '1h' ? 12 : f.period === '24h' ? 24 : 28;
+  const start = f.period === 'custom' ? a || (base.length ? Math.min(...base.map((o) => o.at)) : b - 86400e3) : a;
+  const size = (b - start) / n || 1;
+  const buckets = Array.from({ length: n }, (_, i) => ({ from: start + i * size, to: start + (i + 1) * size, n: 0 }));
+  for (const o of exact) { const i = Math.min(n - 1, Math.floor((o.at - start) / size)); if (i >= 0) buckets[i].n++; }
+  const byCam = new Map<string, number>();
+  for (const o of exact) byCam.set(o.src, (byCam.get(o.src) ?? 0) + 1);
+  return { exact, near, buckets, cams: [...byCam.entries()].sort((x, y) => y[1] - x[1]), people: new Set(exact.map((o) => o.person)).size };
+}
+
+export type Search = { id: string; code: string; f: Filters; purpose: string; by: string; me: boolean; at: number; n: number; people: number };
+export const ME = 'Você';
+let codeN = 418;
+export const nextCode = () => `BC-${String(++codeN).padStart(4, '0')}`;
+
+/** Buscas já feitas (INVENTADAS): autores, finalidades e horários de exemplo. */
+export function seedSearches(all: Obs[], now: number): Search[] {
+  const H = 3600e3;
+  const rows: [string, string, number, Partial<Filters>][] = [
+    [ME, 'Apuração do incidente 42 no acesso norte', 0.4, { gender: 'M', upper: ['preto'], lower: ['jeans'], backpack: 'sim' }],
+    ['Marina Costa', 'Furto de bicicleta no bicicletário do Bloco 01', 2.2, { upper: ['vermelho', 'laranja'], locais: ['Bloco 01'] }],
+    ['Rafael Souza', 'Aluna não localizada pela família, vista pela última vez no Bloco 03', 5.5, { gender: 'F', ages: ['18-24'], lower: ['jeans'] }],
+    [ME, 'Ocorrência OC-2026-0139: dano ao patrimônio na sala de leituras', 21, { gender: 'M', ages: ['25-34'], upper: ['preto', 'cinza'], locais: ['Bloco 07'] }],
+    ['Juliana Alves', 'Comportamento suspeito relatado pela portaria', 46, { upper: ['azul-marinho'], backpack: 'sim' }],
+    ['Marina Costa', 'Verificação de denúncia anônima', 70, { upper: ['amarelo', 'laranja'] }],
+    ['Rafael Souza', 'Objeto esquecido no Bloco 04: localizar o dono', 97, { extras: ['bolsa'], locais: ['Bloco 04'] }],
+  ];
+  return rows.map(([by, purpose, h, p], i) => {
+    const f = { ...EMPTY, ...p };
+    const at = now - h * H;
+    const r = runSearch(all, f, at);
+    return { id: `s${i}`, code: `BC-${String(418 - i).padStart(4, '0')}`, f, purpose, by, me: by === ME, at, n: r.exact.length, people: r.people };
+  });
+}
