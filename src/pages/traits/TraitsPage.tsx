@@ -6,6 +6,7 @@ import { useUi } from '../../lib/useUi';
 import { storage } from '../../lib/storage';
 import { FaceImg } from '../faces/FaceImg';
 import { Figure } from './Figure';
+import { SearchMotion } from './SearchMotion';
 import { TraitDrawer } from './TraitDrawer';
 import {
   AGES, buildObs, camName, camOf, COLOR, COLORS, EMPTY, EXAMPLES, EXTRAS, GENDER_LABEL, isSet, LOCAIS, MOODS, nTraits, obsTrait, parseDescription, range, score,
@@ -183,7 +184,7 @@ export function TraitsPage({ screen }: { screen: Screen }) {
                 <div className="tr-hero__txt">
                   <span className="tr-eyebrow">Retrato da busca</span>
                   <p>{nT ? describe(f) : 'Escolha cores e acessórios, ou descreva a pessoa no campo acima.'}</p>
-                  {nT > 0 && <button type="button" className="tr-link" onClick={() => setF({ ...EMPTY, period: f.period, from: f.from, to: f.to, locais: f.locais })}>Limpar características</button>}
+                  {nT > 0 && <Button icon="eraser" className="tr-clear" onClick={() => setF({ ...EMPTY, period: f.period, from: f.from, to: f.to, locais: f.locais })}>Limpar características<span className="tr-clear__n">{nT}</span></Button>}
                 </div>
               </div>
 
@@ -421,11 +422,7 @@ export { TRI_ICON };
 function Intro({ busy, recent, onExample, onRecent }: { busy: boolean; recent: Recent[]; onExample: (t: string) => void; onRecent: (r: Recent) => void }) {
   return (
     <div className={`tr-intro${busy ? ' is-busy' : ''}`}>
-      <div className="tr-intro__art" aria-hidden="true">
-        <Figure upper={['azul']} lower={['jeans']} backpack size="lg" />
-        <Figure upper={['vermelho']} lower={['preto']} hat gender="M" size="lg" />
-        <Figure upper={['branco']} lower={['bege']} glasses gender="F" extras={['bolsa']} size="lg" />
-      </div>
+      <div className="tr-intro__art"><SearchMotion fast={busy} /></div>
       <h2>{busy ? 'Pesquisando nas câmeras…' : 'Descreva quem você procura'}</h2>
       <p>Combine gênero, idade, cores da roupa e acessórios. Cada consulta fica vinculada à finalidade declarada e entra na trilha de auditoria.</p>
       <div className="tr-intro__ex">
