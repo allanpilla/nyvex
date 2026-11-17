@@ -30,7 +30,7 @@ export function RolesView({ roles, usersByRole, onToggle, onSetMany, onNew, onRe
   const [selKey, setSelKey] = useState(roles[1]?.key ?? roles[0]?.key);
   const [open, setOpen] = useState<Set<string>>(() => new Set([CATALOG[0].label]));
   const [q, setQ] = useState('');
-  const [show, setShow] = useState<Show>('all');
+  const show: Show = 'all';
   const [del, setDel] = useState<Role | null>(null);
 
   // papel recém-criado já abre selecionado
@@ -93,7 +93,7 @@ export function RolesView({ roles, usersByRole, onToggle, onSetMany, onNew, onRe
 
           <section className="dv-tcard is-t2 us-rd" aria-label={`Permissões de ${role.label}`}>
             <RoleDetail role={role} set={sets[role.key]} users={usersByRole[role.key] ?? 0} open={open} q={q} show={show}
-              setQ={setQ} setShow={setShow} toggleMod={toggleMod} setOpen={setOpen}
+              setQ={setQ} toggleMod={toggleMod} setOpen={setOpen}
               onToggle={onToggle} onSetMany={onSetMany} onRename={onRename} onDelete={() => setDel(role)} />
           </section>
         </div>
@@ -110,11 +110,11 @@ export function RolesView({ roles, usersByRole, onToggle, onSetMany, onNew, onRe
 
 type DetailProps = {
   role: Role; set: Set<string>; users: number; open: Set<string>; q: string; show: Show;
-  setQ: (v: string) => void; setShow: (v: Show) => void; toggleMod: (l: string) => void; setOpen: (s: Set<string>) => void;
+  setQ: (v: string) => void; toggleMod: (l: string) => void; setOpen: (s: Set<string>) => void;
   onToggle: Props['onToggle']; onSetMany: Props['onSetMany']; onRename: Props['onRename']; onDelete: () => void;
 };
 
-function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod, setOpen, onToggle, onSetMany, onRename, onDelete }: DetailProps) {
+function RoleDetail({ role, set, users, open, q, show, setQ, toggleMod, setOpen, onToggle, onSetMany, onRename, onDelete }: DetailProps) {
   const edit = !role.is_system;
   const n = role.granted.length;
   const term = fold(q.trim());
@@ -163,8 +163,8 @@ function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod,
       <header className="us-rd__head">
         <span className={`us-rd__ic${edit ? ' is-custom' : ''}`}><Icon name={edit ? 'shield' : 'lock'} size={16} /></span>
         <div className="us-rd__title">
-          <h2>{role.label} <Badge tone={edit ? 'info' : 'neutral'}>{edit ? 'Personalizado' : 'Do sistema'}</Badge></h2>
-          <p>{users} {users === 1 ? 'usuário' : 'usuários'} · {role.plane === 'platform' ? 'Plataforma' : 'Cliente'} · {edit ? 'clique nas bolinhas para conceder ou revogar' : 'permissões fixas'}</p>
+          <h2>{role.label} <Badge tone="neutral">{users} {users === 1 ? 'usuário' : 'usuários'}</Badge></h2>
+          <p>{role.plane === 'platform' ? 'Plataforma' : 'Cliente'} · {edit ? 'Personalizado · clique nas bolinhas para conceder ou revogar' : 'Permissões fixas'}</p>
         </div>
         <div className="us-rd__count" title={`${n} de ${TOTAL} permissões`}>
           <span><b>{n}</b>/{TOTAL} permissões</span>
@@ -185,7 +185,6 @@ function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod,
             onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
           {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
         </label>
-        <Segmented<Show> size="sm" label="Mostrar" value={show} onChange={setShow} options={[{ value: 'all', label: 'Todas' }, { value: 'on', label: 'Só concedidas' }]} />
         <span className="dv-tools__sp" />
         <Button icon={allOpen ? 'collapse' : 'expand'} onClick={() => setOpen(allOpen ? new Set() : new Set(CATALOG.map((m) => m.label)))}>{allOpen ? 'Recolher' : 'Expandir'} tudo</Button>
       </div>

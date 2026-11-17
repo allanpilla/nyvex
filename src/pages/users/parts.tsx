@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button, Icon, IconButton, Select, Sheet, Switch } from '../../ds/components';
-import { initials, type Role, type User } from './data';
+import { initials, tempPassword, type Role, type User } from './data';
 
 /* Peças da tela de Usuários e Permissões: papel, status, painel do usuário e os dois formulários laterais. */
 
@@ -69,14 +69,18 @@ export type UserValues = { full_name: string; email: string; role: string; passw
 /** Novo usuário / Editar usuário: nome, e-mail, papel, senha e ativo. */
 export function UserForm({ id, initial, roles, rolesByKey, onClose, onSave }: { id?: string; initial: UserValues; roles: Role[]; rolesByKey: Record<string, Role>; onClose: () => void; onSave: (v: UserValues) => void }) {
   const [v, setV] = useState(initial);
-  const [err, setErr] = useState<Partial<Record<keyof UserValues, string>>>({});
+  const [err, setErr] = useState<Partial<Record<keyof UserValues | 'confirm', string>>>({});
   const set = (p: Partial<UserValues>) => setV((x) => ({ ...x, ...p }));
+  const [pw2, setPw2] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const gen = () => { const g = tempPassword(); set({ password: g }); setPw2(g); setShowPw(true); setErr((x) => ({ ...x, password: undefined, confirm: undefined })); };
   const save = () => {
     const pw = v.password.trim();
     const e: typeof err = {};
     if (!v.full_name.trim()) e.full_name = 'Informe o nome';
-    else if (!id && !/.+@.+\..+/.test(v.email)) e.email = 'E-mail inválido';
-    else if (!id && pw && pw.length < 10) e.password = 'Senha de no mínimo 10 caracteres';
+    if (!id && !/.+@.+\..+/.test(v.email)) e.email = 'E-mail inválido';
+    if (pw && pw.length < 10) e.password = 'Senha de no mínimo 10 caracteres';
+    else if (pw && pw2 !== v.password) e.confirm = 'As senhas não conferem';
     setErr(e);
     if (Object.keys(e).length) return;
     onSave({ ...v, full_name: v.full_name.trim(), email: v.email.trim(), password: pw });
@@ -101,17 +105,57 @@ export function UserForm({ id, initial, roles, rolesByKey, onClose, onSave }: { 
           <Select<string> label="Papel" value={v.role} onChange={(r) => set({ role: r })} options={roles.map((r) => ({ value: r.key, label: r.label }))} />
           {nPerm != null && <span className="dv-field__h">{nPerm} {nPerm === 1 ? 'permissão' : 'permissões'}</span>}
         </div>
-        <label className={`dv-field${err.password ? ' is-err' : ''}`}>
+        <div className={`dv-field${err.password ? ' is-err' : ''}`}>
           <span className="dv-field__l">{id ? 'Nova senha' : 'Senha'}</span>
-          <span className="nx-input us-in"><input type="password" autoComplete="new-password" value={v.password} onChange={(e) => set({ password: e.target.value })} /></span>
-          <span className="dv-field__h">{err.password ?? (id ? 'Deixe vazio para manter a atual.' : 'Deixe em branco para gerar uma senha temporária.')}</span>
-        </label>
+          <span className="us-pwrow">
+            <span className="nx-input us-in">
+              <input type={showPw ? 'text' : 'password'} autoComplete="new-password" aria-label={id ? 'Nova senha' : 'Senha'} value={v.password}
+                onChange={(e) => { set({ password: e.target.value }); setErr((x) => ({ ...x, password: undefined })); }} />
+              <button type="button" className="us-eye" aria-label={showPw ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPw((x) => !x)}><Icon name={showPw ? 'eyeOff' : 'eye'} size={16} /></button>
+            </span>
+            <Button icon="refresh" onClick={gen}>Gerar</Button>
+          </span>
+          {v.password ? <Strength pw={v.password} /> : <span className="dv-field__h">{err.password ?? (id ? 'Deixe vazio para manter a atual.' : 'Deixe em branco para gerar uma senha temporária.')}</span>}
+          {v.password && err.password && <span className="dv-field__h">{err.password}</span>}
+        </div>
+        {v.password && (
+          <label className={`dv-field${err.confirm ? ' is-err' : ''}`}>
+            <span className="dv-field__l">Repetir senha</span>
+            <span className="nx-input us-in"><input type={showPw ? 'text' : 'password'} autoComplete="new-password" value={pw2} onChange={(e) => { setPw2(e.target.value); setErr((x) => ({ ...x, confirm: undefined })); }} /></span>
+            {(err.confirm || (pw2 && pw2 === v.password)) && <span className={`dv-field__h${!err.confirm ? ' us-ok' : ''}`}>{err.confirm ?? 'As senhas conferem'}</span>}
+          </label>
+        )}
         <div className="us-toggle">
           <span>Usuário ativo</span>
           <Switch checked={v.is_active} onChange={(a) => set({ is_active: a })} label="Usuário ativo" />
         </div>
       </div>
     </Sheet>
+  );
+}
+
+/** Medidor de força da senha (DS › Key Components › Password Strength): 3 barras e os critérios abaixo. */
+const RULES: [string, (p: string) => boolean][] = [
+  ['Pelo menos 1 letra maiúscula', (p) => /[A-Z]/.test(p)],
+  ['Pelo menos 1 número', (p) => /\d/.test(p)],
+  ['Pelo menos 10 caracteres', (p) => p.length >= 10],
+];
+export function Strength({ pw }: { pw: string }) {
+  const ok = RULES.map(([, t]) => t(pw));
+  const n = ok.filter(Boolean).length;
+  const lv = !pw ? 'empty' : n <= 1 ? 'weak' : n === 2 ? 'mid' : 'strong';
+  const title = { empty: 'A senha precisa ter:', weak: 'Senha fraca. Precisa ter:', mid: 'Senha moderada. Precisa ter:', strong: 'Senha forte. Sua senha está segura.' }[lv];
+  const lit = lv === 'empty' ? 0 : lv === 'weak' ? 1 : lv === 'mid' ? 2 : 3;
+  return (
+    <div className={`us-str is-${lv}`} aria-live="polite">
+      <div className="us-str__bars">{[0, 1, 2].map((i) => <i key={i} className={i < lit ? 'is-on' : ''} />)}</div>
+      <p>{title}</p>
+      <ul>
+        {RULES.map(([l], i) => (
+          <li key={l} className={ok[i] ? 'is-ok' : pw ? 'is-no' : ''}><Icon name={ok[i] ? 'successFill' : pw ? 'errorFill' : 'successFill'} size={14} />{l}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
