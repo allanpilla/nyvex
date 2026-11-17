@@ -116,6 +116,7 @@
 .nx-switch.is-on { background: var(--nx-primary); }
 .nx-switch.is-on .nx-switch__knob { transform: translateX(14px); }
 .nx-switch--sm.is-on .nx-switch__knob { transform: translateX(12px); }
+.nx-switch:disabled { opacity: .45; cursor: not-allowed; }
 
 /* Controle segmentado */
 .nx-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--nx-radius-md); background: var(--nx-bg-canvas); border: 1px solid var(--nx-stroke); }
