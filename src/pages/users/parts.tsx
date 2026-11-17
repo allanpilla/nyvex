@@ -25,7 +25,7 @@ export function Avatar({ name, size = 32 }: { name: string; size?: number }) {
 }
 
 /** Painel do usuário (clique na linha): acesso, papéis atribuídos e Editar. Mesmo padrão de drawer das outras telas. */
-export function UserPanel({ u, roles, onClose, onEdit }: { u: User; roles: Record<string, Role>; onClose: () => void; onEdit: () => void }) {
+export function UserPanel({ u, roles, onClose, onEdit, onDelete }: { u: User; roles: Record<string, Role>; onClose: () => void; onEdit: () => void; onDelete: () => void }) {
   const main = u.roles[0];
   return (
     <aside className="dv-drawer us-drawer" aria-label={`Usuário ${u.full_name || u.email}`}>
@@ -38,7 +38,8 @@ export function UserPanel({ u, roles, onClose, onEdit }: { u: User; roles: Recor
         <IconButton icon="close" label="Fechar painel" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
       </header>
       <div className="dv-drawer__acts">
-        <Button variant="primary" icon="edit" onClick={onEdit}>Editar</Button>
+        <Button icon="edit" onClick={onEdit}>Editar</Button>
+        <Button icon="trash" className="is-danger-ghost" onClick={onDelete}>Excluir</Button>
         <span className="dv-tools__sp" />
         <Status active={u.is_active} />
       </div>

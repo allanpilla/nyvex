@@ -268,7 +268,7 @@ export function UsersPage({ screen }: { screen: Screen }) {
       {open && createPortal(
         <div className="nx-sheet-back is-soft" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpenId(null); }}>
           <div className="nx-sheet dv-dsheet" style={{ width: 'min(440px, 100%)' }}>
-            <UserPanel key={open.id} u={open} roles={byKey} onClose={() => setOpenId(null)} onEdit={() => { editUser(open); setOpenId(null); }} />
+            <UserPanel key={open.id} u={open} roles={byKey} onClose={() => setOpenId(null)} onEdit={() => { editUser(open); setOpenId(null); }} onDelete={() => setRemove(open)} />
           </div>
         </div>,
         document.body,

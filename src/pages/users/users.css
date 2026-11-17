@@ -193,7 +193,7 @@ button.us-dot.is-on:hover { background: color-mix(in srgb, var(--nx-success) 26%
 .nx-badge.us-role, .is-t2 .dv-table .nx-badge.us-role { padding: 2px 8px; font-weight: 500; color: var(--rc); background: color-mix(in srgb, var(--rc) 15%, transparent); border-color: color-mix(in srgb, var(--rc) 28%, transparent); }
 .nx-badge.us-role::before { display: none; }
 .us-info { margin-bottom: 20px; }
-.us-info dd { margin: 0; font-size: 13px; }
+.us-info dd { margin: 0; font-size: 13px; justify-self: end; text-align: right; }
 .us-info dd b { font-weight: 600; }
 .us-role.is-violet { --rc: #a78bfa; } .us-role.is-blue { --rc: #6f8dff; } .us-role.is-teal { --rc: #2dd4bf; }
 .us-role.is-amber { --rc: #f2ae40; } .us-role.is-gray { --rc: #9aa3b5; } .us-role.is-rose { --rc: #f472b6; }
