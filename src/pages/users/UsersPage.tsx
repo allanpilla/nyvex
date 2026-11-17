@@ -6,7 +6,7 @@ import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import { norm } from '../devices/parts';
 import { FilterToggle, SortButton } from '../devices/tableModel';
-import { RolesMatrix } from './RolesView';
+import { RolesView } from './RolesView';
 import { PasswordModal, RoleForm, UserForm, UserPanel, type UserValues } from './parts';
 import { initials, ROLES, tempPassword, USERS, type Role, type User } from './data';
 import '../devices/devices.css';
@@ -111,6 +111,8 @@ export function UsersPage({ screen }: { screen: Screen }) {
     setEditor(null);
   };
   const toggleCell = (r: Role, key: string) => setRoles((l) => l.map((x) => (x.key === r.key ? { ...x, granted: x.granted.includes(key) ? x.granted.filter((k) => k !== key) : [...x.granted, key] } : x)));
+  const setMany = (r: Role, keys: string[], on: boolean) => setRoles((l) => l.map((x) => (x.key === r.key ? { ...x, granted: on ? [...new Set([...x.granted, ...keys])] : x.granted.filter((k) => !keys.includes(k)) } : x)));
+  const usersByRole = useMemo(() => { const m: Record<string, number> = {}; users.forEach((u) => u.roles.forEach((k) => { m[k] = (m[k] ?? 0) + 1; })); return m; }, [users]);
   const saveRole = (label: string) => {
     if (roleEditor?.key) {
       const k = roleEditor.key;
@@ -248,8 +250,9 @@ export function UsersPage({ screen }: { screen: Screen }) {
         )}
         {tab !== 'usuarios' && (
           <div className="dv-body us-mxbody">
-            <RolesMatrix roles={roles} onToggle={toggleCell} onRename={(r) => setRoleEditor({ key: r.key, label: r.label })}
-              onDelete={(r) => { setRoles((l) => l.filter((x) => x.key !== r.key)); toast('Papel removido'); }} />
+            <RolesView roles={roles} usersByRole={usersByRole} onToggle={toggleCell} onSetMany={setMany}
+              onNew={() => setRoleEditor({ label: '' })} onRename={(r) => setRoleEditor({ key: r.key, label: r.label })}
+              onDelete={(r) => { setRoles((l) => l.filter((x) => x.key !== r.key)); toast('Papel excluído'); }} />
           </div>
         )}
         {tab === 'usuarios' && sel.size > 0 && (
