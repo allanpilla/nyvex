@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button, Icon, IconButton, Select, Sheet, Switch } from '../../ds/components';
-import { initials, tempPassword, type Role, type User } from './data';
+import { initials, tempPassword, TOTAL, type Role, type User } from './data';
+
+const TONE: Record<string, string> = { super_admin: 'violet', admin: 'blue', operator: 'teal', viewer: 'amber', member: 'gray' };
+export const roleTone = (k: string) => TONE[k] ?? 'rose';
 
 /* Peças da tela de Usuários e Permissões: papel, status, painel do usuário e os dois formulários laterais. */
 
@@ -39,12 +42,12 @@ export function UserPanel({ u, roles, onClose, onEdit }: { u: User; roles: Recor
         <span className="dv-tools__sp" />
         <Status active={u.is_active} />
       </div>
-      <div className="wl-kpis us-kpis">
-        <div><span>Papel principal</span><b>{(main && roles[main]?.label) || main || '—'}</b></div>
-        <div><span>Papéis atribuídos</span><b>{u.roles.length}</b></div>
-        <div><span>Permissões</span><b>{main && roles[main] ? roles[main].granted.length : 0}</b></div>
-      </div>
       <div className="dv-drawer__body">
+        <dl className="dv-info us-info">
+          <div className="dv-info__row"><dt>Papel principal</dt><dd>{main ? <span className={`nx-badge us-role is-${roleTone(main)}`}>{roles[main]?.label ?? main}</span> : <span className="us-none">Nenhum</span>}</dd></div>
+          <div className="dv-info__row"><dt>Permissões</dt><dd><b>{main && roles[main] ? roles[main].granted.length : 0}</b> <span className="us-none">de {TOTAL}</span></dd></div>
+          <div className="dv-info__row"><dt>Acesso</dt><dd>{main && roles[main]?.plane === 'platform' ? 'Plataforma' : 'Cliente'}</dd></div>
+        </dl>
         <section className="dv-sec">
           <div className="dv-sec__head"><h3>Papéis atribuídos</h3><span className="us-none">{u.roles.length}</span></div>
           {u.roles.length === 0 ? <p className="us-none">Nenhum papel</p> : (

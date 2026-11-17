@@ -29,7 +29,6 @@
 
 /* drawer do usuário */
 .us-drawer .dv-drawer__acts { align-items: center; }
-.us-kpis b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .us-alist code { margin-left: auto; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 11px; color: var(--nx-text-soft); }
 .us-rkind { color: var(--us-blue); }
 .us-rkind.is-platform { color: var(--us-violet); }
@@ -191,7 +190,10 @@ button.us-dot.is-on:hover { background: color-mix(in srgb, var(--nx-success) 26%
 
 /* papel na tabela: label com cor por papel */
 .nx-badge.us-role, .is-t2 .dv-table .nx-badge.us-role { padding: 2px 8px; font-weight: 500; color: var(--rc); background: color-mix(in srgb, var(--rc) 15%, transparent); border-color: color-mix(in srgb, var(--rc) 28%, transparent); }
-.is-t2 .dv-table .nx-badge.us-role::before { display: none; }
+.nx-badge.us-role::before { display: none; }
+.us-info { margin-bottom: 20px; }
+.us-info dd { margin: 0; font-size: 13px; }
+.us-info dd b { font-weight: 600; }
 .us-role.is-violet { --rc: #a78bfa; } .us-role.is-blue { --rc: #6f8dff; } .us-role.is-teal { --rc: #2dd4bf; }
 .us-role.is-amber { --rc: #f2ae40; } .us-role.is-gray { --rc: #9aa3b5; } .us-role.is-rose { --rc: #f472b6; }
 [data-theme='light'] .us-role.is-violet { --rc: #6d4fd8; } [data-theme='light'] .us-role.is-blue { --rc: #375dfb; }

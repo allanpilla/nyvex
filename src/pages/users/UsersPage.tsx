@@ -7,7 +7,7 @@ import { useUi } from '../../lib/useUi';
 import { norm } from '../devices/parts';
 import { FilterToggle, SortButton } from '../devices/tableModel';
 import { RolesView } from './RolesView';
-import { PasswordModal, RoleForm, UserForm, UserPanel, type UserValues } from './parts';
+import { PasswordModal, RoleForm, roleTone, UserForm, UserPanel, type UserValues } from './parts';
 import { initials, ROLES, tempPassword, USERS, type Role, type User } from './data';
 import '../devices/devices.css';
 import '../locations/locations.css';
@@ -27,8 +27,6 @@ const SORT_OPTS: [SortKey, string][] = [['name', 'Usuário'], ['role', 'Papel'],
  * Funções do sistema atual: criar, editar, remover usuário; matriz de papéis × permissões.
  */
 /** Cor fixa por papel do sistema; papéis criados pelo cliente usam a mesma cor. */
-const TONE: Record<string, string> = { super_admin: 'violet', admin: 'blue', operator: 'teal', viewer: 'amber', member: 'gray' };
-const roleTone = (k: string) => TONE[k] ?? 'rose';
 
 export function UsersPage({ screen }: { screen: Screen }) {
   const { toast } = useUi();
