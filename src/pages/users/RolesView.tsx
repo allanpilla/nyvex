@@ -15,6 +15,8 @@ type Props = {
 type Mode = 'role' | 'compare';
 type Show = 'all' | 'on';
 
+/** Ações comuns ficam sempre na mesma coluna; as demais vão para "Outras ações". */
+const CORE = ['Ver', 'Editar', 'Administrar'];
 const keysOf = (m: Module) => m.resources.flatMap((r) => r.permissions.map((p) => p[0]));
 const pct = (n: number, t: number) => (t ? Math.round((n / t) * 100) : 0);
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -127,6 +129,19 @@ function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod,
       .filter((r) => r.permissions.length),
   })).filter((x) => x.res.length);
   const allOpen = mods.every((x) => open.has(x.m.label));
+  const chip = (res: string, [key, label]: [string, string, number]) => {
+    const g = set.has(key);
+    return edit ? (
+      <button key={key} type="button" className={`us-chip${g ? ' is-on' : ''}`} aria-pressed={g} title={key}
+        aria-label={`${g ? 'Revogar' : 'Conceder'} ${res}: ${label}`} onClick={() => onToggle(role, key)}>
+        <Icon name={g ? 'check' : 'plus'} size={12} />{label}
+      </button>
+    ) : (
+      <span key={key} className={`us-chip is-ro${g ? ' is-on' : ''}`} title={key}>
+        <Icon name={g ? 'check' : 'close'} size={12} />{label}
+      </span>
+    );
+  };
 
   return (
     <>
@@ -166,6 +181,11 @@ function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod,
       </div>
 
       <div className="us-rd__body">
+        {mods.length > 0 && (
+          <div className="us-res__hd" aria-hidden="true">
+            <span>Recurso</span>{CORE.map((c) => <span key={c}>{c}</span>)}<span>Outras ações</span>
+          </div>
+        )}
         {mods.length === 0 && (
           <div className="dv-empty">
             <span className="dv-empty__ic"><Icon name="search" /></span>
@@ -197,21 +217,11 @@ function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod,
                   {res.map((r) => (
                     <li key={r.label}>
                       <span className="us-res__l">{r.label}</span>
-                      <span className="us-res__acts">
-                        {r.permissions.map(([key, label]) => {
-                          const g = set.has(key);
-                          return edit ? (
-                            <button key={key} type="button" className={`us-chip${g ? ' is-on' : ''}`} aria-pressed={g} title={key}
-                              aria-label={`${g ? 'Revogar' : 'Conceder'} ${r.label}: ${label}`} onClick={() => onToggle(role, key)}>
-                              <Icon name={g ? 'check' : 'plus'} size={12} />{label}
-                            </button>
-                          ) : (
-                            <span key={key} className={`us-chip is-ro${g ? ' is-on' : ''}`} title={key}>
-                              {g ? <Icon name="check" size={12} /> : <Icon name="close" size={12} />}{label}
-                            </span>
-                          );
-                        })}
-                      </span>
+                      {CORE.map((c) => {
+                        const p = r.permissions.find((x) => x[1] === c);
+                        return <span key={c} className="us-res__c">{p ? chip(r.label, p) : <span className="us-res__none">—</span>}</span>;
+                      })}
+                      <span className="us-res__more">{r.permissions.filter((x) => !CORE.includes(x[1])).map((p) => chip(r.label, p))}</span>
                     </li>
                   ))}
                 </ul>
