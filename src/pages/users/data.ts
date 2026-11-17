@@ -1,137 +1,112 @@
-import type { IconName } from '../../ds/icons/icons';
+/*
+ * Usuários e Permissões, fiel à tela do sistema (homolog · sol-unibrasil).
+ * Catálogo, papéis e concessões copiados da matriz real (97 permissões). Nomes e e-mails de pessoas são inventados.
+ * Rótulos sem tradução (sensitive_attributes, transit, stores…) aparecem crus, como no sistema.
+ */
 
-/* Usuários, papéis e o catálogo de permissões. Dados inventados para o protótipo. */
+/** [chave, rótulo da ação, nível]: o nível diz até qual papel do sistema a permissão é concedida
+ *  (1 = só Super Admin, 2 = + Administrador, 3 = + Operador, 4 = + Visualizador). Membro não tem nenhuma. */
+type P = [string, string, number];
+export type Resource = { label: string; permissions: P[] };
+export type Module = { label: string; resources: Resource[] };
 
-export type Perm = { key: string; label: string; hint: string; sensitive?: boolean };
-export type Module = { id: string; label: string; icon: IconName; perms: Perm[] };
-
-export const MODULES: Module[] = [
-  { id: 'operacao', label: 'Operação', icon: 'painel', perms: [
-    { key: 'painel.ver', label: 'Ver painel operacional', hint: 'KPIs, mapa de calor e saúde dos sistemas' },
-    { key: 'alertas.ver', label: 'Ver fila de alertas', hint: 'Alertas de face, placa e vídeo' },
-    { key: 'alertas.triar', label: 'Triar alertas', hint: 'Confirmar, descartar e encaminhar' },
-    { key: 'alertas.lote', label: 'Triar em lote', hint: 'Encerrar vários alertas de uma vez' },
-    { key: 'ocor.ver', label: 'Ver ocorrências', hint: 'Quadro, lista e mapa' },
-    { key: 'ocor.criar', label: 'Registrar ocorrências', hint: 'Abrir e editar ocorrências' },
-    { key: 'ocor.despachar', label: 'Despachar e encerrar', hint: 'Atribuir equipes e concluir' },
+export const CATALOG: Module[] = [
+  { label: "Identidade", resources: [
+    { label: "Busca", permissions: [["identify:search:execute", "Executar", 4]] },
+    { label: "Busca forense", permissions: [["identify:forensics:read", "Ver", 3], ["identify:forensics:export", "Exportar", 3], ["identify:forensics:sensitive_attributes", "sensitive_attributes", 2]] },
+    { label: "Consentimentos (LGPD)", permissions: [["identify:consents:read", "Ver", 2], ["identify:consents:write", "Editar", 2]] },
+    { label: "Controle de acesso", permissions: [["identify:access:read", "Ver", 4], ["identify:access:evaluate", "Avaliar", 2], ["identify:access:transit", "transit", 3]] },
+    { label: "Credenciais", permissions: [["identify:credentials:read", "Ver", 2], ["identify:credentials:write", "Editar", 2], ["identify:credentials:manage", "Administrar", 2]] },
+    { label: "Desaparecidos", permissions: [["identify:missing:read", "Ver", 4], ["identify:missing:write", "Editar", 3]] },
+    { label: "Despacho", permissions: [["identify:dispatch:read", "Ver", 4], ["identify:dispatch:write", "Editar", 3]] },
+    { label: "Escolar", permissions: [["identify:school:read", "Ver", 4], ["identify:school:write", "Editar", 3]] },
+    { label: "Listas de monitoramento", permissions: [["identify:watchlists:read", "Ver", 4], ["identify:watchlists:write", "Editar", 2]] },
+    { label: "Ocorrências", permissions: [["identify:incidents:read", "Ver", 4], ["identify:incidents:write", "Editar", 3], ["identify:incidents:manage", "Administrar", 2]] },
+    { label: "Pessoas", permissions: [["identify:persons:read", "Ver", 4], ["identify:persons:write", "Editar", 3], ["identify:persons:manage", "Administrar", 2]] },
+    { label: "Refinamento da IA", permissions: [["identify:ai_tuning:read", "Ver", 2], ["identify:ai_tuning:write", "Editar", 2]] },
+    { label: "Segurança pública (Hélios/Córtex/Alerta Brasil)", permissions: [["identify:public_security:read", "Ver", 4], ["identify:public_security:query", "Consultar", 3]] },
+    { label: "Veículos", permissions: [["identify:vehicles:read", "Ver", 4], ["identify:vehicles:write", "Editar", 3], ["identify:vehicles:manage", "Administrar", 2]] },
+    { label: "authorization", permissions: [["identify:authorization:read", "Ver", 2], ["identify:authorization:write", "Editar", 2]] },
+    { label: "contracting", permissions: [["identify:contracting:read", "Ver", 4], ["identify:contracting:write", "Editar", 2]] },
+    { label: "qualifications", permissions: [["identify:qualifications:read", "Ver", 4], ["identify:qualifications:write", "Editar", 2], ["identify:qualifications:waive", "waive", 2]] },
+    { label: "visits", permissions: [["identify:visits:read", "Ver", 4], ["identify:visits:write", "Editar", 3], ["identify:visits:approve", "approve", 2]] },
   ] },
-  { id: 'video', label: 'Vídeo', icon: 'tv', perms: [
-    { key: 'video.vivo', label: 'Assistir ao vivo', hint: 'Mural de vídeo e câmeras' },
-    { key: 'video.gravacoes', label: 'Ver gravações', hint: 'Voltar no tempo e revisar' },
-    { key: 'video.exportar', label: 'Exportar clipes', hint: 'Baixar trechos de vídeo', sensitive: true },
-    { key: 'video.ptz', label: 'Controlar câmeras PTZ', hint: 'Mover, aproximar e usar presets' },
-    { key: 'video.layouts', label: 'Gerenciar layouts', hint: 'Criar e compartilhar layouts do mural' },
+  { label: "Defesa Civil", resources: [
+    { label: "Abrigos", permissions: [["risk:shelters:read", "Ver", 2], ["risk:shelters:write", "Editar", 2], ["risk:shelters:manage", "Administrar", 2]] },
+    { label: "Meteorologia", permissions: [["risk:weather:read", "Ver", 2], ["risk:weather:write", "Editar", 2]] },
+    { label: "Moradias", permissions: [["risk:dwellings:read", "Ver", 2], ["risk:dwellings:write", "Editar", 2], ["risk:dwellings:manage", "Administrar", 2]] },
+    { label: "Moradores", permissions: [["risk:residents:read", "Ver", 2], ["risk:residents:write", "Editar", 2]] },
+    { label: "Áreas de risco", permissions: [["risk:areas:read", "Ver", 2], ["risk:areas:write", "Editar", 2], ["risk:areas:manage", "Administrar", 2]] },
   ] },
-  { id: 'inteligencia', label: 'Reconhecimento', icon: 'faces', perms: [
-    { key: 'faces.ver', label: 'Ver faces ao vivo', hint: 'Grade de faces capturadas', sensitive: true },
-    { key: 'carac.buscar', label: 'Buscar por característica', hint: 'Exige finalidade registrada', sensitive: true },
-    { key: 'placas.ver', label: 'Consultar rede de placas', hint: 'Passagens e conexões de veículos' },
-    { key: 'watch.ver', label: 'Ver listas de observação', hint: 'Pessoas e veículos acompanhados' },
-    { key: 'watch.editar', label: 'Editar listas de observação', hint: 'Incluir, remover, ativar e pausar', sensitive: true },
+  { label: "Comunicação", resources: [
+    { label: "Avisos", permissions: [["comms:broadcasts:read", "Ver", 2], ["comms:broadcasts:write", "Editar", 2], ["comms:broadcasts:manage", "Administrar", 2]] },
+    { label: "Canais de contato", permissions: [["comms:contacts:read", "Ver", 2], ["comms:contacts:write", "Editar", 2]] },
+    { label: "E-mails transacionais", permissions: [["comms:emails:read", "Ver", 2], ["comms:emails:admin", "Administrar", 2]] },
   ] },
-  { id: 'cadastros', label: 'Cadastros', icon: 'idcard', perms: [
-    { key: 'pessoas.ver', label: 'Ver pessoas', hint: 'Cadastro único de pessoas' },
-    { key: 'pessoas.editar', label: 'Cadastrar e editar pessoas', hint: 'Inclui foto de referência', sensitive: true },
-    { key: 'veic.ver', label: 'Ver veículos', hint: 'Cadastro único de veículos' },
-    { key: 'veic.editar', label: 'Cadastrar e editar veículos', hint: 'Placas, modelos e vínculos' },
+  { label: "Almoxarifado", resources: [
+    { label: "Movimento de estoque", permissions: [["inventory:movements:write", "Editar", 3], ["inventory:movements:write_off", "Dar baixa", 2]] },
+    { label: "Operadores do setor", permissions: [["inventory:operators:assign", "Atribuir", 2]] },
+    { label: "stores", permissions: [["inventory:stores:read", "Ver", 4], ["inventory:stores:write", "Editar", 2]] },
   ] },
-  { id: 'infra', label: 'Infraestrutura', icon: 'dev', perms: [
-    { key: 'disp.ver', label: 'Ver dispositivos', hint: 'Inventário e saúde' },
-    { key: 'disp.editar', label: 'Gerenciar dispositivos', hint: 'Adicionar, editar e remover' },
-    { key: 'locais.ver', label: 'Ver locais', hint: 'Árvore de locais e mapa' },
-    { key: 'locais.editar', label: 'Gerenciar locais', hint: 'Criar, mover e remover locais' },
+  { label: "Cautela", resources: [
+    { label: "Devoluções e consumo", permissions: [["custody:closures:return", "Receber de volta", 3], ["custody:closures:consume", "Declarar consumo", 2]] },
+    { label: "records", permissions: [["custody:records:read", "Ver", 4], ["custody:records:issue", "Entregar", 3]] },
   ] },
-  { id: 'admin', label: 'Administração', icon: 'shield', perms: [
-    { key: 'usuarios.ver', label: 'Ver usuários', hint: 'Lista de quem acessa o sistema' },
-    { key: 'usuarios.gerenciar', label: 'Gerenciar usuários', hint: 'Convidar, editar e desativar', sensitive: true },
-    { key: 'papeis.gerenciar', label: 'Gerenciar papéis', hint: 'Criar papéis e mudar permissões', sensitive: true },
-    { key: 'auditoria.ver', label: 'Ver auditoria', hint: 'Registro de ações dos usuários' },
-    { key: 'config.editar', label: 'Editar configurações', hint: 'Preferências do cliente' },
+  { label: "Pessoal", resources: [
+    { label: "Escalas", permissions: [["hr:schedules:read", "Ver", 4], ["hr:schedules:write", "Editar", 3], ["hr:schedules:publish", "Publicar", 2]] },
+    { label: "Férias e afastamentos", permissions: [["hr:leaves:read", "Ver", 3], ["hr:leaves:write", "Editar", 2]] },
+    { label: "Unidades de lotação", permissions: [["hr:units:read", "Ver", 4], ["hr:units:write", "Editar", 2]] },
+    { label: "Vínculos funcionais", permissions: [["hr:employments:read", "Ver", 3], ["hr:employments:write", "Editar", 2]] },
+  ] },
+  { label: "Infraestrutura", resources: [
+    { label: "Dispositivos", permissions: [["equipments:equipment:read", "Ver", 4], ["equipments:equipment:write", "Editar", 2], ["equipments:equipment:manage", "Administrar", 2]] },
+    { label: "Locais", permissions: [["equipments:location:read", "Ver", 4], ["equipments:location:write", "Editar", 2], ["equipments:location:manage", "Administrar", 2]] },
+    { label: "Telemetria", permissions: [["equipments:heartbeat:write", "Editar", 2]] },
+  ] },
+  { label: "Aquisição de vídeo", resources: [
+    { label: "Streams de vídeo", permissions: [["acquisition:streams:read", "Ver", 3]] },
+  ] },
+  { label: "Análise inteligente de vídeo", resources: [
+    { label: "Runtime de análise", permissions: [["analytics:runtime:configure", "configure", 2]] },
+  ] },
+  { label: "Administração", resources: [
+    { label: "Clientes", permissions: [["iam:tenants:read", "Ver", 1], ["iam:tenants:create", "Criar", 1], ["iam:tenants:update", "Atualizar", 1]] },
+    { label: "Usuários", permissions: [["iam:users:read", "Ver", 2], ["iam:users:create", "Criar", 2], ["iam:users:update", "Atualizar", 2], ["iam:users:delete", "Excluir", 2]] },
   ] },
 ];
-export const ALL_PERMS = MODULES.flatMap((m) => m.perms);
-export const PERM_TOTAL = ALL_PERMS.length;
-export const permLabel = (k: string) => ALL_PERMS.find((p) => p.key === k)?.label ?? k;
+const ALL: P[] = CATALOG.flatMap((m) => m.resources.flatMap((r) => r.permissions));
+export const TOTAL = ALL.length; // 97
+const upTo = (lv: number) => ALL.filter((p) => p[2] >= lv).map((p) => p[0]);
 
-export type Role = { key: string; label: string; description: string; system: boolean; tone: string; perms: string[] };
-
-const pick = (...prefixes: string[]) => ALL_PERMS.map((p) => p.key).filter((k) => prefixes.some((x) => (x.endsWith('.') ? k.startsWith(x) : k === x)));
-const VIEW = ['painel.ver', 'alertas.ver', 'ocor.ver', 'video.vivo', 'locais.ver'];
-
+export type Role = { key: string; label: string; plane: 'platform' | 'tenant'; is_system: boolean; granted: string[] };
 export const ROLES: Role[] = [
-  { key: 'admin', label: 'Administrador', system: true, tone: 'violet', description: 'Acesso total, inclusive usuários, papéis e configurações.', perms: ALL_PERMS.map((p) => p.key) },
-  { key: 'supervisor', label: 'Supervisor', system: true, tone: 'blue', description: 'Coordena a operação: despacha, exporta e mantém as listas de observação.',
-    perms: pick('painel.', 'alertas.', 'ocor.', 'video.', 'faces.', 'carac.', 'placas.', 'watch.', 'pessoas.', 'veic.', 'disp.ver', 'locais.ver', 'usuarios.ver', 'auditoria.ver') },
-  { key: 'operador', label: 'Operador', system: true, tone: 'green', description: 'Monitora câmeras, tria alertas e registra ocorrências.',
-    perms: pick(...VIEW, 'alertas.triar', 'ocor.criar', 'video.gravacoes', 'video.ptz', 'faces.ver', 'placas.ver', 'watch.ver', 'pessoas.ver', 'veic.ver', 'disp.ver') },
-  { key: 'auditor', label: 'Auditor', system: true, tone: 'amber', description: 'Consulta tudo sem alterar nada e acompanha a trilha de auditoria.',
-    perms: pick(...VIEW, 'video.gravacoes', 'placas.ver', 'watch.ver', 'pessoas.ver', 'veic.ver', 'disp.ver', 'usuarios.ver', 'auditoria.ver') },
-  { key: 'visualizador', label: 'Visualizador', system: true, tone: 'gray', description: 'Só assiste às câmeras e acompanha o painel.', perms: pick('painel.ver', 'video.vivo', 'locais.ver') },
-  { key: 'portaria', label: 'Portaria', system: false, tone: 'teal', description: 'Equipe das portarias: câmeras de acesso, placas e registro de ocorrências.',
-    perms: pick('painel.ver', 'alertas.ver', 'alertas.triar', 'ocor.ver', 'ocor.criar', 'video.vivo', 'video.ptz', 'placas.ver', 'veic.ver', 'veic.editar', 'locais.ver') },
-  { key: 'investigacao', label: 'Investigação', system: false, tone: 'rose', description: 'Apura casos com busca por característica, gravações e exportação.',
-    perms: pick(...VIEW, 'video.gravacoes', 'video.exportar', 'faces.ver', 'carac.buscar', 'placas.ver', 'watch.ver', 'pessoas.ver', 'veic.ver', 'auditoria.ver') },
+  { key: 'super_admin', label: 'Super Admin', plane: 'platform', is_system: true, granted: upTo(1) },
+  { key: 'admin', label: 'Administrador', plane: 'tenant', is_system: true, granted: upTo(2) },
+  { key: 'operator', label: 'Operador', plane: 'tenant', is_system: true, granted: upTo(3) },
+  { key: 'viewer', label: 'Visualizador', plane: 'tenant', is_system: true, granted: upTo(4) },
+  { key: 'member', label: 'Membro', plane: 'tenant', is_system: true, granted: [] },
+  { key: 'ux_ui', label: 'UX/UI', plane: 'tenant', is_system: false, granted: [] },
 ];
 
-export const LOCAIS = ['Campus Centro', 'Bloco A', 'Bloco B', 'Bloco C', 'Biblioteca', 'Ginásio', 'Estacionamento Norte', 'Estacionamento Sul', 'Portaria Principal', 'Portaria Leste'];
-
-export type UStatus = 'ativo' | 'pendente' | 'inativo';
-export type User = {
-  id: string; name: string; email: string; team: string; role: string; status: UStatus;
-  /** vazio = todos os locais */
-  locais: string[]; mfa: boolean; lastSeen: number | null; created: number;
-};
-export const STATUS_LABEL: Record<UStatus, string> = { ativo: 'Ativo', pendente: 'Convite pendente', inativo: 'Inativo' };
-
-const H = 3600e3, D = 24 * H;
-const seed: [string, string, string, string, UStatus, string[], boolean, number | null, number][] = [
-  ['Mariana Couto', 'mariana.couto', 'Coordenação de Segurança', 'admin', 'ativo', [], true, 0.2 * H, 420 * D],
-  ['Rafael Nogueira', 'rafael.nogueira', 'TI', 'admin', 'ativo', [], true, 3 * H, 390 * D],
-  ['Juliana Prado', 'juliana.prado', 'Coordenação de Segurança', 'supervisor', 'ativo', [], true, 0.05 * H, 300 * D],
-  ['Carlos Menezes', 'carlos.menezes', 'Central de Monitoramento', 'supervisor', 'ativo', [], false, 26 * H, 280 * D],
-  ['Ana Beatriz Lima', 'ana.lima', 'Central de Monitoramento', 'operador', 'ativo', [], false, 0.4 * H, 210 * D],
-  ['Diego Fernandes', 'diego.fernandes', 'Central de Monitoramento', 'operador', 'ativo', [], false, 1.5 * H, 200 * D],
-  ['Patrícia Ramos', 'patricia.ramos', 'Central de Monitoramento', 'operador', 'ativo', [], true, 9 * H, 190 * D],
-  ['Thiago Azevedo', 'thiago.azevedo', 'Central de Monitoramento', 'operador', 'ativo', [], false, 50 * H, 160 * D],
-  ['Fernanda Souza', 'fernanda.souza', 'Central de Monitoramento', 'operador', 'inativo', [], false, 62 * D, 330 * D],
-  ['Lucas Pereira', 'lucas.pereira', 'Portaria', 'portaria', 'ativo', ['Portaria Principal', 'Estacionamento Norte'], false, 0.8 * H, 120 * D],
-  ['Bruna Carvalho', 'bruna.carvalho', 'Portaria', 'portaria', 'ativo', ['Portaria Leste', 'Estacionamento Sul'], false, 5 * H, 118 * D],
-  ['Rodrigo Alves', 'rodrigo.alves', 'Portaria', 'portaria', 'ativo', ['Portaria Principal'], false, 30 * H, 90 * D],
-  ['Camila Ribeiro', 'camila.ribeiro', 'Portaria', 'portaria', 'pendente', ['Portaria Leste'], false, null, 2 * D],
-  ['Eduardo Martins', 'eduardo.martins', 'Investigação', 'investigacao', 'ativo', [], true, 4 * H, 150 * D],
-  ['Larissa Gomes', 'larissa.gomes', 'Investigação', 'investigacao', 'ativo', [], true, 72 * H, 140 * D],
-  ['Paulo Henrique Dias', 'paulo.dias', 'Ouvidoria', 'auditor', 'ativo', [], true, 7 * D, 260 * D],
-  ['Sofia Andrade', 'sofia.andrade', 'Jurídico', 'auditor', 'pendente', [], false, null, 0.5 * D],
-  ['Gustavo Rocha', 'gustavo.rocha', 'Manutenção', 'visualizador', 'ativo', ['Bloco A', 'Bloco B', 'Bloco C'], false, 12 * D, 100 * D],
-  ['Renata Moraes', 'renata.moraes', 'Biblioteca', 'visualizador', 'ativo', ['Biblioteca'], false, 3 * D, 80 * D],
-  ['Vinícius Barros', 'vinicius.barros', 'Esportes', 'visualizador', 'inativo', ['Ginásio'], false, 95 * D, 240 * D],
-  ['Aline Teixeira', 'aline.teixeira', 'Central de Monitoramento', 'operador', 'pendente', [], false, null, 1 * D],
-  ['Marcelo Vieira', 'marcelo.vieira', 'TI', 'supervisor', 'ativo', [], true, 20 * H, 230 * D],
+export type User = { id: string; full_name: string; email: string; roles: string[]; is_active: boolean };
+const u = (i: number, full_name: string, email: string, roles: string[]): User => ({ id: `u${i}`, full_name, email, roles, is_active: true });
+/** 11 usuários com a mesma distribuição de papéis do homolog. */
+export const USERS: User[] = [
+  u(1, 'Leandro Mota', 'leandro.mota@nyvex.com.br', ['super_admin', 'admin']),
+  u(2, 'Elaine Souto', 'elaine@nyvex.com.br', ['super_admin']),
+  u(3, 'Tiago', 'tiago@nyvex.com.br', ['super_admin']),
+  u(4, 'Leo Nyvex', 'leo@nyvex.com.br', ['super_admin']),
+  u(5, 'Visualizador Homolog', 'visualizador@nyvex.com.br', ['viewer']),
+  u(6, 'Membro Homolog', 'membro@nyvex.com.br', ['member']),
+  u(7, 'Eduardo', 'eduardo@unibrasil.edu.br', ['admin']),
+  u(8, 'Admin Teste', 'adminteste@nyvex.com.br', ['admin']),
+  u(9, 'Operador UX', 'operador@nyvex.com.br', ['operator']),
+  u(10, 'Marina Duarte', 'marina.duarte@unibrasil.edu.br', ['admin']),
+  u(11, 'Júlio', 'julio@nyvex.com.br', ['super_admin']),
 ];
 
-export const buildUsers = (now: number): User[] => seed.map(([name, mail, team, role, status, locais, mfa, last, created], i) => ({
-  id: `u${i + 1}`, name, email: `${mail}@unibrasil.edu.br`, team, role, status, locais, mfa,
-  lastSeen: last == null ? null : now - last, created: now - created,
-}));
-
-export const TEAMS = [...new Set(seed.map((s) => s[2]))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-
-export const initials = (n: string) => n.split(' ').filter((p) => p.length > 2 || p === n).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || n.slice(0, 2).toUpperCase();
-export const ago = (t: number | null, now: number) => {
-  if (t == null) return 'Nunca entrou';
-  const m = Math.round((now - t) / 60e3);
-  if (m < 5) return 'Agora';
-  if (m < 60) return `Há ${m} min`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `Há ${h} h`;
-  const d = Math.round(h / 24);
-  if (d === 1) return 'Ontem';
-  if (d < 30) return `Há ${d} dias`;
-  const mo = Math.round(d / 30);
-  return mo === 1 ? 'Há 1 mês' : `Há ${mo} meses`;
-};
-export const fmtDate = (t: number) => new Date(t).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '');
+export const initials = (n: string) => n.split(/[\s@.]+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 export const tempPassword = () => {
   const a = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  return Array.from({ length: 12 }, (_, i) => (i === 4 || i === 8 ? '-' : a[Math.floor(Math.random() * a.length)])).join('');
+  return Array.from({ length: 14 }, () => a[Math.floor(Math.random() * a.length)]).join('');
 };
