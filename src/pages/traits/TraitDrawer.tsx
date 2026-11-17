@@ -4,7 +4,7 @@ import { Alert, Button, Icon, IconButton, Menu, NavItem } from '../../ds/compone
 import { copy } from '../devices/parts';
 import { FaceImg } from '../faces/FaceImg';
 import { Figure } from './Figure';
-import { camName, camOf, COLOR, EXTRAS, GENDER_LABEL, isSet, MOODS, traitOk, when, type Filters, type Obs, type TraitKey } from './data';
+import { camName, camOf, colorBg, COLOR, EXTRAS, GENDER_LABEL, isSet, MOODS, traitOk, when, type Filters, type Obs, type TraitKey } from './data';
 
 type Props = {
   o: Obs; f: Filters; all: Obs[]; now: number;
@@ -67,8 +67,8 @@ export function TraitDrawer({ o, f, all, now, onOpen, onClose, toast, onSearchLi
           <div className="tr-attrs">
             <Attr label="Gênero" value={GENDER_LABEL[o.gender]} conf={o.conf.gender} asked={asked('gender')} ok={ok('gender')} />
             <Attr label="Faixa etária" value={`${o.age} anos`} conf={o.conf.age} asked={asked('ages')} ok={ok('ages')} />
-            <Attr label="Roupa superior" value={<><i className="tr-dot" style={{ background: COLOR[o.upper].hex }} />{COLOR[o.upper].label}</>} conf={o.conf.upper} asked={asked('upper')} ok={ok('upper')} />
-            <Attr label="Roupa inferior" value={<><i className="tr-dot" style={{ background: COLOR[o.lower].hex }} />{COLOR[o.lower].label}</>} conf={o.conf.lower} asked={asked('lower')} ok={ok('lower')} />
+            <Attr label="Roupa superior" value={<><i className="tr-dot" style={{ background: colorBg(o.upper) }} />{COLOR[o.upper].label}</>} conf={o.conf.upper} asked={asked('upper')} ok={ok('upper')} />
+            <Attr label="Roupa inferior" value={<><i className="tr-dot" style={{ background: colorBg(o.lower) }} />{COLOR[o.lower].label}</>} conf={o.conf.lower} asked={asked('lower')} ok={ok('lower')} />
             <Attr label="Boné ou chapéu" value={yn(o.hat)} conf={o.conf.hat} asked={asked('hat')} ok={ok('hat')} />
             <Attr label="Óculos" value={yn(o.glasses)} conf={o.conf.glasses} asked={asked('glasses')} ok={ok('glasses')} />
             <Attr label="Mochila" value={yn(o.backpack)} conf={o.conf.backpack} asked={asked('backpack')} ok={ok('backpack')} />

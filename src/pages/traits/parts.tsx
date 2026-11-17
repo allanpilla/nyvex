@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Icon, Segmented, useTooltip } from '../../ds/components';
 import { FaceImg } from '../faces/FaceImg';
 import { Figure } from './Figure';
-import { camName, camOf, COLOR, COLORS, GENDER_LABEL, isSet, obsTrait, score, TRAIT_KEYS, traitLabel, when, type Color, type Filters, type Obs, type TraitKey, type Tri } from './data';
+import { camName, camOf, colorBg, COLOR, COLORS, GENDER_LABEL, isSet, obsTrait, score, TRAIT_KEYS, traitLabel, when, type Color, type Filters, type Obs, type TraitKey, type Tri } from './data';
 
 /* Peças compartilhadas pela tela de buscas, pelo modal de nova busca e pelos resultados. */
 
@@ -42,7 +42,7 @@ export function Swatches({ value, onChange, kind }: { value: Color[]; onChange: 
 export function Swatch({ c, on, onClick }: { c: (typeof COLORS)[number]; on: boolean; onClick: () => void }) {
   const tip = useTooltip(c.label, undefined, true, 'top');
   return (
-    <button type="button" className={`tr-sw${on ? ' is-on' : ''}${c.id === 'jeans' ? ' is-jeans' : ''}`} style={{ '--c': c.hex } as React.CSSProperties} aria-pressed={on} aria-label={c.label} {...tip} onClick={onClick}>
+    <button type="button" className={`tr-sw${on ? ' is-on' : ''}${c.id === 'jeans' ? ' is-jeans' : ''}`} style={{ '--c': c.css ?? c.hex } as React.CSSProperties} aria-pressed={on} aria-label={c.label} {...tip} onClick={onClick}>
       <i />{on && <Icon name="check" size={12} />}
     </button>
   );
@@ -108,9 +108,9 @@ export function Card({ o, n = 1, f, now, on, miss, onOpen }: { o: Obs; n?: numbe
       <span className="tr-card__body">
         <b>{GENDER_LABEL[o.gender]} · {o.age}</b>
         <span className="tr-card__wear">
-          <i style={{ background: COLOR[o.upper].hex }} />{COLOR[o.upper].label}
+          <i style={{ background: colorBg(o.upper) }} />{COLOR[o.upper].label}
           <span>/</span>
-          <i style={{ background: COLOR[o.lower].hex }} />{COLOR[o.lower].label}
+          <i style={{ background: colorBg(o.lower) }} />{COLOR[o.lower].label}
           {(o.backpack || o.hat || o.glasses) && <span className="tr-card__acc">{o.hat && TRI_ICON.hat}{o.glasses && TRI_ICON.glasses}{o.backpack && TRI_ICON.backpack}</span>}
         </span>
         <span className="tr-card__meta"><span className={cam.name ? undefined : 'is-id'}>{camName(o.src)}</span><time>{when(o.at, now)}</time></span>

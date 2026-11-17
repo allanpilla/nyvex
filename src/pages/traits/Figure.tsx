@@ -16,13 +16,17 @@ type Props = FigureLook & {
   onPart?: (p: 'upper' | 'lower' | 'head') => void;
 };
 
-/** Várias cores: faixas verticais. */
+const RAINBOW = ['#f2556f', '#f2c230', '#2f9e64', '#3b82f6'];
+
+/** Várias cores: faixas verticais (a colorida vira faixas finas de várias cores). */
 function Stripes({ id, colors }: { id: string; colors: Color[] }) {
   if (colors.length < 2) return null;
   const w = 100 / colors.length;
   return (
     <linearGradient id={id} x1="0" x2="1" y1="0" y2="0">
-      {colors.flatMap((c, i) => [<stop key={`${c}a`} offset={`${i * w}%`} stopColor={COLOR[c].hex} />, <stop key={`${c}b`} offset={`${(i + 1) * w}%`} stopColor={COLOR[c].hex} />])}
+      {colors.flatMap((c, i) => (c === 'colorida'
+        ? RAINBOW.flatMap((h, j) => [<stop key={`${c}${j}a`} offset={`${i * w + (j * w) / RAINBOW.length}%`} stopColor={h} />, <stop key={`${c}${j}b`} offset={`${i * w + ((j + 1) * w) / RAINBOW.length}%`} stopColor={h} />])
+        : [<stop key={`${c}a`} offset={`${i * w}%`} stopColor={COLOR[c].hex} />, <stop key={`${c}b`} offset={`${(i + 1) * w}%`} stopColor={COLOR[c].hex} />]))}
     </linearGradient>
   );
 }
@@ -34,7 +38,7 @@ function Stripes({ id, colors }: { id: string; colors: Color[] }) {
 export function FigureShape({ upper, lower, gender = '', hat, glasses, backpack, extras = [], onPart, mono }: FigureLook & { onPart?: Props['onPart']; mono?: string }) {
   const uid = useId().replace(/:/g, '');
   const anyU = upper.length === 0, anyL = lower.length === 0;
-  const paint = (cs: Color[], k: string) => (mono ? mono : cs.length === 0 ? 'var(--tr-any)' : cs.length === 1 ? COLOR[cs[0]].hex : `url(#${uid}${k})`);
+  const paint = (cs: Color[], k: string) => (mono ? mono : cs.length === 0 ? 'var(--tr-any)' : cs.length === 1 ? (cs[0] === 'colorida' ? `url(#${uid}mc)` : COLOR[cs[0]].hex) : `url(#${uid}${k})`);
   const line = (any: boolean) => (any && !mono ? { stroke: 'var(--tr-any-stroke)', strokeWidth: 1, strokeDasharray: '2.5 2.5' } : {});
   const skin = mono ?? 'var(--tr-skin)', hair = mono ?? 'var(--tr-hair)', shoe = mono ?? 'var(--tr-shoe)', gear = mono ?? 'var(--tr-gear)';
   const hit = (p: 'upper' | 'lower' | 'head') => (onPart ? { onClick: () => onPart(p), className: `tr-fig__hit is-${p}` } : {});
@@ -42,6 +46,13 @@ export function FigureShape({ upper, lower, gender = '', hat, glasses, backpack,
   return (
     <g>
       <defs>
+        <pattern id={`${uid}mc`} width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+          <rect width="12" height="12" fill="#3b82f6" />
+          <rect width="4" height="12" fill="#f2556f" />
+          <rect x="4" width="4" height="12" fill="#f2c230" />
+          <circle cx="10" cy="3" r="1.6" fill="#fff" opacity=".7" />
+          <circle cx="10" cy="9" r="1.6" fill="#2f9e64" />
+        </pattern>
         <Stripes id={`${uid}u`} colors={upper} />
         <Stripes id={`${uid}l`} colors={lower} />
         <linearGradient id={`${uid}sh`} x1="0" x2="1">

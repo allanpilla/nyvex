@@ -9,14 +9,14 @@ import { SOURCES, srcName, type Source } from '../faces/data';
 
 export type Gender = 'M' | 'F';
 export type Age = '18-24' | '25-34' | '35-44' | '45-59' | '60+';
-export type Color = 'preto' | 'branco' | 'cinza' | 'azul' | 'azul-marinho' | 'vermelho' | 'verde' | 'amarelo' | 'laranja' | 'rosa' | 'roxo' | 'marrom' | 'bege' | 'jeans';
+export type Color = 'preto' | 'branco' | 'cinza' | 'azul' | 'azul-marinho' | 'vermelho' | 'verde' | 'amarelo' | 'laranja' | 'rosa' | 'roxo' | 'marrom' | 'bege' | 'jeans' | 'colorida';
 export type Mood = 'neutro' | 'alegre' | 'alerta' | 'tenso';
 export type Extra = 'bolsa' | 'mala' | 'guarda-chuva' | 'capacete' | 'mascara';
 export type Tri = '' | 'sim' | 'nao';
 
 export const GENDER_LABEL: Record<Gender, string> = { M: 'Masculino', F: 'Feminino' };
 export const AGES: Age[] = ['18-24', '25-34', '35-44', '45-59', '60+'];
-export const COLORS: { id: Color; label: string; hex: string; lowerOnly?: boolean }[] = [
+export const COLORS: { id: Color; label: string; hex: string; css?: string; lowerOnly?: boolean }[] = [
   { id: 'preto', label: 'Preto', hex: '#16181d' },
   { id: 'branco', label: 'Branco', hex: '#f4f5f7' },
   { id: 'cinza', label: 'Cinza', hex: '#8a8f99' },
@@ -31,8 +31,12 @@ export const COLORS: { id: Color; label: string; hex: string; lowerOnly?: boolea
   { id: 'marrom', label: 'Marrom', hex: '#7a5134' },
   { id: 'bege', label: 'Bege', hex: '#d9c3a0' },
   { id: 'jeans', label: 'Jeans', hex: '#4a6a96', lowerOnly: true },
+  /** Estampada ou com várias cores: o motor não separa uma cor dominante. */
+  { id: 'colorida', label: 'Colorida ou estampada', hex: '#c45ab3', css: 'conic-gradient(from 200deg, #f2556f, #f2c230, #2f9e64, #3b82f6, #8b5cf6, #f2556f)' },
 ];
 export const COLOR = Object.fromEntries(COLORS.map((c) => [c.id, c])) as Record<Color, (typeof COLORS)[number]>;
+/** Fundo CSS de uma cor (a colorida vira um gradiente). */
+export const colorBg = (c: Color) => COLOR[c].css ?? COLOR[c].hex;
 export const MOODS: { id: Mood; label: string }[] = [
   { id: 'neutro', label: 'Neutro' }, { id: 'alegre', label: 'Alegre' }, { id: 'alerta', label: 'Alerta' }, { id: 'tenso', label: 'Tenso' },
 ];
@@ -89,8 +93,8 @@ function rng(seed: number) {
   };
 }
 
-const UPPER_W: [Color, number][] = [['preto', 22], ['branco', 14], ['cinza', 10], ['azul', 10], ['azul-marinho', 8], ['vermelho', 7], ['verde', 6], ['amarelo', 4], ['rosa', 5], ['bege', 4], ['marrom', 3], ['roxo', 3], ['laranja', 3]];
-const LOWER_W: [Color, number][] = [['jeans', 34], ['preto', 26], ['azul-marinho', 8], ['cinza', 8], ['bege', 8], ['branco', 4], ['marrom', 5], ['verde', 3], ['vermelho', 2], ['rosa', 2]];
+const UPPER_W: [Color, number][] = [['preto', 22], ['branco', 14], ['cinza', 10], ['azul', 10], ['azul-marinho', 8], ['vermelho', 7], ['verde', 6], ['amarelo', 4], ['rosa', 5], ['bege', 4], ['marrom', 3], ['roxo', 3], ['laranja', 3], ['colorida', 7]];
+const LOWER_W: [Color, number][] = [['jeans', 34], ['preto', 26], ['azul-marinho', 8], ['cinza', 8], ['bege', 8], ['branco', 4], ['marrom', 5], ['verde', 3], ['vermelho', 2], ['rosa', 2], ['colorida', 2]];
 const pickW = <T,>(r: () => number, w: [T, number][]) => { let x = r() * w.reduce((s, [, n]) => s + n, 0); for (const [v, n] of w) { x -= n; if (x < 0) return v; } return w[0][0]; };
 
 /** Só câmeras com nome e no ar (as fontes só com ID ficam para o Faces ao vivo). */
@@ -233,7 +237,7 @@ const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCa
 const COLOR_WORDS: [RegExp, Color][] = [
   [/azul[- ]marinho|marinho/, 'azul-marinho'], [/pret[oa]s?|escur[oa]/, 'preto'], [/branc[oa]s?/, 'branco'], [/cinza|grafite/, 'cinza'],
   [/azul|azuis/, 'azul'], [/vermelh[oa]s?|vinho/, 'vermelho'], [/verde/, 'verde'], [/amarel[oa]s?/, 'amarelo'], [/laranja/, 'laranja'],
-  [/rosa|pink/, 'rosa'], [/roxo|roxa|lilas/, 'roxo'], [/marrom|caqui/, 'marrom'], [/bege|creme/, 'bege'], [/jeans/, 'jeans'],
+  [/rosa|pink/, 'rosa'], [/roxo|roxa|lilas/, 'roxo'], [/marrom|caqui/, 'marrom'], [/bege|creme/, 'bege'], [/jeans/, 'jeans'], [/colorid[oa]|estampad[oa]|florid[oa]|listrad[oa]|xadrez/, 'colorida'],
 ];
 const UPPER_RE = /(camis[ae]t?a|camisa|blusa|jaqueta|casaco|moletom|regata|uniforme|colete|top|parte de cima)/;
 const LOWER_RE = /(calca|bermuda|saia|short|shorts|legging|parte de baixo)/;

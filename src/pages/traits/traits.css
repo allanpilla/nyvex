@@ -44,7 +44,7 @@
 .tr-hero .tr-fig { flex: none; width: 84px; height: 160px; }
 .tr-hero__txt { min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .tr-hero__txt p { margin: 0; font-size: 14px; line-height: 20px; color: var(--nx-text-main); }
-.tr-clear { margin-top: 6px; height: 30px; padding: 0 10px; font-size: 13px; background: var(--nx-bg-canvas); animation: tr-in .2s var(--nx-ease); }
+.tr-clear { margin-top: 6px; height: 34px; padding: 0 12px; font-size: 13px; white-space: nowrap; background: var(--nx-bg-canvas); animation: tr-in .2s var(--nx-ease); }
 .tr-clear:hover { box-shadow: var(--tr-hov-shadow); }
 .tr-clear__n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: var(--nx-tonal-bg); color: var(--nx-tonal-fg); font-size: 11px; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
 [data-theme='light'] .tr-clear { background: var(--nx-bg-surface); }
@@ -275,21 +275,23 @@
 
 /* ── modal de nova busca ── */
 .tr-wiz { --tr-any: color-mix(in srgb, var(--nx-text-soft) 14%, transparent); --tr-any-stroke: color-mix(in srgb, var(--nx-text-soft) 70%, transparent); --tr-skin: #c9a07f; --tr-hair: #2a211b; --tr-hat: #1e2533; --tr-shoe: #2a2d35; --tr-gear: #3a3f4b; --tr-hov-shadow: 0 4px 12px rgba(0, 0, 0, .28), 0 1px 2px rgba(0, 0, 0, .2);
-  width: min(880px, 100%); height: min(680px, calc(100vh - 48px)); display: flex; flex-direction: column; border-radius: 16px; background: var(--nx-bg-surface); border: 1px solid var(--nx-stroke); box-shadow: var(--nx-shadow); animation: nx-zoom .16s var(--nx-ease); overflow: hidden; }
+  width: min(1040px, calc(100vw - 32px)); height: min(700px, calc(100vh - 48px)); display: flex; flex-direction: column; border-radius: 16px; background: var(--nx-bg-surface); border: 1px solid var(--nx-stroke); box-shadow: var(--nx-shadow); animation: nx-zoom .16s var(--nx-ease); overflow: hidden; }
 [data-theme='light'] .tr-wiz { --tr-hov-shadow: 0 4px 12px rgba(10, 13, 20, .08), 0 1px 2px rgba(10, 13, 20, .05); --tr-shoe: #4a4f5c; }
 .tr-wiz__head { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 0 12px 0 24px; border-bottom: 1px solid var(--nx-stroke); }
 .tr-wiz__head > div { flex: 1; display: flex; flex-direction: column; }
 .tr-wiz__head h2 { margin: 0; font-size: 16px; line-height: 22px; font-weight: 500; }
 .tr-wiz__steps { padding: 16px 24px 14px; }
-.tr-wiz__main { flex: 1; min-height: 0; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+.tr-wiz__main { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px minmax(0, 1fr); }
 .tr-wiz__side { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 20px 20px; background: var(--nx-bg-canvas); border-right: 1px solid var(--nx-stroke); overflow: auto; }
 .tr-wiz__stage { width: 100%; display: grid; place-items: center; padding: 12px 0 6px; background: radial-gradient(90px 100px at 50% 55%, color-mix(in srgb, var(--nx-primary) 18%, transparent), transparent 70%); }
-.tr-wiz__stage .tr-fig { width: 92px; height: 176px; }
+.tr-wiz__stage { padding: 20px 0 10px; background: radial-gradient(120px 130px at 50% 55%, color-mix(in srgb, var(--nx-primary) 18%, transparent), transparent 70%); }
+.tr-wiz__stage .tr-fig { width: 108px; height: 206px; }
 .tr-wiz__desc { margin: 0; font-size: 13px; line-height: 19px; color: var(--nx-text-main); }
 .tr-wiz__est { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 10px 12px; border-radius: var(--nx-radius-md); background: var(--nx-bg-surface); text-align: left; width: 100%; }
 .tr-wiz__est b { font-size: 22px; line-height: 28px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--nx-tonal-fg); }
 .tr-wiz__est span { font-size: 11.5px; line-height: 15px; color: var(--nx-text-soft); }
-.tr-wiz__side .tr-clear { margin-top: 4px; }
+.tr-wiz__side .tr-clear { margin-top: 4px; width: 100%; justify-content: center; }
+.tr-wiz__side { overflow-x: hidden; }
 .tr-wiz__body { min-height: 0; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 24px; animation: nx-fade .18s; }
 .tr-wiz__foot { display: flex; align-items: center; gap: 8px; padding: 14px 24px; border-top: 1px solid var(--nx-stroke); }
 .tr-wiz__count { flex: 1; text-align: center; font-size: 12px; color: var(--nx-text-soft); }
