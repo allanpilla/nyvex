@@ -129,6 +129,21 @@ function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod,
       .filter((r) => r.permissions.length),
   })).filter((x) => x.res.length);
   const allOpen = mods.every((x) => open.has(x.m.label));
+  // colunas fixas: só a bolinha (o cabeçalho já diz a ação)
+  const dot = (res: string, [key, label]: [string, string, number]) => {
+    const g = set.has(key);
+    const tip = `${res} · ${label}${g ? '' : ' (não concedida)'} · ${key}`;
+    return edit ? (
+      <button key={key} type="button" className={`us-dot${g ? ' is-on' : ''}`} aria-pressed={g} title={tip}
+        aria-label={`${g ? 'Revogar' : 'Conceder'} ${res}: ${label}`} onClick={() => onToggle(role, key)}>
+        <Icon name={g ? 'check' : 'close'} size={12} />
+      </button>
+    ) : (
+      <span key={key} className={`us-dot is-ro${g ? ' is-on' : ''}`} title={tip} aria-label={`${label}: ${g ? 'concedida' : 'não concedida'}`}>
+        <Icon name={g ? 'check' : 'close'} size={12} />
+      </span>
+    );
+  };
   const chip = (res: string, [key, label]: [string, string, number]) => {
     const g = set.has(key);
     return edit ? (
@@ -219,7 +234,7 @@ function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod,
                       <span className="us-res__l">{r.label}</span>
                       {CORE.map((c) => {
                         const p = r.permissions.find((x) => x[1] === c);
-                        return <span key={c} className="us-res__c">{p ? chip(r.label, p) : <span className="us-res__none">—</span>}</span>;
+                        return <span key={c} className="us-res__c">{p ? dot(r.label, p) : <span className="us-res__none" aria-label="Não se aplica">—</span>}</span>;
                       })}
                       <span className="us-res__more">{r.permissions.filter((x) => !CORE.includes(x[1])).map((p) => chip(r.label, p))}</span>
                     </li>
