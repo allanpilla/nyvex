@@ -82,7 +82,7 @@ export function TraitsPage({ screen }: { screen: Screen }) {
                 <span className="dv-c" role="columnheader">Onde e quando</span>
                 <span className="dv-c" role="columnheader">Resultados</span>
                 <span className="dv-c" role="columnheader">Feita por</span>
-                <span className="dv-c" role="columnheader"><span className="nx-sr">Abrir</span></span>
+                <span className="dv-c" role="columnheader" aria-label="Abrir" />
               </div>
               {rows.map((s) => (
                 <div key={s.id} className="dv-tr" role="row" tabIndex={0} onClick={() => setOpenSearch(s.id)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenSearch(s.id); }}>

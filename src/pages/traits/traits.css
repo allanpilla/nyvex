@@ -338,3 +338,4 @@
 .tr-near__head h3 span { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--nx-text-soft); }
 .tr-near { margin-top: 12px; }
 .nx-combo__opt > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tr-list { overflow-x: hidden; }
