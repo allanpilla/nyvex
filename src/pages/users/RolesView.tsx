@@ -136,11 +136,11 @@ function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod,
     return edit ? (
       <button key={key} type="button" className={`us-dot${g ? ' is-on' : ''}`} aria-pressed={g} title={tip}
         aria-label={`${g ? 'Revogar' : 'Conceder'} ${res}: ${label}`} onClick={() => onToggle(role, key)}>
-        <Icon name={g ? 'check' : 'close'} size={12} />
+        <Icon name={g ? 'check' : 'close'} size={g ? 12 : 10} />
       </button>
     ) : (
       <span key={key} className={`us-dot is-ro${g ? ' is-on' : ''}`} title={tip} aria-label={`${label}: ${g ? 'concedida' : 'não concedida'}`}>
-        <Icon name={g ? 'check' : 'close'} size={12} />
+        <Icon name={g ? 'check' : 'close'} size={g ? 12 : 10} />
       </span>
     );
   };

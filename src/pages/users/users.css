@@ -119,7 +119,7 @@
 .us-res li { min-height: 40px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--nx-stroke) 60%, transparent); }
 .us-res__l { min-width: 0; font-size: 13px; color: var(--nx-text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .us-res__c { display: flex; justify-content: center; }
-.us-res__none { width: 24px; text-align: center; color: color-mix(in srgb, var(--nx-text-soft) 40%, transparent); }
+.us-res__none { width: 20px; text-align: center; color: color-mix(in srgb, var(--nx-text-soft) 40%, transparent); }
 .us-res__more { min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .us-res__more .us-chip { max-width: 100%; overflow: hidden; }
 .us-res__hd { position: sticky; top: -8px; z-index: 2; margin: -8px -8px 6px; padding: 10px 16px 8px 42px; background: var(--nx-bg-surface); border-bottom: 1px solid var(--nx-stroke); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--nx-text-soft); }
@@ -132,12 +132,13 @@ button.us-chip:hover { color: var(--nx-text-main); border-color: color-mix(in sr
 .us-chip.is-ro:not(.is-on) .nx-icon { opacity: .6; }
 .us-chip.is-ro.is-on { border-color: color-mix(in srgb, var(--nx-success) 40%, transparent); background: color-mix(in srgb, var(--nx-success) 12%, transparent); }
 .us-chip.is-ro.is-on .nx-icon { color: var(--nx-success); }
-.us-dot { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; color: var(--nx-text-soft); background: var(--nx-bg-badge); border: 1px solid transparent; transition: background .12s, color .12s, border-color .12s, transform .12s; }
-.us-dot .nx-icon { opacity: .75; }
-.us-dot.is-on { color: #fff; background: var(--nx-success); }
+.us-dot { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; color: var(--nx-text-soft); background: var(--nx-bg-badge); border: 1px solid transparent; transition: background .12s, color .12s, border-color .12s, transform .12s; }
+.us-dot .nx-icon { opacity: .6; }
+.us-dot:not(.is-on) { color: color-mix(in srgb, var(--nx-text-soft) 80%, transparent); background: color-mix(in srgb, var(--nx-bg-badge) 70%, transparent); }
+.us-dot.is-on { color: var(--nx-success); background: color-mix(in srgb, var(--nx-success) 16%, transparent); border-color: color-mix(in srgb, var(--nx-success) 45%, transparent); }
 .us-dot.is-on .nx-icon { opacity: 1; }
 button.us-dot:hover { border-color: color-mix(in srgb, var(--nx-success) 70%, transparent); transform: scale(1.08); }
-button.us-dot.is-on:hover { background: color-mix(in srgb, var(--nx-success) 85%, #000); }
+button.us-dot.is-on:hover { background: color-mix(in srgb, var(--nx-success) 26%, transparent); }
 .us-dot.is-ro { cursor: default; }
 .us-dot:focus-visible { outline: 0; box-shadow: 0 0 0 2px color-mix(in srgb, var(--nx-primary) 45%, transparent); }
 .us-chip:focus-visible { outline: 0; box-shadow: 0 0 0 2px color-mix(in srgb, var(--nx-primary) 45%, transparent); }
