@@ -47,7 +47,7 @@ export const NAV: NavGroup[] = [
     { id: 'locais', actions: ['Novo local'], path: '/locais', label: 'Locais', icon: 'pin', description: 'Locais em lista ou árvore, com mapa.' },
   ]),
   s('admin', 'Administração', 'settings', false, [
-    { id: 'users', actions: ['Convidar usuário'], path: '/usuarios', label: 'Usuários e permissões', icon: 'shield', description: 'Usuários e matriz de perfis × permissões.' },
+    { id: 'users', actions: ['Novo usuário'], path: '/usuarios', label: 'Usuários e permissões', icon: 'shield', description: 'Quem acessa o sistema e o que cada papel pode fazer.' },
     { id: 'config', path: '/configuracoes', label: 'Configurações', icon: 'settings', description: 'Preferências do cliente.' },
     { id: 'custom', path: '/personalizar-menu', label: 'Personalizar menu', icon: 'custom', description: 'Montagem do menu por arrastar.' },
     { id: 'auditoria', path: '/auditoria', label: 'Auditoria (VMS)', icon: 'audit', description: 'Registro de ações de usuários no VMS.' },

@@ -8,6 +8,7 @@ import { FacesPage } from './faces/FacesPage';
 import { AlertsPage } from './alerts/AlertsPage';
 import { OccurrencesPage } from './occurrences/OccurrencesPage';
 import { TraitsPage } from './traits/TraitsPage';
+import { UsersPage } from './users/UsersPage';
 
 /**
  * Telas já desenhadas, por id do menu. Ao criar uma tela nova:
@@ -24,4 +25,5 @@ export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> =
   alertas: AlertsPage,
   ocor: OccurrencesPage,
   caracteristicas: TraitsPage,
+  users: UsersPage,
 };
