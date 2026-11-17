@@ -57,12 +57,8 @@ export function RolesView({ roles, usersByRole, onToggle, onSetMany, onNew, onRe
     return (
       <button key={r.key} type="button" className={`us-rl__item${r.key === role?.key ? ' is-sel' : ''}`} aria-current={r.key === role?.key} onClick={() => pick(r.key)}>
         <span className={`us-rl__ic${r.is_system ? '' : ' is-custom'}`}><Icon name={r.is_system ? 'lock' : 'shield'} size={14} /></span>
-        <span className="us-rl__txt">
-          <b>{r.label}</b>
-          <span>{u} {u === 1 ? 'usuário' : 'usuários'}{r.plane === 'platform' ? ' · Plataforma' : ''}</span>
-        </span>
-        <span className="us-rl__n"><b>{n}</b>/{TOTAL}</span>
-        <span className="us-bar us-rl__bar"><i style={{ width: `${pct(n, TOTAL)}%` }} /></span>
+        <span className="us-rl__txt"><b>{r.label}</b></span>
+        <span className="us-rl__u" title={`${u} ${u === 1 ? 'usuário' : 'usuários'} · ${n} de ${TOTAL} permissões`}><Icon name="people" size={12} />{u}</span>
       </button>
     );
   };
@@ -174,7 +170,6 @@ function RoleDetail({ role, set, users, open, q, show, setQ, toggleMod, setOpen,
         </label>
         <div className="us-rd__count" title={`${n} de ${TOTAL} permissões`}>
           <span><b>{n}</b>/{TOTAL} permissões</span>
-          <span className="us-bar"><i style={{ width: `${pct(n, TOTAL)}%` }} /></span>
         </div>
         <div className="us-rd__acts">
           <IconButton icon={allOpen ? 'collapse' : 'expand'} label={allOpen ? 'Recolher todos os módulos' : 'Expandir todos os módulos'} tipPlace="bottom"
@@ -207,7 +202,6 @@ function RoleDetail({ role, set, users, open, q, show, setQ, toggleMod, setOpen,
                   <Icon name="chevron" size={14} className="us-mod__chev" />
                   <b>{m.label}</b>
                   <span className="us-mod__n">{on} de {keys.length}</span>
-                  <span className="us-bar us-mod__bar"><i style={{ width: `${pct(on, keys.length)}%` }} /></span>
                 </button>
                 {edit && (
                   <Checkbox checked={on === keys.length} indeterminate={on > 0 && on < keys.length} label={`Conceder todas de ${m.label}`}
@@ -248,7 +242,6 @@ function Compare({ roles, sets, usersByRole, onPick }: { roles: Role[]; sets: Re
         <button type="button" className={`us-cmp__b${on === 0 ? ' is-zero' : p === 100 ? ' is-full' : ''}`} onClick={() => onPick(r.key, mod)}
           title={`${r.label}${mod ? ` · ${mod}` : ''}: ${on} de ${keys.length}`}>
           <span className="us-cmp__v">{on === 0 ? '—' : p === 100 ? 'Tudo' : `${on}/${keys.length}`}</span>
-          <span className="us-bar"><i style={{ width: `${p}%` }} /></span>
         </button>
       </td>
     );
