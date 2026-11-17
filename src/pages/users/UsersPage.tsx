@@ -26,6 +26,10 @@ const SORT_OPTS: [SortKey, string][] = [['name', 'Usuário'], ['role', 'Papel'],
  * Usuários e Permissões no padrão das outras listagens (cards de resumo, tabela em card, drawer).
  * Funções do sistema atual: criar, editar, remover usuário; matriz de papéis × permissões.
  */
+/** Cor fixa por papel do sistema; papéis criados pelo cliente usam a mesma cor. */
+const TONE: Record<string, string> = { super_admin: 'violet', admin: 'blue', operator: 'teal', viewer: 'amber', member: 'gray' };
+const roleTone = (k: string) => TONE[k] ?? 'rose';
+
 export function UsersPage({ screen }: { screen: Screen }) {
   const { toast } = useUi();
   const [tab, setTab] = useState<Tab>('usuarios');
@@ -193,7 +197,6 @@ export function UsersPage({ screen }: { screen: Screen }) {
                   </span>
                   <Th k="name" sort={sort} onSort={sortBy} cls="dv-c--name">Usuário</Th>
                   <Th k="role" sort={sort} onSort={sortBy} cls="us-c--role">Papel</Th>
-                  <span className="dv-c us-c--roles" role="columnheader">Papéis atribuídos</span>
                   <Th k="status" sort={sort} onSort={sortBy} cls="us-c--st">Status</Th>
                   <span className="dv-c dv-c--act" role="columnheader"><span className="nx-sr">Ações</span></span>
                 </div>
@@ -206,10 +209,7 @@ export function UsersPage({ screen }: { screen: Screen }) {
                       <span className={`dv-kind us-kind${byKey[u.roles[0]]?.plane === 'platform' ? ' is-platform' : ''}`}>{initials(u.full_name || u.email)}</span>
                       <span className="dv-name"><b>{u.full_name || '—'}</b><span>{u.email}</span></span>
                     </span>
-                    <span className="dv-c us-c--role" role="cell"><span className="dv-two"><b>{roleLabel(u.roles[0]) || '—'}</b><span>{byKey[u.roles[0]]?.plane === 'platform' ? 'Plataforma' : 'Cliente'} · {byKey[u.roles[0]]?.granted.length ?? 0} permissões</span></span></span>
-                    <span className="dv-c us-c--roles" role="cell">
-                      <span className="dv-two"><b>{u.roles.length} {u.roles.length === 1 ? 'papel' : 'papéis'}</b><span>{u.roles.map(roleLabel).join(', ') || 'Nenhum papel'}</span></span>
-                    </span>
+                    <span className="dv-c us-c--role" role="cell">{u.roles[0] ? <span className={`nx-badge us-role is-${roleTone(u.roles[0])}`}>{roleLabel(u.roles[0])}</span> : <span className="us-none">—</span>}</span>
                     <span className="dv-c us-c--st" role="cell"><Badge tone={u.is_active ? 'success' : 'neutral'}>{u.is_active ? 'Ativo' : 'Inativo'}</Badge></span>
                     <span className="dv-c dv-c--act" role="cell" onClick={(e) => e.stopPropagation()}>
                       <IconButton icon="edit" label="Editar" onClick={() => editUser(u)} tipPlace="top" />
