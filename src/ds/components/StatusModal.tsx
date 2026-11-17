@@ -17,12 +17,14 @@ type Props = {
   cancel?: string;
   /** Mostra “Não mostrar novamente” no rodapé. */
   dontAsk?: boolean;
+  /** Desabilita a ação principal (ex.: campo obrigatório vazio). */
+  confirmDisabled?: boolean;
   onConfirm: (dontAskAgain: boolean) => void;
   onCancel: () => void;
 };
 
 /** Status Modal do DS (Figma › Modal › Status Modals): ícone do tipo, título, descrição e rodapé com ações. */
-export function StatusModal({ type = 'error', align = 'left', title, description, confirm, cancel = 'Cancelar', dontAsk, onConfirm, onCancel }: Props) {
+export function StatusModal({ type = 'error', align = 'left', title, description, confirm, cancel = 'Cancelar', dontAsk, confirmDisabled, onConfirm, onCancel }: Props) {
   const [skip, setSkip] = useState(false);
   useEffect(() => {
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel(); } };
@@ -43,7 +45,7 @@ export function StatusModal({ type = 'error', align = 'left', title, description
           {dontAsk && <Checkbox label="Não mostrar novamente" checked={skip} onChange={setSkip}><span>Não mostrar novamente</span></Checkbox>}
           <span className="nx-smodal__sp" />
           <Button autoFocus onClick={onCancel}>{cancel}</Button>
-          <Button variant="primary" className={type === 'error' ? 'is-danger' : undefined} onClick={() => onConfirm(skip)}>{confirm}</Button>
+          <Button variant="primary" className={type === 'error' ? 'is-danger' : undefined} disabled={confirmDisabled} onClick={() => onConfirm(skip)}>{confirm}</Button>
         </div>
       </div>
     </div>,

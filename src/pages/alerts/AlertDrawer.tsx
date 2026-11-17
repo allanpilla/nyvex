@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert as Note, Button, Checkbox, Combobox, Icon, IconButton, Menu, NavItem } from '../../ds/components';
+import { Alert as Note, Button, Checkbox, Combobox, Icon, IconButton, Menu, NavItem, Select } from '../../ds/components';
 import { copy } from '../devices/parts';
 import { FaceImg } from '../faces/FaceImg';
 import { ago, CAMS, camName, FP_REASONS, fullDate, hms, KIND, ME, OUTCOMES, PRIO_LABEL, span, STATUS_LABEL, subtitle, title, USERS, type Alert, type Group } from './data';
@@ -9,7 +9,7 @@ import { Thumb } from './Thumb';
 export type Act =
   | { type: 'ack' }
   | { type: 'reopen' }
-  | { type: 'fp'; reason: string; reeval: boolean }
+  | { type: 'fp'; reason: string; reeval: boolean; note: string }
   | { type: 'close'; outcome: string; note: string }
   | { type: 'fwd'; to: string; note: string };
 
@@ -48,7 +48,7 @@ export function AlertDrawer({ startForm = null, onClip, g, now, pos, onPrev, onN
   const openForm = (f: Form) => { setForm(form === f ? null : f); setTried(false); setNote(''); };
   const submit = () => {
     setTried(true);
-    if (form === 'fp') onAct({ type: 'fp', reason, reeval });
+    if (form === 'fp') { if (!note.trim()) return; onAct({ type: 'fp', reason, reeval, note: note.trim() }); }
     if (form === 'close') { if (!outcome || !note.trim()) return; onAct({ type: 'close', outcome, note: note.trim() }); }
     if (form === 'fwd') { if (!to) return; onAct({ type: 'fwd', to, note: note.trim() }); setForm(null); }
   };
@@ -121,21 +121,23 @@ export function AlertDrawer({ startForm = null, onClip, g, now, pos, onPrev, onN
           <section className="al-form" aria-label={form === 'fp' ? 'Falso positivo' : form === 'close' ? 'Encerrar com desfecho' : 'Encaminhar'}>
             {form === 'fp' && (
               <>
-                <label className="dv-field"><span className="dv-field__l">Motivo</span>
-                  <select className="nx-select" value={reason} onChange={(e) => setReason(e.target.value)}>{FP_REASONS.map((r) => <option key={r}>{r}</option>)}</select>
-                </label>
+                <div className="dv-field"><span className="dv-field__l">Causa-raiz do falso positivo</span>
+                  <Select label="Causa-raiz do falso positivo" value={reason} onChange={setReason} options={FP_REASONS.map((r) => ({ value: r, label: r }))} />
+                </div>
                 <Checkbox label="Enviar para reavaliação do modelo" checked={reeval} onChange={setReeval}><span className="al-chk">Enviar para reavaliação do modelo</span></Checkbox>
+                <label className={`dv-field${tried && !note.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Justificativa<i>*</i></span>
+                  <textarea className="nx-textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que foi verificado e por que é falso positivo" />
+                  {tried && !note.trim() && <span className="dv-field__h">Obrigatória para encerrar.</span>}
+                </label>
               </>
             )}
             {form === 'close' && (
               <>
-                <label className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho</span>
-                  <select className="nx-select" value={outcome ?? ''} onChange={(e) => setOutcome(e.target.value || null)}>
-                    <option value="">Selecione…</option>{OUTCOMES.map((o) => <option key={o}>{o}</option>)}
-                  </select>
-                </label>
-                <label className={`dv-field${tried && !note.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Justificativa</span>
-                  <textarea className="al-textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que foi verificado e o que foi feito" />
+                <div className={`dv-field${tried && !outcome ? ' is-err' : ''}`}><span className="dv-field__l">Desfecho<i>*</i></span>
+                  <Select label="Desfecho" value={outcome ?? ''} onChange={setOutcome} invalid={tried && !outcome} options={OUTCOMES.map((o) => ({ value: o, label: o }))} />
+                </div>
+                <label className={`dv-field${tried && !note.trim() ? ' is-err' : ''}`}><span className="dv-field__l">Justificativa<i>*</i></span>
+                  <textarea className="nx-textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que foi verificado e o que foi feito" />
                   {tried && !note.trim() && <span className="dv-field__h">Obrigatória para encerrar.</span>}
                 </label>
               </>
@@ -146,7 +148,7 @@ export function AlertDrawer({ startForm = null, onClip, g, now, pos, onPrev, onN
                   <Combobox label="Encaminhar para" value={to} onChange={setTo} placeholder="Operador ou equipe" options={USERS.map((u) => ({ value: u, label: u }))} />
                 </div>
                 <label className="dv-field"><span className="dv-field__l">Nota <span className="al-opt">opcional</span></span>
-                  <textarea className="al-textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Contexto para quem recebe" />
+                  <textarea className="nx-textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Contexto para quem recebe" />
                 </label>
               </>
             )}
