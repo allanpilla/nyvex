@@ -445,8 +445,8 @@ function Row({ g, now, tab, sel, open, fresh, onSel, onOpen, onAck, onQuick, onC
         {a.kind !== 'camera' && <ClipChip onClick={onClip} />}
       </span>
       <span className="dv-c al-c--reason" role="cell"><span className={`al-reason is-${r.tone}`}><Icon name={KIND[a.kind].icon} size={14} />{r.label}</span></span>
-      <span className="dv-c al-c--cam" role="cell"><span className="dv-two"><b className={c.name ? undefined : 'al-noname'}>{camName(c)}</b><span>{c.local}</span></span></span>
-      <span className="dv-c al-c--when" role="cell"><span className="dv-two"><b>{ago(g.last, now)}</b><span>{n > 1 ? `${n}× ${span(g.first, g.last)}` : when(g.last, now)}</span></span></span>
+      <span className="dv-c al-c--cam" role="cell"><span className="dv-two"><b className={c.name ? undefined : 'al-noname'}>{camName(c)}</b></span></span>
+      <span className="dv-c al-c--when" role="cell"><span className="dv-two"><b title={when(g.last, now)}>{ago(g.last, now)}</b></span></span>
       <span className="dv-c al-c--trail" role="cell">
         {tab === 'pendente' ? (a.fwdTo ? <span className="dv-two"><b>{a.fwdTo}</b><span>Encaminhado</span></span> : <span className="lc-none">—</span>)
           : tab === 'reconhecido' ? <span className="dv-two"><b>{a.ackBy}</b><span>{ago(a.ackAt!, now)}</span></span>
