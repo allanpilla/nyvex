@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Button, Checkbox, ConfirmDialog, Icon, Segmented } from '../../ds/components';
+import { Badge, Button, Checkbox, ConfirmDialog, Icon, IconButton, Segmented } from '../../ds/components';
 import { CATALOG, TOTAL, type Module, type Role } from './data';
 
 type Props = {
@@ -161,27 +161,22 @@ function RoleDetail({ role, set, users, open, q, show, setQ, setShow, toggleMod,
   return (
     <>
       <header className="us-rd__head">
-        <span className={`us-rd__ic${edit ? ' is-custom' : ''}`}><Icon name={edit ? 'shield' : 'lock'} size={18} /></span>
+        <span className={`us-rd__ic${edit ? ' is-custom' : ''}`}><Icon name={edit ? 'shield' : 'lock'} size={16} /></span>
         <div className="us-rd__title">
           <h2>{role.label} <Badge tone={edit ? 'info' : 'neutral'}>{edit ? 'Personalizado' : 'Do sistema'}</Badge></h2>
-          <p>{users} {users === 1 ? 'usuário' : 'usuários'} com este papel · {role.plane === 'platform' ? 'Plataforma (equipe Nyvex)' : 'Cliente'}</p>
+          <p>{users} {users === 1 ? 'usuário' : 'usuários'} · {role.plane === 'platform' ? 'Plataforma' : 'Cliente'} · {edit ? 'clique nas bolinhas para conceder ou revogar' : 'permissões fixas'}</p>
+        </div>
+        <div className="us-rd__count" title={`${n} de ${TOTAL} permissões`}>
+          <span><b>{n}</b>/{TOTAL} permissões</span>
+          <span className="us-bar"><i style={{ width: `${pct(n, TOTAL)}%` }} /></span>
         </div>
         {edit && (
           <div className="us-rd__acts">
-            <Button icon="edit" onClick={() => onRename(role)}>Renomear</Button>
-            <Button icon="trash" className="is-danger-ghost" onClick={onDelete}>Excluir</Button>
+            <IconButton icon="edit" label="Renomear" onClick={() => onRename(role)} tipPlace="bottom" />
+            <IconButton icon="trash" label="Excluir" className="us-danger" onClick={onDelete} tipPlace="bottom" />
           </div>
         )}
       </header>
-
-      <div className="us-rd__sum">
-        <div className="us-rd__big"><b>{n}</b><span>de {TOTAL} permissões</span></div>
-        <span className="us-bar us-bar--lg"><i style={{ width: `${pct(n, TOTAL)}%` }} /></span>
-        <p className="us-rd__note">
-          <Icon name={edit ? 'infoFill' : 'lock'} size={14} />
-          {edit ? 'Clique numa ação para conceder ou revogar. Use a caixa do módulo para marcar todas de uma vez.' : 'Papel do sistema: as permissões são fixas. Para outro conjunto, crie um papel personalizado.'}
-        </p>
-      </div>
 
       <div className="dv-tools us-rd__tools">
         <label className="nx-input dv-search">

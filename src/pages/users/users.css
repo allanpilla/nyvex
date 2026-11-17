@@ -84,20 +84,22 @@
 
 /* detalhe do papel */
 .us-rd.dv-tcard { min-height: 0; padding: 0; gap: 0; overflow: hidden; }
-.us-rd__head { flex: none; display: flex; align-items: center; gap: 12px; padding: 16px 16px 0; }
-.us-rd__ic { width: 40px; height: 40px; flex: none; border-radius: 12px; display: grid; place-items: center; color: var(--nx-text-soft); background: var(--nx-bg-hover); }
+.us-rd__head { flex: none; display: flex; align-items: center; gap: 12px; padding: 14px 16px 0; }
+.us-rd__ic { width: 32px; height: 32px; flex: none; border-radius: 9px; display: grid; place-items: center; color: var(--nx-text-soft); background: var(--nx-bg-hover); }
 .us-rd__ic.is-custom { color: var(--us-blue); background: color-mix(in srgb, var(--us-blue) 14%, transparent); }
 .us-rd__title { flex: 1; min-width: 0; }
-.us-rd__title h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 16px; line-height: 22px; font-weight: 500; }
-.us-rd__title p { margin: 2px 0 0; font-size: 12.5px; color: var(--nx-text-soft); }
-.us-rd__acts { display: flex; gap: 8px; }
+.us-rd__title h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; line-height: 20px; font-weight: 500; }
+.us-rd__title p { margin: 1px 0 0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--nx-text-soft); }
+.us-rd__acts { display: flex; gap: 2px; }
+.us-rd__count { flex: 0 0 180px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--nx-text-soft); font-variant-numeric: tabular-nums; }
+.us-rd__count b { font-size: 14px; font-weight: 500; color: var(--nx-text-main); }
 .us-rd__sum { flex: none; display: grid; grid-template-columns: auto minmax(120px, 1fr); align-items: center; column-gap: 16px; row-gap: 10px; margin: 14px 16px 0; padding: 12px 14px; border-radius: 12px; background: var(--nx-bg-canvas); }
 .us-rd__big { display: flex; align-items: baseline; gap: 6px; }
 .us-rd__big b { font-size: 22px; line-height: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .us-rd__big span { font-size: 12.5px; color: var(--nx-text-soft); }
 .us-rd__note { grid-column: 1 / -1; margin: 0; display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 17px; color: var(--nx-text-soft); }
 .us-rd__note .nx-icon { flex: none; margin-top: 1px; }
-.us-rd__tools.dv-tools { flex: none; padding: 12px 16px; border-bottom: 1px solid var(--nx-stroke); }
+.us-rd__tools.dv-tools { flex: none; padding: 12px 16px 10px; border-bottom: 1px solid var(--nx-stroke); }
 .us-rd__body { flex: 1; min-height: 0; overflow: auto; padding: 8px 8px 16px; }
 
 /* módulo → recursos → ações */
