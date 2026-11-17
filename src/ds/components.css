@@ -116,6 +116,7 @@
 .nx-switch.is-on { background: var(--nx-primary); }
 .nx-switch.is-on .nx-switch__knob { transform: translateX(14px); }
 .nx-switch--sm.is-on .nx-switch__knob { transform: translateX(12px); }
+.nx-switch:disabled { opacity: .45; cursor: not-allowed; }
 
 /* Controle segmentado */
 .nx-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--nx-radius-md); background: var(--nx-bg-canvas); border: 1px solid var(--nx-stroke); }
@@ -285,11 +286,11 @@ div.nx-combo { cursor: text; }
 .nx-combo__search { flex: none; margin-bottom: 4px; }
 .nx-combo__list { overflow: auto; display: flex; flex-direction: column; gap: 1px; min-height: 0; }
 .nx-combo__opt { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 8px; border-radius: var(--nx-radius-sm); font-size: 13px; color: var(--nx-text-sub); text-align: left; }
-.nx-combo__opt > span { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.nx-combo__opt > span:not(.nx-icon) { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
 .nx-combo__opt em { font-style: normal; font-size: 11px; color: var(--nx-text-soft); white-space: nowrap; }
 .nx-combo__opt.is-hi { background: var(--nx-bg-hover); color: var(--nx-text-main); }
 .nx-combo__opt[aria-selected='true'] { color: var(--nx-text-main); }
-.nx-combo__opt > .nx-icon { color: var(--nx-primary); }
+.nx-combo__opt > .nx-icon { flex: none; margin-left: auto; color: var(--nx-primary); }
 .nx-combo__none { padding: 10px 8px; font-size: 12px; color: var(--nx-text-soft); }
 
 /* Tooltip no padrão do DS (Figma › Tooltip [1.0]): borda, sombra e seta apontando para o elemento */
