@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, Checkbox, Icon, IconButton, Menu, NavItem, PageHeader, StatusModal, Switch, Tabs, useTooltip } from '../../ds/components';
+import { Button, Checkbox, Icon, IconButton, Menu, NavItem, PageHeader, Select, StatusModal, Switch, Tabs, useTooltip } from '../../ds/components';
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import { norm } from '../devices/parts';
@@ -391,9 +391,9 @@ function FpDialog({ a, n, onCancel, onConfirm }: { a?: Alert; n: number; onCance
       description={<span className="al-fpd">
         <span>{n === 1 ? 'O alerta sai' : 'Os alertas saem'} da fila e {n === 1 ? 'vai' : 'vão'} para Encerrados com a causa e a justificativa abaixo.</span>
         {a && <AlertSum a={a} n={n} />}
-        <label className="dv-field"><span className="dv-field__l">Causa-raiz do falso positivo</span>
-          <select className="nx-select" value={reason} onChange={(e) => setReason(e.target.value)}>{FP_REASONS.map((r) => <option key={r}>{r}</option>)}</select>
-        </label>
+        <span className="dv-field"><span className="dv-field__l">Causa-raiz do falso positivo</span>
+          <Select label="Causa-raiz do falso positivo" value={reason} onChange={setReason} options={FP_REASONS.map((r) => ({ value: r, label: r }))} />
+        </span>
         <Checkbox label="Enviar para reavaliação do modelo" checked={reeval} onChange={setReeval}><span>Enviar para reavaliação do modelo</span></Checkbox>
         <label className="dv-field"><span className="dv-field__l">Justificativa<i>*</i></span>
           <textarea className="nx-textarea" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que foi verificado e por que é falso positivo" />
@@ -421,11 +421,9 @@ function FwdDialog({ a, n, onCancel, onConfirm }: { a: Alert; n: number; onCance
       description={<span className="al-fpd">
         <span>O alerta continua pendente, agora com responsável.</span>
         <AlertSum a={a} n={n} />
-        <label className="dv-field"><span className="dv-field__l">Para<i>*</i></span>
-          <select className="nx-select" value={to} onChange={(e) => setTo(e.target.value)}>
-            <option value="">Escolha quem recebe</option>{USERS.filter((u) => u !== ME).map((u) => <option key={u}>{u}</option>)}
-          </select>
-        </label>
+        <span className="dv-field"><span className="dv-field__l">Para<i>*</i></span>
+          <Select label="Para" value={to} onChange={setTo} placeholder="Escolha quem recebe" options={USERS.filter((u) => u !== ME).map((u) => ({ value: u, label: u }))} />
+        </span>
         <label className="dv-field"><span className="dv-field__l">Nota <span className="al-opt">opcional</span></span>
           <textarea className="nx-textarea" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que a pessoa precisa saber ou verificar" />
         </label>
