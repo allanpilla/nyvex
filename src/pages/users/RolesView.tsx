@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { IconName } from '../../ds/icons/icons';
-import { Badge, Checkbox, ConfirmDialog, Icon, IconButton, Segmented } from '../../ds/components';
+import { Badge, Button, Checkbox, ConfirmDialog, Icon, IconButton, Segmented } from '../../ds/components';
 import { CATALOG, TOTAL, type Module, type Role } from './data';
 
 type Props = {
   roles: Role[];
   usersByRole: Record<string, number>;
-  onToggle: (r: Role, key: string) => void;
-  onSetMany: (r: Role, keys: string[], on: boolean) => void;
+  onSave: (r: Role, granted: string[]) => void;
   onNew: () => void;
   onRename: (r: Role) => void;
   onDelete: (r: Role) => void;
@@ -25,13 +24,15 @@ const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCa
  * Papéis & Permissões em dois níveis: escolha o papel à esquerda e veja o que ele pode fazer, módulo a módulo,
  * com cada recurso numa linha e as ações como chips. "Comparar papéis" mostra módulos × papéis lado a lado.
  */
-export function RolesView({ roles, usersByRole, onToggle, onSetMany, onNew, onRename, onDelete }: Props) {
+export function RolesView({ roles, usersByRole, onSave, onNew, onRename, onDelete }: Props) {
   const [mode, setMode] = useState<Mode>('role');
   const [selKey, setSelKey] = useState(roles[1]?.key ?? roles[0]?.key);
   const [open, setOpen] = useState<Set<string>>(() => new Set([CATALOG[0].label]));
   const [q, setQ] = useState('');
   const show: Show = 'all';
   const [del, setDel] = useState<Role | null>(null);
+  // rascunho por papel: as bolinhas mexem aqui e só valem depois de Salvar
+  const [drafts, setDrafts] = useState<Record<string, string[]>>({});
 
   // papel recém-criado já abre selecionado
   const prevLen = useRef(roles.length);
@@ -40,7 +41,15 @@ export function RolesView({ roles, usersByRole, onToggle, onSetMany, onNew, onRe
     prevLen.current = roles.length;
   }, [roles]);
 
-  const role = roles.find((r) => r.key === selKey) ?? roles[0];
+  const base = roles.find((r) => r.key === selKey) ?? roles[0];
+  const same = (a: string[], b: string[]) => a.length === b.length && a.every((k) => b.includes(k));
+  const isDirty = (r: Role) => !!drafts[r.key] && !same(drafts[r.key], r.granted);
+  const role = base && drafts[base.key] ? { ...base, granted: drafts[base.key] } : base;
+  const editDraft = (fn: (g: string[]) => string[]) => base && setDrafts((d) => ({ ...d, [base.key]: fn(d[base.key] ?? base.granted) }));
+  const toggle = (_: Role, key: string) => editDraft((g) => (g.includes(key) ? g.filter((k) => k !== key) : [...g, key]));
+  const setMany = (_: Role, keys: string[], on: boolean) => editDraft((g) => (on ? [...new Set([...g, ...keys])] : g.filter((k) => !keys.includes(k))));
+  const discard = () => base && setDrafts((d) => { const n = { ...d }; delete n[base.key]; return n; });
+  const save = () => { if (base && drafts[base.key]) { onSave(base, drafts[base.key]); discard(); } };
   const sets = useMemo(() => Object.fromEntries(roles.map((r) => [r.key, new Set(r.granted)])), [roles]);
   const system = roles.filter((r) => r.is_system);
   const custom = roles.filter((r) => !r.is_system);
@@ -57,7 +66,7 @@ export function RolesView({ roles, usersByRole, onToggle, onSetMany, onNew, onRe
     return (
       <button key={r.key} type="button" className={`us-rl__item${r.key === role?.key ? ' is-sel' : ''}`} aria-current={r.key === role?.key} onClick={() => pick(r.key)}>
         <span className={`us-rl__ic${r.is_system ? '' : ' is-custom'}`}><Icon name={r.is_system ? 'lock' : 'shield'} size={14} /></span>
-        <span className="us-rl__txt"><b>{r.label}</b></span>
+        <span className="us-rl__txt"><b>{r.label}</b>{isDirty(r) && <i className="us-rl__dirty" title="Alterações não salvas" />}</span>
         <span className="us-rl__u" title={`${u} ${u === 1 ? 'usuário' : 'usuários'} · ${n} de ${TOTAL} permissões`}><Icon name="people" size={12} />{u}</span>
       </button>
     );
@@ -90,7 +99,20 @@ export function RolesView({ roles, usersByRole, onToggle, onSetMany, onNew, onRe
           <section className="dv-tcard is-t2 us-rd" aria-label={`Permissões de ${role.label}`}>
             <RoleDetail role={role} set={sets[role.key]} users={usersByRole[role.key] ?? 0} open={open} q={q} show={show}
               setQ={setQ} toggleMod={toggleMod} setOpen={setOpen}
-              onToggle={onToggle} onSetMany={onSetMany} onRename={onRename} onDelete={() => setDel(role)} />
+              onToggle={toggle} onSetMany={setMany} onRename={onRename} onDelete={() => setDel(base)} />
+            {!role.is_system && (
+              <footer className="us-rd__foot">
+                {isDirty(base) ? (() => {
+                  const d = drafts[base.key];
+                  const added = d.filter((k) => !base.granted.includes(k)).length;
+                  const removed = base.granted.filter((k) => !d.includes(k)).length;
+                  return <span className="us-rd__pending"><i />Alterações não salvas{added ? ` · ${added} ${added === 1 ? 'concedida' : 'concedidas'}` : ''}{removed ? ` · ${removed} ${removed === 1 ? 'revogada' : 'revogadas'}` : ''}</span>;
+                })() : <span className="us-rd__saved">Nenhuma alteração pendente</span>}
+                <span className="dv-tools__sp" />
+                <Button disabled={!isDirty(base)} onClick={discard}>Descartar</Button>
+                <Button variant="primary" icon="check" disabled={!isDirty(base)} onClick={save}>Salvar</Button>
+              </footer>
+            )}
           </section>
         </div>
       )}
@@ -98,16 +120,18 @@ export function RolesView({ roles, usersByRole, onToggle, onSetMany, onNew, onRe
       {del && (
         <ConfirmDialog title={`Excluir o papel ${del.label}?`} confirm="Excluir"
           text={(usersByRole[del.key] ?? 0) > 0 ? `${usersByRole[del.key]} ${usersByRole[del.key] === 1 ? 'usuário perde' : 'usuários perdem'} as permissões deste papel.` : 'Nenhum usuário usa este papel.'}
-          onConfirm={() => { onDelete(del); setDel(null); setSelKey(roles[1]?.key ?? roles[0]?.key); }} onCancel={() => setDel(null)} />
+          onConfirm={() => { onDelete(del); setDrafts((d) => { const n = { ...d }; delete n[del.key]; return n; }); setDel(null); setSelKey(roles[1]?.key ?? roles[0]?.key); }} onCancel={() => setDel(null)} />
       )}
     </div>
   );
 }
 
+type Toggle = (r: Role, key: string) => void;
+type SetMany = (r: Role, keys: string[], on: boolean) => void;
 type DetailProps = {
   role: Role; set: Set<string>; users: number; open: Set<string>; q: string; show: Show;
   setQ: (v: string) => void; toggleMod: (l: string) => void; setOpen: (s: Set<string>) => void;
-  onToggle: Props['onToggle']; onSetMany: Props['onSetMany']; onRename: Props['onRename']; onDelete: () => void;
+  onToggle: Toggle; onSetMany: SetMany; onRename: Props['onRename']; onDelete: () => void;
 };
 
 function RoleDetail({ role, set, users, open, q, show, setQ, toggleMod, setOpen, onToggle, onSetMany, onRename, onDelete }: DetailProps) {

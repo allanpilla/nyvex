@@ -208,3 +208,11 @@ button.us-dot.is-on:hover { background: color-mix(in srgb, var(--nx-success) 26%
 .us-mod__tg { grid-template-columns: 16px minmax(0, 1fr) auto !important; }
 .us-rd__count { flex: none !important; }
 .us-cmp__b .nx-badge { align-self: center; }
+
+/* salvar alterações do papel */
+.us-rd__foot { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--nx-stroke); background: var(--nx-bg-surface); }
+.us-rd__pending { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--nx-text-main); }
+.us-rd__pending i { width: 8px; height: 8px; border-radius: 50%; background: #f2ae40; }
+.us-rd__saved { font-size: 12.5px; color: var(--nx-text-soft); }
+.us-rl__txt { flex-direction: row !important; align-items: center; gap: 8px; }
+.us-rl__dirty { flex: none; width: 7px; height: 7px; border-radius: 50%; background: #f2ae40; }
