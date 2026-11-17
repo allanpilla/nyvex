@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, DateTimePicker, Icon, IconButton, Kbd, Segmented } from '../../ds/components';
+import { Button, DateTimePicker, Icon, IconButton, Segmented } from '../../ds/components';
 import { storage } from '../../lib/storage';
 import { Figure } from './Figure';
 import { Chip, describe, Field, isoLocal, PERIOD_LABEL, Swatches, toggle, TriRow } from './parts';
 import {
-  AGES, EMPTY, EXAMPLES, EXTRAS, GENDER_LABEL, isSet, LOCAIS, MOODS, nTraits, parseDescription, runSearch, traitLabel,
+  AGES, EMPTY, EXTRAS, GENDER_LABEL, isSet, LOCAIS, MOODS, nTraits, runSearch, traitLabel,
   type Filters, type Obs, type TraitKey,
 } from './data';
 
@@ -19,13 +19,10 @@ export function NewSearch({ initial, all, onClose, onSearch }: Props) {
   const [f, setF] = useState<Filters>(initial ?? EMPTY);
   const [step, setStep] = useState(0);
   const [seen, setSeen] = useState(initial ? STEPS.length - 1 : 0);
-  const [text, setText] = useState('');
   const [purpose, setPurpose] = useState('');
   const [tried, setTried] = useState(false);
   const now = useMemo(() => Date.now(), []);
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setF((x) => ({ ...x, [k]: v }));
-  const parsed = useMemo(() => (text.trim().length > 2 ? parseDescription(text) : {}), [text]);
-  const parsedKeys = Object.keys(parsed) as (keyof Filters)[];
   const preview = useMemo(() => runSearch(all, f, now), [all, f, now]);
   const recent = useMemo(readPurposes, []);
 
@@ -44,7 +41,6 @@ export function NewSearch({ initial, all, onClose, onSearch }: Props) {
     storage.set('nx-traits-purposes', JSON.stringify([p, ...recent.filter((x) => x !== p)].slice(0, 4)));
     onSearch(f, p);
   };
-  const applyText = () => { if (parsedKeys.length) { setF((x) => ({ ...x, ...parsed })); setText(''); } };
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -102,24 +98,6 @@ export function NewSearch({ initial, all, onClose, onSearch }: Props) {
           <div className="tr-wiz__body" key={step}>
             {step === 0 && (
               <>
-                <div className="tr-desc">
-                  <span className="tr-field__l">Descreva em uma frase <span className="tr-field__h">opcional</span></span>
-                  <label className="nx-input tr-desc__in">
-                    <Icon name="sparkle" size={16} />
-                    <input autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="Ex.: homem de camiseta vermelha com mochila"
-                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); applyText(); } }} aria-label="Descrever a pessoa" />
-                    {text && <Kbd>Enter</Kbd>}
-                  </label>
-                  {text.trim().length > 2 ? (
-                    <div className="tr-desc__pre" aria-live="polite">
-                      {parsedKeys.length ? <><span>Entendi:</span>{parsedKeys.map((k) => <b key={k}>{k === 'locais' ? parsed.locais!.join(', ') : k === 'period' ? PERIOD_LABEL[parsed.period!] : traitLabel({ ...EMPTY, ...parsed }, k as TraitKey)}</b>)}<span>· Enter preenche</span></> : <span>Nada reconhecido ainda…</span>}
-                    </div>
-                  ) : (
-                    <div className="tr-desc__pre">
-                      {EXAMPLES.map((e) => <button key={e.text} type="button" className="tr-ex" onClick={() => setF((x) => ({ ...x, ...parseDescription(e.text) }))}>{e.label}</button>)}
-                    </div>
-                  )}
-                </div>
                 <Field label="Gênero" hint="como reportado pelo motor">
                   <Segmented<'' | 'M' | 'F'> label="Gênero" value={f.gender} onChange={(v) => set('gender', v)}
                     options={[{ value: '', label: 'Tanto faz' }, { value: 'M', label: GENDER_LABEL.M }, { value: 'F', label: GENDER_LABEL.F }]} />

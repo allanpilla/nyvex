@@ -40,7 +40,7 @@ export function TraitsPage({ screen }: { screen: Screen }) {
     setList((l) => [s, ...l]);
     setOpenSearch(s.id);
     setBusy(true);
-    setTimeout(() => setBusy(false), 1400);
+    setTimeout(() => setBusy(false), 4200);
   };
 
   const nq = norm(q.trim());
