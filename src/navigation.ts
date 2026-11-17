@@ -38,6 +38,7 @@ export const NAV: NavGroup[] = [
     { id: 'faces', path: '/faces-ao-vivo', label: 'Faces ao vivo', icon: 'faces', description: 'Grade de faces capturadas em tempo real.' },
     { id: 'alertas', actions: ['Triar em lote'], path: '/alertas', label: 'Fila de alertas', icon: 'alert', count: '3.772', description: 'Alertas de face, placa e vídeo aguardando triagem.' },
     { id: 'ocor', actions: ['Nova ocorrência'], path: '/ocorrencias', label: 'Ocorrências', icon: 'ocor', description: 'Central de despacho: do registro ao encerramento.' },
+    { id: 'caracteristicas', path: '/caracteristicas', label: 'Características', icon: 'search', description: 'Busca de pessoas vistas pelas câmeras pela aparência (roupa, idade, acessórios).' },
     { id: 'placas', path: '/rede-de-placas', label: 'Rede de placas', icon: 'share', description: 'Conexões entre placas, locais e passagens (Plate Network).' },
   ]),
   s('infra', 'Infraestrutura', 'camera', true, [
