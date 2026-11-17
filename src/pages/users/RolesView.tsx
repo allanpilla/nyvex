@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import type { IconName } from '../../ds/icons/icons';
 import { Badge, Checkbox, ConfirmDialog, Icon, IconButton, Segmented } from '../../ds/components';
 import { CATALOG, TOTAL, type Module, type Role } from './data';
 
@@ -18,7 +19,6 @@ type Show = 'all' | 'on';
 /** Ações comuns ficam sempre na mesma coluna; as demais vão para "Outras ações". */
 const CORE = ['Ver', 'Editar', 'Administrar'];
 const keysOf = (m: Module) => m.resources.flatMap((r) => r.permissions.map((p) => p[0]));
-const pct = (n: number, t: number) => (t ? Math.round((n / t) * 100) : 0);
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /**
@@ -232,56 +232,49 @@ function RoleDetail({ role, set, users, open, q, show, setQ, toggleMod, setOpen,
   );
 }
 
-/** Módulos × papéis: quanto de cada módulo cada papel tem. Clique numa célula para abrir o papel naquele módulo. */
+/** Módulos × papéis no mesmo modelo de tabela das outras telas (dv-tcard is-t2 + dv-table). Clique numa célula para abrir o papel naquele módulo. */
 function Compare({ roles, sets, usersByRole, onPick }: { roles: Role[]; sets: Record<string, Set<string>>; usersByRole: Record<string, number>; onPick: (k: string, mod?: string) => void }) {
+  const cols = { '--cols': `minmax(220px, 1.6fr) repeat(${roles.length}, minmax(112px, 1fr))` } as CSSProperties;
   const cell = (r: Role, keys: string[], mod?: string) => {
     const on = keys.filter((k) => sets[r.key].has(k)).length;
-    const p = pct(on, keys.length);
     return (
-      <td key={r.key} className="us-cmp__c">
-        <button type="button" className={`us-cmp__b${on === 0 ? ' is-zero' : p === 100 ? ' is-full' : ''}`} onClick={() => onPick(r.key, mod)}
-          title={`${r.label}${mod ? ` · ${mod}` : ''}: ${on} de ${keys.length}`}>
-          <span className="us-cmp__v">{on === 0 ? '—' : p === 100 ? 'Tudo' : `${on}/${keys.length}`}</span>
+      <span key={r.key} className="dv-c us-cmp__c" role="cell">
+        <button type="button" className="us-cmp__b" onClick={() => onPick(r.key, mod)} title={`Abrir ${r.label}${mod ? ` em ${mod}` : ''}`}>
+          {on === 0 ? <span className="us-none">—</span> : on === keys.length ? <Badge tone="success">Tudo</Badge> : <span className="us-cmp__v"><b>{on}</b> de {keys.length}</span>}
         </button>
-      </td>
+      </span>
     );
   };
   const all = CATALOG.flatMap(keysOf);
-  return (
-    <div className="dv-tcard is-t2 us-cmp">
-      <div className="us-cmp__scroll">
-        <table className="us-cmp__t">
-          <thead>
-            <tr>
-              <th className="us-cmp__m">Módulo</th>
-              {roles.map((r) => (
-                <th key={r.key}>
-                  <button type="button" className="us-cmp__rh" onClick={() => onPick(r.key)}>
-                    <Icon name={r.is_system ? 'lock' : 'shield'} size={12} />
-                    <b>{r.label}</b>
-                  </button>
-                  <span className="us-cmp__ru">{usersByRole[r.key] ?? 0} {(usersByRole[r.key] ?? 0) === 1 ? 'usuário' : 'usuários'}</span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="us-cmp__tot">
-              <td className="us-cmp__m"><b>Total</b><span>{TOTAL} permissões</span></td>
-              {roles.map((r) => cell(r, all))}
-            </tr>
-            {CATALOG.map((m) => {
-              const keys = keysOf(m);
-              return (
-                <tr key={m.label}>
-                  <td className="us-cmp__m"><b>{m.label}</b><span>{keys.length} permissões</span></td>
-                  {roles.map((r) => cell(r, keys, m.label))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+  const row = (key: string, icon: IconName, label: string, sub: string, keys: string[], mod?: string, cls = '') => (
+    <div key={key} className={`dv-tr us-cmp__tr${cls}`} role="row" style={cols}>
+      <span className="dv-c dv-c--name" role="cell">
+        <span className="dv-kind"><Icon name={icon} size={16} /></span>
+        <span className="dv-name"><b>{label}</b><span>{sub}</span></span>
+      </span>
+      {roles.map((r) => cell(r, keys, mod))}
     </div>
+  );
+  return (
+    <section className="dv-tcard is-t2 us-cmp" aria-label="Comparar papéis">
+      <div className="dv-tools">
+        <span className="wl-title"><b>{roles.length}</b> papéis em <b>{CATALOG.length}</b> módulos</span>
+        <span className="dv-tools__sp" />
+        <span className="us-rv__hint">Clique numa célula para abrir o papel naquele módulo</span>
+      </div>
+      <div className="dv-table" role="table" aria-label="Permissões por módulo e papel">
+        <div className="dv-tr dv-th" role="row" style={cols}>
+          <span className="dv-c" role="columnheader">Módulo</span>
+          {roles.map((r) => (
+            <span key={r.key} className="dv-c us-cmp__h" role="columnheader">
+              <button type="button" className="dv-sort" onClick={() => onPick(r.key)}>{r.label}</button>
+              <span className="us-rl__u"><Icon name="people" size={12} />{usersByRole[r.key] ?? 0}</span>
+            </span>
+          ))}
+        </div>
+        {row('__total', 'stack', 'Total', `${TOTAL} permissões`, all, undefined, ' is-total')}
+        {CATALOG.map((m) => { const keys = keysOf(m); return row(m.label, 'shield', m.label, `${keys.length} ${keys.length === 1 ? 'permissão' : 'permissões'}`, keys, m.label); })}
+      </div>
+    </section>
   );
 }
