@@ -50,9 +50,22 @@ export function UsersPage({ screen }: { screen: Screen }) {
   const [spin, setSpin] = useState(false);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [bulkRemove, setBulkRemove] = useState(false);
+  const [roleMenu, setRoleMenu] = useState<HTMLElement | null>(null);
 
   const byKey = useMemo(() => Object.fromEntries(roles.map((r) => [r.key, r])), [roles]);
   const tenantRoles = roles.filter((r) => r.plane === 'tenant');
+  const selUsers = users.filter((u) => sel.has(u.id));
+  const nSel = (n: number) => `${n} ${n === 1 ? 'usuário' : 'usuários'}`;
+  const setActive = (to: boolean) => {
+    const n = selUsers.filter((u) => u.is_active !== to).length;
+    setUsers((l) => l.map((u) => (sel.has(u.id) ? { ...u, is_active: to } : u)));
+    toast(`${nSel(n)} ${to ? (n === 1 ? 'ativado' : 'ativados') : (n === 1 ? 'desativado' : 'desativados')}`);
+  };
+  const setRoleBulk = (key: string) => {
+    setUsers((l) => l.map((u) => (sel.has(u.id) ? { ...u, roles: [key, ...u.roles.filter((r) => r !== key).slice(1)] } : u)));
+    setRoleMenu(null);
+    toast(`Papel ${byKey[key]?.label ?? key} aplicado a ${nSel(selUsers.length)}`);
+  };
   const roleLabel = (k?: string) => (k ? byKey[k]?.label ?? k : '');
   const F_GROUPS: { key: FKey; label: string; opts: [string, string][] }[] = [
     { key: 'role', label: 'Papel', opts: roles.map((r) => [r.key, r.label]) },
@@ -243,7 +256,10 @@ export function UsersPage({ screen }: { screen: Screen }) {
           <div className="dv-bulk" role="toolbar" aria-label="Ações para os selecionados">
             <span className="dv-bulk__n"><b>{sel.size}</b> {sel.size === 1 ? 'selecionado' : 'selecionados'}</span>
             <span className="dv-bulk__sep" />
-            <Button icon="trash" onClick={() => setBulkRemove(true)}>Remover</Button>
+            <Button icon="shield" onClick={(e) => setRoleMenu(roleMenu ? null : e.currentTarget)}>Mudar papel</Button>
+            {selUsers.some((u) => !u.is_active) && <Button icon="play" onClick={() => setActive(true)}>Ativar</Button>}
+            <Button icon="pause" disabled={!selUsers.some((u) => u.is_active)} onClick={() => setActive(false)}>Desativar</Button>
+            <Button icon="trash" className="is-danger-ghost" onClick={() => setBulkRemove(true)}>Remover</Button>
             <span className="dv-bulk__sep" />
             <IconButton icon="close" label="Limpar seleção" onClick={() => setSel(new Set())} tipPlace="top" />
           </div>
@@ -279,6 +295,15 @@ export function UsersPage({ screen }: { screen: Screen }) {
           </Menu>
         );
       })()}
+
+      {roleMenu && sel.size > 0 && (
+        <Menu anchor={roleMenu} onClose={() => setRoleMenu(null)}>
+          <div className="nx-menu__title">Mudar papel de {nSel(sel.size)}</div>
+          {tenantRoles.map((r) => (
+            <NavItem key={r.key} role="menuitem" icon={selUsers.every((u) => u.roles[0] === r.key) ? 'check' : 'shield'} label={r.label} onClick={() => setRoleBulk(r.key)} />
+          ))}
+        </Menu>
+      )}
 
       {rowMenu && (() => {
         const u = users.find((x) => x.id === rowMenu.id)!;
