@@ -5,6 +5,7 @@
 .st-nav.dv-tcard { padding: 8px; gap: 2px; background: var(--nx-bg-canvas); }
 .st-nav__item { display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 10px; align-items: center; width: 100%; padding: 8px 10px; border-radius: 10px; text-align: left; border: 1px solid transparent; transition: background .12s, border-color .12s; }
 .st-nav__item:hover { background: var(--nx-bg-hover); }
+.st-nav__item:hover:not(.is-sel) .st-nav__ic { background: var(--nx-bg-badge); color: var(--nx-text-sub); }
 .st-nav__item:focus-visible { outline: 0; border-color: color-mix(in srgb, var(--nx-primary) 55%, transparent); }
 .st-nav__item.is-sel { background: color-mix(in srgb, var(--nx-primary) 10%, transparent); border-color: color-mix(in srgb, var(--nx-primary) 45%, transparent); }
 .st-nav__ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: var(--nx-text-soft); background: var(--nx-bg-hover); transition: color .12s; }
