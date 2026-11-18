@@ -11,7 +11,7 @@
 
 /* Resumo */
 .dv-sum { display: flex; gap: 8px; align-items: stretch; }
-.dv-cards { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.dv-cards { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .dv-card { min-width: 0; text-align: left; padding: 10px 12px; border-radius: var(--nx-radius-lg); border: 1px solid var(--nx-stroke); display: flex; flex-direction: column; justify-content: center; gap: 2px; transition: background .12s, border-color .12s; }
 .dv-card:hover { background: var(--nx-bg-hover); }
 .dv-card.is-on { background: var(--nx-bg-hover); border-color: var(--nx-bg-badge); box-shadow: inset 0 0 0 1px var(--nx-bg-badge); }
@@ -297,7 +297,7 @@ b.is-ok { color: var(--nx-success); }
   .dv-upd { display: none; }
 }
 @container dvmain (max-width: 720px) {
-  .dv-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dv-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dv-meters { flex-direction: column; }
 }
 @media (max-width: 1280px) {
