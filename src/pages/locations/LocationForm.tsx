@@ -105,7 +105,7 @@ export function LocationForm({ edit, parentId, locs, onClose, onSave }: Props) {
             </div>
           </div>
         ) : (
-          <div className="dv-row">
+          <>
             <label className={`dv-field${err('name') ? ' is-err' : ''}`}>
               <span className="dv-field__l">Nome do local<i>*</i></span>
               <span className="nx-input"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Bloco 10 — Reitoria" autoFocus={!edit} /></span>
@@ -118,7 +118,7 @@ export function LocationForm({ edit, parentId, locs, onClose, onSave }: Props) {
                 { value: 'outdoor', label: <><Icon name="map" size={14} />Externo</> },
               ]} />
             </div>
-          </div>
+          </>
         )}
         <label className="dv-field lc-half">
           <span className="dv-field__l">Setor <span className="al-opt">opcional</span></span>
