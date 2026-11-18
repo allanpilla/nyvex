@@ -72,7 +72,7 @@
 /* Tabela */
 .dv-table { container-type: inline-size; border: 1px solid var(--nx-stroke); border-radius: var(--nx-radius-lg); }
 .dv-tr {
-  --cols: 40px minmax(200px, 2.4fr) minmax(110px, 1.2fr) 124px minmax(130px, 1fr) minmax(140px, 1fr) 136px 148px;
+  --cols: 40px minmax(200px, 2.4fr) minmax(110px, 1.2fr) minmax(140px, 1fr) 132px 150px 148px;
   display: grid; grid-template-columns: var(--cols); align-items: center; min-height: 56px;
   border-top: 1px solid var(--nx-stroke); cursor: pointer; outline: 0; position: relative; transition: background .1s;
 }
@@ -132,22 +132,22 @@ b.is-ok { color: var(--nx-success); }
 @media (hover: none) { .dv-c--act { opacity: 1; } }
 
 @container (max-width: 1080px) {
-  .dv-tr { --cols: 40px minmax(190px, 2.4fr) minmax(110px, 1.2fr) 124px minmax(130px, 1fr) minmax(130px, 1fr) 148px; }
+  .dv-tr { --cols: 40px minmax(190px, 2.4fr) minmax(110px, 1.2fr) minmax(140px, 1fr) 132px 148px; }
   .dv-c--lat { display: none; }
 }
 @container (max-width: 880px) {
-  .dv-tr { --cols: 40px minmax(180px, 1fr) 124px 136px 140px 148px; }
+  .dv-tr { --cols: 40px minmax(180px, 1fr) 140px 132px 148px; }
   .dv-c--local { display: none; }
 }
 @container (max-width: 640px) {
   .dv-tr { --cols: 40px minmax(0, 1fr) 120px 44px; }
-  .dv-c--sit, .dv-c--stream { display: none; }
+  .dv-c--stream { display: none; }
   .dv-c--act .nx-icon-btn:not(:last-child) { display: none; }
   .dv-c--act { opacity: 1; padding-right: 6px; }
 }
 @container (max-width: 460px) {
   .dv-tr { --cols: 36px minmax(0, 1fr) 44px; }
-  .dv-c--conn { display: none; }
+  .dv-c--sit { display: none; }
   .dv-c--name .dv-kind { display: none; }
 }
 
@@ -451,3 +451,6 @@ b.is-ok { color: var(--nx-success); }
 
 .dv-tmodel { display: inline-flex; align-items: center; gap: 8px; padding-left: 12px; margin-left: 4px; border-left: 1px solid var(--nx-stroke); font-size: 12px; white-space: nowrap; }
 @container dvmain (max-width: 760px) { .dv-tmodel > span:first-child { display: none; } .dv-sortbtn__l { display: none; } }
+.dv-conn.is-maint i { background: #f2ae40; }
+.dv-tele.is-3 > :last-child { grid-column: 1 / -1; }
+.dv-c--lat b.is-ok { color: var(--nx-success); }

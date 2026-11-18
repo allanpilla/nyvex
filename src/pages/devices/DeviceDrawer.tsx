@@ -3,11 +3,11 @@ import { Alert, Button, Icon, IconButton, Menu, NavItem, Segmented, useTooltip, 
 import { useUi } from '../../lib/useUi';
 import { CAM_BY_ID } from '../mural/data';
 import { sceneUrl } from '../mural/scene';
-import { availability, eventsFor, KIND_ICON, KIND_LABEL, latencySeries, profileFor, TYPE_BY_NAME, type Device, type Situacao } from './data';
-import { ago, bitrate, ConnPill, copy, envOf, errorRate, healthScore, latTone, ReliabPill, SitBadge } from './parts';
+import { availability, categoryOf, eventsFor, KIND_ICON, latencySeries, typeOf, uptimeTone, type Device, type Situacao } from './data';
+import { ago, copy, latTone, StatusPill } from './parts';
 import type { IconName } from '../../ds/icons/icons';
 
-type Tab = 'geral' | 'saude' | 'conexao' | 'eventos';
+type Tab = 'geral' | 'saude' | 'log';
 type Props = {
   d: Device;
   onClose: () => void;
@@ -50,15 +50,13 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
         <span className={`dv-kind is-${d.kind} is-lg`}><Icon name={KIND_ICON[d.kind]} size={20} /></span>
         <div className="dv-drawer__title">
           <h2>{d.name}</h2>
-          <p>{d.type} · {KIND_LABEL[d.kind]}</p>
+          <p>{categoryOf(d)} · {typeOf(d)}</p>
         </div>
         <IconButton icon="close" label="Fechar painel" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
       </header>
 
       <div className="dv-drawer__status">
-        <SitBadge s={d.situacao} />
-        <ConnPill d={d} />
-        {!inactive && <span className="dv-drawer__hb">Heartbeat {ago(d.hb)}</span>}
+        <StatusPill d={d} />
       </div>
       {d.note && (
         <Alert type={d.situacao !== 'ativo' ? 'information' : d.conn === 'offline' ? 'error' : d.conn === 'instavel' ? 'warning' : 'information'}>{d.note}</Alert>
@@ -76,8 +74,7 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
         <Segmented label="Seções" value={tab} onChange={setTab} size="sm" options={[
           { value: 'geral', label: 'Visão geral' },
           { value: 'saude', label: 'Saúde' },
-          { value: 'conexao', label: 'Conexão' },
-          { value: 'eventos', label: 'Eventos' },
+          { value: 'log', label: 'Log' },
         ]} />
       </div>
 
@@ -94,20 +91,17 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
             <dl className="dv-info">
               <Info k="Fabricante" v={d.vendor} />
               <Info k="Modelo" v={d.model} />
-              <Info k="Categoria" v={TYPE_BY_NAME[d.type]?.category ?? KIND_LABEL[d.kind]} />
-              <Info k="Driver" v={<code className="dv-code">{profileFor(d).driver}</code>} />
-              <Info k="Integração" v={d.certified ? <span className="dv-cert is-on"><Icon name="check" size={12} />Certificado</span> : <span className="dv-cert">Genérico (ONVIF/RTSP)</span>} />
+              <Info k="Categoria" v={categoryOf(d)} />
+              <Info k="Tipo" v={typeOf(d)} />
               <Info k="Firmware" v={d.firmware} />
-              <Info k="Local" v={`${d.local} · ${d.area}`} />
-              <Info k="Ambiente" v={envOf(d.local)} />
-              <Info k="Endereço IP" v={<CopyVal v={d.ip} what="IP copiado" />} />
+              <Info k="IP" v={<CopyVal v={d.ip} what="IP copiado" />} />
+              <Info k="MAC address" v={<CopyVal v={d.mac} what="MAC copiado" />} />
               <Info k="Cadastrado em" v={new Date(d.added + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} />
             </dl>
           </>
         )}
         {tab === 'saude' && <Health d={d} />}
-        {tab === 'conexao' && <Connection d={d} />}
-        {tab === 'eventos' && <Events d={d} />}
+        {tab === 'log' && <Events d={d} />}
       </div>
 
       {more && (
@@ -145,23 +139,15 @@ function CopyVal({ v, what, mono = true }: { v: string; what: string; mono?: boo
 function Health({ d }: { d: Device }) {
   const av = useMemo(() => availability(d), [d]);
   const lat = useMemo(() => latencySeries(d), [d]);
-  if (d.situacao === 'inativo') return <p className="dv-muted">Dispositivo inativo: a saúde não é monitorada. Reative para voltar a receber heartbeat e alertas.</p>;
-  const max = Math.max(...lat, 100);
-  const pts = lat.map((v, i) => `${(i / (lat.length - 1)) * 100},${40 - (v / max) * 36}`).join(' ');
-  const avg = Math.round(lat.reduce((a, b) => a + b, 0) / lat.length);
-  const score = healthScore(d), err = errorRate(d), br = bitrate(d);
   const tipApi = useTooltipApi();
+  if (d.situacao === 'inativo') return <p className="dv-muted">Dispositivo desativado: a saúde não é monitorada. Reative para voltar a receber sinal e alertas.</p>;
+  const avg = Math.round(lat.reduce((a, b) => a + b, 0) / lat.length);
   return (
     <>
-      <div className="dv-tele">
-        <Stat icon="activity" k="Confiabilidade" v={<ReliabPill d={d} />} sub={d.kind === 'camera' ? `Sinal da câmera ${ago(d.hb)}` : `Heartbeat ${ago(d.hb)}`} />
-        <Stat icon="sliders" k="Saúde" v={<b className={score == null ? '' : score >= 85 ? 'is-ok' : score >= 50 ? 'is-warn' : 'is-bad'}>{score ?? '—'}<small> /100</small></b>} sub="Reportada pelo dispositivo" />
-        <Stat icon="flash" k="Heartbeat" v={<b>{ago(d.hb)}</b>} sub={d.conn === 'offline' ? 'Sem resposta' : 'A cada 10 s'} />
+      <div className="dv-tele is-3">
         <Stat icon="clock" k="Latência" v={<b className={latTone(d.latency)}>{d.latency ?? '—'}{d.latency != null && <small> ms</small>}</b>} sub={`Média 24 h: ${avg} ms`} />
-        <Stat icon="warn" k="Taxa de erro" v={<b className={err == null ? '' : err >= 2 ? 'is-warn' : ''}>{err == null ? '—' : `${String(err).replace('.', ',')}%`}</b>} sub="Última janela de 5 min" />
-        <Stat icon="live" k="Transmissão" v={<b>{br == null ? '—' : `${(br / 1000).toFixed(1).replace('.', ',')}`}{br != null && <small> Mbps</small>}</b>} sub={br == null ? (d.kind === 'camera' ? 'Sem vídeo' : 'Não se aplica') : 'Stream principal'} />
-        <Stat icon="signal" k="Último sinal" v={<b>{ago(d.hb)}</b>} sub={d.ip} />
-        <Stat icon="check" k="Disponibilidade 30 d" v={<b className={d.uptime >= 99 ? 'is-ok' : d.uptime >= 95 ? 'is-warn' : 'is-bad'}>{d.uptime.toFixed(2).replace('.', ',')}%</b>} sub="Tempo respondendo" />
+        <Stat icon="signal" k="Último sinal" v={<b>{ago(d.hb)}</b>} />
+        <Stat icon="check" k="Disponibilidade 30 d" v={<b className={uptimeTone(d.uptime)}>{d.uptime.toFixed(2).replace('.', ',')}%</b>} />
       </div>
 
       <section className="dv-sec">
@@ -170,61 +156,6 @@ function Health({ d }: { d: Device }) {
           {av.map((s, i) => <i key={i} className={`is-${s}`} onMouseEnter={(e) => tipApi.show(e.currentTarget, `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'} · ${s === 'ok' ? 'ok' : s === 'warn' ? 'instável' : 'fora'}`, undefined, 'top')} onMouseLeave={tipApi.hide} />)}
         </div>
         <div className="dv-axis"><span>24 h atrás</span><span>agora</span></div>
-      </section>
-
-      <section className="dv-sec">
-        <div className="dv-sec__head"><h3>Latência · últimas 24 h</h3><span className="dv-muted">média {avg} ms</span></div>
-        <svg className="dv-spark" viewBox="0 0 100 40" preserveAspectRatio="none" role="img" aria-label={`Latência média de ${avg} ms`}>
-          <line x1="0" x2="100" y1={40 - (300 / max) * 36} y2={40 - (300 / max) * 36} className="dv-spark__lim" />
-          <polyline points={`0,40 ${pts} 100,40`} className="dv-spark__area" />
-          <polyline points={pts} className="dv-spark__line" />
-        </svg>
-        <div className="dv-axis"><span>24 h atrás</span><span className="dv-muted">limite 300 ms</span><span>agora</span></div>
-      </section>
-    </>
-  );
-}
-
-function Connection({ d }: { d: Device }) {
-  const { toast } = useUi();
-  const [show, setShow] = useState(false);
-  const [test, setTest] = useState<'idle' | 'run' | 'ok' | 'fail'>('idle');
-  const pass = 'Nyv3x#2026';
-  const rtsp = `rtsp://${d.user}:${show ? pass : '••••••'}@${d.ip}:${d.port}/Streaming/Channels/101`;
-  const run = () => {
-    setTest('run');
-    setTimeout(() => setTest(d.conn === 'offline' || d.situacao === 'inativo' ? 'fail' : 'ok'), 1100);
-  };
-  return (
-    <>
-      <dl className="dv-info">
-        <Info k="Endereço IP" v={<CopyVal v={d.ip} what="IP copiado" />} />
-        <Info k="Porta" v={String(d.port)} />
-        <Info k="MAC" v={<CopyVal v={d.mac} what="MAC copiado" />} />
-        <Info k="Usuário" v={d.user} />
-        <Info k="Senha" v={<span className="dv-pass">{show ? pass : '••••••••••'}<IconButton icon={show ? 'eyeOff' : 'eye'} label={show ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShow(!show)} tipPlace="top" /></span>} />
-      </dl>
-      {d.kind === 'camera' && (
-        <section className="dv-sec">
-          <div className="dv-sec__head"><h3>URL do stream (RTSP)</h3></div>
-          <button type="button" className="dv-rtsp" onClick={() => { navigator.clipboard?.writeText(rtsp.replace('••••••', pass)).catch(() => {}); toast('URL RTSP copiada'); }}>
-            <code>{rtsp}</code><Icon name="copy" size={14} />
-          </button>
-        </section>
-      )}
-      <section className="dv-sec">
-        <div className="dv-sec__head"><h3>Teste de conexão</h3></div>
-        {test === 'ok' || test === 'fail'
-          ? <Alert type={test === 'ok' ? 'success' : 'error'} title={test === 'ok' ? `Respondeu em ${d.latency ?? 20} ms` : `Sem resposta em ${d.ip}:${d.port}`}
-              action={<Button onClick={run}>Testar de novo</Button>}>
-              {test === 'ok' ? `Credenciais válidas${d.kind === 'camera' ? ' · stream H.264 1080p' : ''}.` : 'Confira cabo, energia e rede.'}
-            </Alert>
-          : (
-            <div className="dv-testrow">
-              <span>{test === 'run' ? <><Icon name="refresh" size={14} className="is-spin" />Testando {d.ip}…</> : 'Verifica se o dispositivo responde e se as credenciais estão corretas.'}</span>
-              <Button icon="activity" onClick={run} disabled={test === 'run'}>Testar conexão</Button>
-            </div>
-          )}
       </section>
     </>
   );
@@ -244,12 +175,12 @@ function Events({ d }: { d: Device }) {
   );
 }
 
-function Stat({ icon, k, v, sub }: { icon: IconName; k: string; v: React.ReactNode; sub: string }) {
+function Stat({ icon, k, v, sub }: { icon: IconName; k: string; v: React.ReactNode; sub?: string }) {
   return (
     <div className="dv-stat">
       <span className="dv-stat__k"><Icon name={icon} size={14} />{k}</span>
       <span className="dv-stat__v">{v}</span>
-      <span className="dv-stat__s">{sub}</span>
+      {sub && <span className="dv-stat__s">{sub}</span>}
     </div>
   );
 }

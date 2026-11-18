@@ -1,7 +1,7 @@
 import { Badge } from '../../ds/components';
 import { storage } from '../../lib/storage';
 import { DEFAULT_MURAL } from '../mural/data';
-import { CONN_LABEL, SIT_LABEL, type Device, type Situacao } from './data';
+import { CONN_LABEL, SIT_LABEL, STATUS_LABEL, statusOf, type Device, type Situacao } from './data';
 
 /* ───────────── utilidades ───────────── */
 
@@ -35,6 +35,11 @@ export function sendToMural(camId: string) {
 export function ConnPill({ d }: { d: Device }) {
   if (d.situacao === 'inativo') return <span className="dv-conn is-na"><i />Não monitorado</span>;
   return <span className={`dv-conn is-${d.conn}`}><i />{CONN_LABEL[d.conn]}</span>;
+}
+/** Situação única do dispositivo: Online, Offline ou Em manutenção. */
+export function StatusPill({ d }: { d: Device }) {
+  const st = statusOf(d);
+  return <span className={`dv-conn is-${st === 'manutencao' ? 'maint' : st}`}><i />{STATUS_LABEL[st]}</span>;
 }
 export function SitBadge({ s }: { s: Situacao }) {
   return <Badge tone={s === 'ativo' ? 'success' : s === 'manutencao' ? 'warning' : 'neutral'}>{SIT_LABEL[s]}</Badge>;

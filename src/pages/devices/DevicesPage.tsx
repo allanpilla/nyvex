@@ -5,11 +5,11 @@ import type { IconName } from '../../ds/icons/icons';
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import {
-  CONN_LABEL, DEVICES, DEV_LOCAIS, TYPES, KIND_ICON, KIND_LABEL, LICENSES, SIT_LABEL, STREAM_LABEL,
-  type Conn, type Device, type Kind, type Situacao,
+  categoryOf, DEVICES, DEV_LOCAIS, TYPES, KIND_ICON, LICENSES, KIND_LABEL, STATUS_LABEL, statusOf, STREAM_LABEL, typeOf, uptimeTone,
+  type Device, type Kind, type Situacao, type Status,
 } from './data';
 import { DeviceDrawer } from './DeviceDrawer';
-import { ago, ConnPill, copy, envOf, healthScore, latTone, norm, reliability, ReliabPill, SitBadge, sendToMural } from './parts';
+import { ago, copy, envOf, latTone, norm, StatusPill, sendToMural } from './parts';
 import { createPortal } from 'react-dom';
 import { DeviceForm } from './DeviceForm';
 import { FilterToggle, SortButton, useTableModel } from './tableModel';
@@ -17,16 +17,14 @@ import './devices.css';
 
 /* ───────────── filtros ───────────── */
 
-type FKey = 'type' | 'situacao' | 'conn' | 'stream' | 'health' | 'env' | 'local' | 'cert';
+type FKey = 'type' | 'situacao' | 'stream' | 'env' | 'local' | 'cert';
 type Filters = Record<FKey, string[]>;
-const EMPTY: Filters = { type: [], situacao: [], conn: [], stream: [], health: [], env: [], local: [], cert: [] };
+const EMPTY: Filters = { type: [], situacao: [], stream: [], env: [], local: [], cert: [] };
 /** Mesmos filtros da tela atual (Categoria fica nas abas) + Conexão, Local e Integração. */
 const F_GROUPS: { key: FKey; label: string; opts: [string, string][] }[] = [
   { key: 'type', label: 'Tipo', opts: TYPES.map((t) => [t.type, t.type]) },
-  { key: 'situacao', label: 'Situação', opts: [['ativo', 'Ativo'], ['manutencao', 'Em manutenção'], ['inativo', 'Inativo']] },
-  { key: 'conn', label: 'Conexão', opts: [['online', 'Online'], ['instavel', 'Instável'], ['offline', 'Offline']] },
+  { key: 'situacao', label: 'Situação', opts: [['online', 'Online'], ['offline', 'Offline'], ['manutencao', 'Em manutenção']] },
   { key: 'stream', label: 'Stream', opts: [['live', 'Ao vivo'], ['sem', 'Sem vídeo'], ['na', 'Sem stream']] },
-  { key: 'health', label: 'Saúde', opts: [['confiavel', 'Confiável'], ['instavel', 'Instável'], ['nao', 'Não confiável']] },
   { key: 'env', label: 'Ambiente', opts: [['Predial', 'Predial'], ['Perímetro', 'Perímetro'], ['Estacionamento', 'Estacionamento'], ['Esportivo', 'Esportivo']] },
   { key: 'local', label: 'Local', opts: DEV_LOCAIS.map((l) => [l, l]) },
   { key: 'cert', label: 'Integração', opts: [['sim', 'Certificado'], ['nao', 'Genérico (ONVIF/RTSP)']] },
@@ -35,30 +33,27 @@ const fLabel = (k: FKey, v: string) => F_GROUPS.find((g) => g.key === k)!.opts.f
 
 function matches(d: Device, f: Filters) {
   const has = (k: FKey, v: string) => f[k].length === 0 || f[k].includes(v);
-  return has('type', d.type) && has('local', d.local) && has('situacao', d.situacao) && (f.conn.length === 0 || (d.situacao !== 'inativo' && f.conn.includes(d.conn)))
-    && has('stream', d.stream) && has('cert', d.certified ? 'sim' : 'nao') && has('env', envOf(d.local))
-    && (f.health.length === 0 || f.health.includes(reliability(d) ?? '-'));
+  return has('type', d.type) && has('local', d.local) && has('situacao', statusOf(d))
+    && has('stream', d.stream) && has('cert', d.certified ? 'sim' : 'nao') && has('env', envOf(d.local));
 }
 
 /** Atalhos do resumo: cada cartão é um filtro de um clique. */
-type Quick = 'all' | 'online' | 'instavel' | 'offline' | 'manutencao' | 'inativo';
-const quickMatch = (q: Quick, d: Device) =>
-  q === 'all' ? true : q === 'manutencao' || q === 'inativo' ? d.situacao === q : d.situacao !== 'inativo' && d.conn === q;
+type Quick = 'all' | Status;
+const quickMatch = (q: Quick, d: Device) => q === 'all' || statusOf(d) === q;
 
 /* ───────────── ordenação ───────────── */
 
-type SortKey = 'name' | 'local' | 'situacao' | 'conn' | 'stream' | 'latency';
-const SORT_OPTS: [SortKey, string][] = [['name', 'Dispositivo'], ['local', 'Local'], ['situacao', 'Situação'], ['conn', 'Conexão'], ['stream', 'Stream'], ['latency', 'Saúde']];
-const CONN_RANK: Record<Conn, number> = { offline: 0, instavel: 1, online: 2, na: 3 };
-const SIT_RANK: Record<Situacao, number> = { manutencao: 0, ativo: 1, inativo: 2 };
+type SortKey = 'name' | 'local' | 'situacao' | 'ip' | 'latency';
+const SORT_OPTS: [SortKey, string][] = [['name', 'Dispositivo'], ['local', 'Local'], ['situacao', 'Situação'], ['ip', 'IP'], ['latency', 'Saúde']];
+const ST_RANK: Record<Status, number> = { offline: 0, manutencao: 1, online: 2 };
+const ipNum = (ip: string) => ip.split('.').reduce((n, x) => n * 256 + Number(x), 0);
 function cmp(a: Device, b: Device, k: SortKey) {
   switch (k) {
     case 'name': return a.name.localeCompare(b.name, 'pt-BR');
     case 'local': return a.local.localeCompare(b.local, 'pt-BR') || a.name.localeCompare(b.name, 'pt-BR');
-    case 'situacao': return SIT_RANK[a.situacao] - SIT_RANK[b.situacao];
-    case 'conn': return (a.situacao === 'inativo' ? 3 : CONN_RANK[a.conn]) - (b.situacao === 'inativo' ? 3 : CONN_RANK[b.conn]);
-    case 'stream': return a.stream.localeCompare(b.stream);
-    case 'latency': return (healthScore(a) ?? 999) - (healthScore(b) ?? 999);
+    case 'situacao': return ST_RANK[statusOf(a)] - ST_RANK[statusOf(b)];
+    case 'ip': return ipNum(a.ip) - ipNum(b.ip);
+    case 'latency': return a.uptime - b.uptime;
   }
 }
 
@@ -73,7 +68,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
   const [q, setQ] = useState('');
   const [f, setF] = useState<Filters>(EMPTY);
   // Por padrão, o que precisa de atenção aparece primeiro.
-  const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'conn', dir: 1 });
+  const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'situacao', dir: 1 });
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(25);
   const [sel, setSel] = useState<Set<string>>(new Set());
@@ -154,8 +149,8 @@ export function DevicesPage({ screen }: { screen: Screen }) {
     }, 650);
   };
   const exportCsv = (list: Device[]) => {
-    const head = ['Nome', 'Categoria', 'Tipo', 'Fabricante', 'Modelo', 'Local', 'IP', 'Situação', 'Conexão', 'Stream', 'Latência (ms)'];
-    const lines = list.map((d) => [d.name, KIND_LABEL[d.kind], d.type, d.vendor, d.model, d.local, d.ip, SIT_LABEL[d.situacao], d.situacao === 'inativo' ? 'Não monitorado' : CONN_LABEL[d.conn], STREAM_LABEL[d.stream], d.latency ?? ''].map((x) => `"${String(x).replace(/"/g, '""')}"`).join(';'));
+    const head = ['Nome', 'Categoria', 'Tipo', 'Fabricante', 'Modelo', 'Local', 'IP', 'MAC', 'Situação', 'Stream', 'Latência (ms)', 'Disponibilidade 30 d (%)'];
+    const lines = list.map((d) => [d.name, categoryOf(d), typeOf(d), d.vendor, d.model, d.local, d.ip, d.mac, STATUS_LABEL[statusOf(d)], STREAM_LABEL[d.stream], d.latency ?? '', d.uptime.toFixed(2).replace('.', ',')].map((x) => `"${String(x).replace(/"/g, '""')}"`).join(';'));
     const blob = new Blob(['﻿' + [head.join(';'), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -179,11 +174,9 @@ export function DevicesPage({ screen }: { screen: Screen }) {
 
   const cards: { k: Quick; label: string; icon: IconName; tone: string; hint: string }[] = [
     { k: 'all', label: 'Total', icon: KIND_ICON[kind === 'all' ? 'camera' : kind], tone: 'neutral', hint: 'Todos os dispositivos cadastrados' },
-    { k: 'online', label: 'Online', icon: 'signal', tone: 'ok', hint: 'Respondendo ao heartbeat' },
-    { k: 'instavel', label: 'Instáveis', icon: 'activity', tone: 'warn', hint: 'Latência alta ou heartbeat atrasado' },
+    { k: 'online', label: 'Online', icon: 'signal', tone: 'ok', hint: 'Respondendo' },
     { k: 'offline', label: 'Offline', icon: 'nosignal', tone: 'bad', hint: 'Sem resposta' },
     { k: 'manutencao', label: 'Em manutenção', icon: 'wrench', tone: 'maint', hint: 'Alertas silenciados' },
-    { k: 'inativo', label: 'Inativos', icon: 'eyeOff', tone: 'neutral', hint: 'Fora do monitoramento' },
   ];
 
   const search = (
@@ -288,8 +281,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
               <Th k="name" sort={sort} onSort={sortBy} cls="dv-c--name">Dispositivo</Th>
               <Th k="local" sort={sort} onSort={sortBy} cls="dv-c--local">Local</Th>
               <Th k="situacao" sort={sort} onSort={sortBy} cls="dv-c--sit">Situação</Th>
-              <Th k="conn" sort={sort} onSort={sortBy} cls="dv-c--conn">Conexão</Th>
-              <Th k="stream" sort={sort} onSort={sortBy} cls="dv-c--stream">Stream · IP</Th>
+              <Th k="ip" sort={sort} onSort={sortBy} cls="dv-c--stream">IP</Th>
               <Th k="latency" sort={sort} onSort={sortBy} cls="dv-c--lat">Saúde</Th>
               <span className="dv-c dv-c--act" role="columnheader"><span className="nx-sr">Ações</span></span>
             </div>
@@ -420,7 +412,7 @@ export function DevicesPage({ screen }: { screen: Screen }) {
             setDevs((list) => (form.edit ? list.map((x) => (x.id === d.id ? d : x)) : [d, ...list]));
             setForm(null);
             setOpenId(d.id);
-            if (!form.edit) { setKind('all'); clearAll(); setSort({ k: 'conn', dir: 1 }); }
+            if (!form.edit) { setKind('all'); clearAll(); setSort({ k: 'situacao', dir: 1 }); }
             toast(form.edit ? 'Alterações salvas' : `${d.name} adicionado`);
           }}
         />
@@ -487,7 +479,6 @@ function Row({ d, sel, open, onSel, onOpen, onMural, onRestart, onTest, onEdit, 
   const certTip = useTooltip(d.certified ? 'Integração certificada pela Nyvex' : 'Integração genérica (ONVIF/RTSP): recursos avançados podem não funcionar', undefined, true, 'top');
   const ipTip = useTooltip('Copiar IP', undefined, true, 'top');
   const inactive = d.situacao === 'inativo';
-  const score = healthScore(d);
   return (
     <div role="row" tabIndex={0} aria-selected={sel}
       className={`dv-tr${sel ? ' is-sel' : ''}${open ? ' is-open' : ''}${inactive ? ' is-inactive' : ''}`}
@@ -498,31 +489,25 @@ function Row({ d, sel, open, onSel, onOpen, onMural, onRestart, onTest, onEdit, 
         <span className={`dv-kind is-${d.kind}`}><Icon name={KIND_ICON[d.kind]} size={16} /></span>
         <span className="dv-name">
           <b>{d.name}</b>
-          <span>{d.type} · {d.vendor === 'Genérico' ? '' : `${d.vendor} `}{d.model}
+          <span>{typeOf(d)} · {d.vendor === 'Genérico' ? '' : `${d.vendor} `}{d.model}
             <span className={`dv-cert${d.certified ? ' is-on' : ''}`} {...certTip}>{d.certified ? <Icon name="check" size={12} /> : null}{d.certified ? 'Certificado' : 'Genérico'}</span>
           </span>
         </span>
       </span>
       <span className="dv-c dv-c--local" role="cell"><span className="dv-two"><b>{d.local}</b><span>{d.area} · {envOf(d.local)}</span></span></span>
-      <span className="dv-c dv-c--sit" role="cell"><SitBadge s={d.situacao} /></span>
-      <span className="dv-c dv-c--conn" role="cell">
+      <span className="dv-c dv-c--sit" role="cell">
         <span className="dv-two">
-          <ConnPill d={d} />
-          <span>{inactive ? '—' : d.conn === 'offline' ? `Visto ${ago(d.hb)}` : `Heartbeat ${ago(d.hb)}`}</span>
+          <StatusPill d={d} />
+          {statusOf(d) === 'offline' && <span>{inactive ? 'Desativado' : `Sem sinal ${ago(d.hb)}`}</span>}
         </span>
       </span>
       <span className="dv-c dv-c--stream" role="cell">
-        <span className="dv-two">
-          {d.stream === 'live' ? <span className="dv-live"><Icon name="live" size={14} />Ao vivo</span>
-            : d.stream === 'sem' ? <span className="dv-nolive"><Icon name="nosignal" size={14} />Sem vídeo</span>
-              : <span className="dv-nostream">Sem stream</span>}
-          <button type="button" className="dv-ip" onClick={(e) => { e.stopPropagation(); onCopy(); }} {...ipTip}>{d.ip}<Icon name="copy" size={12} /></button>
-        </span>
+        <button type="button" className="dv-ip" onClick={(e) => { e.stopPropagation(); onCopy(); }} {...ipTip}>{d.ip}<Icon name="copy" size={12} /></button>
       </span>
       <span className={`dv-c dv-c--lat ${latTone(d.latency)}`} role="cell">
         <span className="dv-two">
-          <span className="dv-health"><ReliabPill d={d} />{score != null && <em>{score}</em>}</span>
           <span>{d.latency == null ? 'Latência —' : <>Latência <b>{d.latency}</b> ms</>}</span>
+          <span>{inactive ? '30 d —' : <>30 d <b className={uptimeTone(d.uptime)}>{d.uptime.toFixed(1).replace('.', ',')}%</b></>}</span>
         </span>
       </span>
       <span className="dv-c dv-c--act" role="cell" onClick={(e) => e.stopPropagation()}>

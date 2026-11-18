@@ -36,9 +36,23 @@ export type Device = {
   uptime: number; // % em 30 dias
   note?: string;
   camId?: string;
+  /** Tipo da câmera (Bullet, PTZ, Panorâmica, Térmica, LPR, FA). */
+  camType?: CamType;
   added: string;
 };
 
+export type CamType = 'Bullet' | 'PTZ' | 'Panorâmica' | 'Térmica' | 'LPR' | 'FA';
+export const CAM_TYPES: CamType[] = ['Bullet', 'PTZ', 'Panorâmica', 'Térmica', 'LPR', 'FA'];
+/** Situação mostrada ao operador: só Online, Offline ou Em manutenção. */
+export type Status = 'online' | 'offline' | 'manutencao';
+export const STATUS_LABEL: Record<Status, string> = { online: 'Online', offline: 'Offline', manutencao: 'Em manutenção' };
+export const statusOf = (d: Pick<Device, 'situacao' | 'conn'>): Status =>
+  d.situacao === 'manutencao' ? 'manutencao' : d.situacao === 'inativo' || d.conn === 'offline' || d.conn === 'na' ? 'offline' : 'online';
+/** Categoria: Câmera, Controle de acesso ou NVR (demais equipamentos de rede ficam em Infraestrutura). */
+export const categoryOf = (d: Pick<Device, 'kind' | 'type'>) => (d.kind === 'camera' ? 'Câmera' : d.kind === 'acesso' ? 'Controle de acesso' : d.type === 'Gravador (NVR)' ? 'NVR' : 'Infraestrutura');
+export const typeOf = (d: Pick<Device, 'kind' | 'type' | 'camType'>) => (d.kind === 'camera' ? d.camType ?? d.type : d.type);
+/** Disponibilidade 30 d: ≥ 90% verde, 80–89,99% amarelo, abaixo de 80% vermelho. */
+export const uptimeTone = (v: number) => (v >= 90 ? 'is-ok' : v >= 80 ? 'is-warn' : 'is-bad');
 export const KIND_LABEL: Record<Kind, string> = { camera: 'Câmeras', acesso: 'Controle de acesso', infra: 'Infraestrutura' };
 export const KIND_ICON: Record<Kind, IconName> = { camera: 'camera', acesso: 'door', infra: 'server' };
 export const SIT_LABEL: Record<Situacao, string> = { ativo: 'Ativo', manutencao: 'Em manutenção', inativo: 'Inativo' };
@@ -84,9 +98,11 @@ const cams: Device[] = CAMS.map((c, i) => {
     stream: conn === 'offline' ? 'sem' : 'live',
     hb: conn === 'online' ? 1 + Math.floor(r() * 20) : conn === 'instavel' ? 240 + Math.floor(r() * 200) : HB_FROM_NOTE[c.note ?? ''] ?? 900,
     latency: conn === 'online' ? 12 + Math.floor(r() * 50) : conn === 'instavel' ? 320 + Math.floor(r() * 180) : null,
-    uptime: conn === 'online' ? 99 + Math.round(r() * 95) / 100 : conn === 'instavel' ? 93 + Math.round(r() * 400) / 100 : 82 + Math.round(r() * 1000) / 100,
+    uptime: conn === 'online' ? 99 + Math.round(r() * 95) / 100 : conn === 'instavel' ? 86 + Math.round(r() * 1000) / 100 : 68 + Math.round(r() * 2000) / 100,
     note: maint ? 'Troca de lente agendada · alertas silenciados' : c.note,
     camId: c.id,
+    camType: /patio|quadra|setor-a|guarita/.test(c.id) ? 'PTZ' : /cancela|garagem/.test(c.id) ? 'LPR' : /portaria|recepcao/.test(c.id) ? 'FA'
+      : (['Bullet', 'Bullet', 'Panorâmica', 'Bullet', 'Térmica', 'Panorâmica'] as CamType[])[Math.floor(r() * 6)],
     added: date(r),
   } satisfies Device;
 });
