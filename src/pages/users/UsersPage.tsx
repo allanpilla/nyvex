@@ -148,7 +148,7 @@ export function UsersPage({ screen }: { screen: Screen }) {
         {tab === 'usuarios' ? (
           <div className="dv-body">
             <section className="dv-sum" aria-label="Resumo">
-              <div className="dv-cards" role="group" aria-label="Filtrar">
+              <div className="dv-cards us-cards" role="group" aria-label="Filtrar">
                 {cards.map((c) => {
                   const n = count(c.k);
                   const on = quick === c.k;
