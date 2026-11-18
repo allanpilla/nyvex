@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, IconButton, PageHeader } from '../../ds/components';
+import { Button, Icon, IconButton, PageHeader, useTooltip } from '../../ds/components';
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import { FaceDrawer } from './FaceDrawer';
 import { FaceImg } from './FaceImg';
-import { FEED_MAX, initialFaces, makeFace, rand, SRC, srcName, hms, type Face } from './data';
+import { FEED_MAX, initialFaces, KIND_LABEL, makeFace, rand, SRC, srcName, hms, type Face } from './data';
 import '../mural/mural.css';
 import '../devices/devices.css';
 import './faces.css';
@@ -86,14 +86,23 @@ export function FacesPage({ screen }: { screen: Screen }) {
   );
 }
 
-/* ───────────── card: só o recorte ───────────── */
+/* ───────────── card: recorte + selo de alerta ───────────── */
 
 function FaceCard({ f, fresh, on, onOpen }: { f: Face; fresh: boolean; on: boolean; onOpen: () => void }) {
   const s = SRC[f.src];
+  const tip = useTooltip(f.kind === 'observacao' ? 'Pessoa não cadastrada · em observação' : f.kind === 'watchlist' ? `Match: ${f.match!.person} · ${f.match!.list}` : '', undefined, f.kind !== 'comum', 'top');
   return (
-    <button type="button" className={`fc-card${fresh ? ' is-fresh' : ''}${on ? ' is-on' : ''}`} onClick={onOpen}
-      aria-label={`Face capturada em ${srcName(s)} às ${hms(f.at)}`}>
+    <button type="button" className={`fc-card is-${f.kind}${fresh ? ' is-fresh' : ''}${on ? ' is-on' : ''}`} onClick={onOpen}
+      aria-label={`${KIND_LABEL[f.kind]}, ${srcName(s)}, ${hms(f.at)}`}>
       <FaceImg seed={f.seed} night={s.night} />
+      {f.kind !== 'comum' && (
+        <span className="fc-card__top">
+          <span className={`fc-tag is-${f.kind}`} {...tip}>
+            <Icon name={f.kind === 'watchlist' ? 'eye' : 'warn'} size={12} />
+            <span className="fc-tag__l">{f.kind === 'watchlist' ? f.match!.person : 'Observação'}</span>
+          </span>
+        </span>
+      )}
     </button>
   );
 }
