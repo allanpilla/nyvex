@@ -55,10 +55,10 @@ export const ENTRIES: Entry[] = [
   { id: 'l3', kind: 'local', title: 'Estacionamento A', subtitle: 'Campus · 2 leitores de placa', keywords: 'garagem', path: '/locais' },
   { id: 'l4', kind: 'local', title: 'Biblioteca central', subtitle: 'Campus · 5 câmeras', keywords: 'biblioteca', path: '/locais' },
   // Ocorrências
-  { id: 'o1', kind: 'ocorrencia', title: 'OC-2318 · Furto de celular', subtitle: 'Bloco B, 2º andar · aberta há 35 min', keywords: 'roubo furto', tag: { label: 'Em atendimento', tone: 'warning' }, path: '/ocorrencias' },
-  { id: 'o2', kind: 'ocorrencia', title: 'OC-2317 · Pessoa não autorizada', subtitle: 'Portaria principal · hoje 09:40', keywords: 'invasao acesso', tag: { label: 'Aberta', tone: 'danger' }, path: '/ocorrencias' },
-  { id: 'o3', kind: 'ocorrencia', title: 'OC-2311 · Veículo em vaga proibida', subtitle: 'Estacionamento A · ontem 18:02', keywords: 'carro estacionamento', tag: { label: 'Encerrada', tone: 'success' }, path: '/ocorrencias' },
-  { id: 'o4', kind: 'ocorrencia', title: 'OC-2309 · Câmera danificada', subtitle: 'Bloco B · ontem 14:20', keywords: 'vandalismo camera', tag: { label: 'Aberta', tone: 'danger' }, path: '/ocorrencias' },
+  { id: 'o1', kind: 'ocorrencia', title: 'OC-2318 · Furto de celular', subtitle: 'Bloco B, 2º andar · aberta há 35 min', keywords: 'roubo furto', tag: { label: 'Em atendimento', tone: 'warning' }, path: '/alertas?aba=ocorrencias' },
+  { id: 'o2', kind: 'ocorrencia', title: 'OC-2317 · Pessoa não autorizada', subtitle: 'Portaria principal · hoje 09:40', keywords: 'invasao acesso', tag: { label: 'Aberta', tone: 'danger' }, path: '/alertas?aba=ocorrencias' },
+  { id: 'o3', kind: 'ocorrencia', title: 'OC-2311 · Veículo em vaga proibida', subtitle: 'Estacionamento A · ontem 18:02', keywords: 'carro estacionamento', tag: { label: 'Encerrada', tone: 'success' }, path: '/alertas?aba=ocorrencias' },
+  { id: 'o4', kind: 'ocorrencia', title: 'OC-2309 · Câmera danificada', subtitle: 'Bloco B · ontem 14:20', keywords: 'vandalismo camera', tag: { label: 'Aberta', tone: 'danger' }, path: '/alertas?aba=ocorrencias' },
   // Alertas
   { id: 'a1', kind: 'alerta', title: 'Placa em restrição: MKP3H41', subtitle: 'LPR-03 · Estacionamento A · há 4 min', keywords: 'veiculo carro furto', tag: { label: 'Crítico', tone: 'danger' }, path: '/alertas' },
   { id: 'a2', kind: 'alerta', title: 'Face da lista de observação: Mariana Duarte Lopes', subtitle: 'CAM-014 · Portaria principal · há 12 min', keywords: 'pessoa face', tag: { label: 'Alto', tone: 'warning' }, path: '/alertas' },

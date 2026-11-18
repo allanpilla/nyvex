@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Button, Checkbox, Icon, IconButton, Menu, NavItem, PageHeader, Select, StatusModal, Switch, Tabs, useTooltip } from '../../ds/components';
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
@@ -12,6 +13,8 @@ import {
 } from './data';
 import { AlertDrawer, type Act, type Form } from './AlertDrawer';
 import { ClipChip, ClipModal } from './Clip';
+import { OccurrencesPage } from '../occurrences/OccurrencesPage';
+import { build as buildOcc } from '../occurrences/data';
 import '../devices/devices.css';
 import '../locations/locations.css';
 import './alerts.css';
@@ -25,6 +28,11 @@ const F_GROUPS: { key: FKey; label: string; opts: [string, string][] }[] = [
 ];
 const fLabel = (k: FKey, v: string) => F_GROUPS.find((g) => g.key === k)!.opts.find((o) => o[0] === v)?.[1] ?? v;
 type Quick = 'all' | Cat;
+/** Abas: as três situações e “Encaminhados”, tudo o que você encaminhou (qualquer situação). */
+type View = Status | 'encaminhado' | 'ocorrencias';
+const VIEWS: View[] = ['pendente', 'reconhecido', 'encerrado', 'encaminhado', 'ocorrencias'];
+/** Ocorrências ativas (nova, despachada, no local), para o contador da aba. */
+const OCC_ACTIVE = buildOcc(Date.now()).filter((o) => o.stage === 'nova' || o.stage === 'despachada' || o.stage === 'no_local').length;
 type SortKey = 'prio' | 'recent' | 'count';
 const SORT_OPTS: [SortKey, string][] = [['prio', 'Prioridade'], ['recent', 'Mais recente'], ['count', 'Ocorrências']];
 const PAGE = 40;
@@ -41,7 +49,10 @@ const prioOf = (a: Alert): Prio => KIND[a.kind].prio;
 export function AlertsPage({ screen }: { screen: Screen }) {
   const { toast } = useUi();
   const [alerts, setAlerts] = useState<Alert[]>(ALERTS);
-  const [tab, setTab] = useState<Status>('pendente');
+  // A aba fica no endereço (#/alertas?aba=ocorrencias), para links diretos e para o antigo /ocorrencias.
+  const [sp, setSp] = useSearchParams();
+  const tab: View = VIEWS.includes(sp.get('aba') as View) ? (sp.get('aba') as View) : 'pendente';
+  const setTab = (t: View) => setSp(t === 'pendente' ? {} : { aba: t }, { replace: true });
   const [mine, setMine] = useState(false);
   const [quick, setQuick] = useState<Quick>('all');
   const [q, setQ] = useState('');
@@ -66,6 +77,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   const [clip, setClip] = useState<Alert | null>(null);
   const openWith = (key: string, f: Form) => { setStartForm(f); setOpenKey(key); };
   const pausedRef = useRef(paused); pausedRef.current = paused;
+  const wide = useWide();
 
   // Ao vivo: chegam alertas de perímetro e linha. Com agrupamento, eles somam no grupo da câmera em vez de virar linhas novas.
   useEffect(() => {
@@ -90,7 +102,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   const textMatch = (a: Alert) => !nq || norm(`${title(a)} ${subtitle(a)} ${camName(CAMS[a.cam])} ${CAMS[a.cam].local} ${CAMS[a.cam].id} ${a.id} ${a.ackBy ?? ''} ${a.fwdTo ?? ''}`).includes(nq);
   const fMatch = (a: Alert, fl: Filters) => (fl.cam.length === 0 || fl.cam.includes(a.cam)) && (fl.prio.length === 0 || fl.prio.includes(prioOf(a)));
   const mineMatch = (a: Alert) => !mine || a.fwdTo === ME || a.ackBy === ME;
-  const inTab = useMemo(() => alerts.filter((a) => a.status === tab), [alerts, tab]);
+  const inTab = useMemo(() => alerts.filter((a) => (tab === 'encaminhado' ? a.fwdBy === ME : a.status === tab)), [alerts, tab]);
   const base = useMemo(() => inTab.filter((a) => mineMatch(a) && fMatch(a, f) && textMatch(a)), [inTab, mine, f, nq]); // eslint-disable-line react-hooks/exhaustive-deps
   const hits = useMemo(() => base.filter((a) => quick === 'all' || KIND[a.kind].cat === quick), [base, quick]);
   const groups = useMemo(() => {
@@ -103,7 +115,9 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   }, [hits, grouped, sort]);
   const shown = groups.slice(0, limit);
   const open = openKey ? groups.find((g) => g.key === openKey) ?? null : null;
-  const counts = (st: Status) => alerts.filter((a) => a.status === st).length;
+  const counts = (st: View) => alerts.filter((a) => (st === 'encaminhado' ? a.fwdBy === ME : a.status === st)).length;
+  /** Situação usada para as ações: na aba Encaminhados, a do próprio alerta. */
+  const stOf = (g: Group): Status => (tab === 'encaminhado' || tab === 'ocorrencias' ? g.head.status : tab);
   const kcount = (k: Quick) => base.filter((a) => k === 'all' || KIND[a.kind].cat === k).length;
   const anyFilter = Object.values(f).some((a) => a.length) || !!nq || quick !== 'all' || mine;
   const nF = F_GROUPS.filter((g) => f[g.key].length).length;
@@ -111,7 +125,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
 
   const toggleF = (k: FKey, v: string) => setF((o) => ({ ...o, [k]: o[k].includes(v) ? o[k].filter((x) => x !== v) : [...o[k], v] }));
   const clearAll = () => { setF(EMPTY); setQ(''); setQuick('all'); setMine(false); };
-  const changeTab = (t: Status) => { setTab(t); setSel(new Set()); setOpenKey(null); setLimit(PAGE); };
+  const changeTab = (t: View) => { setTab(t); setSel(new Set()); setOpenKey(null); setLimit(PAGE); };
 
   /** Aplica uma ação a todos os alertas dos grupos indicados. */
   const act = (keys: string[], a: Act) => {
@@ -119,11 +133,13 @@ export function AlertsPage({ screen }: { screen: Screen }) {
     const t = Date.now();
     setAlerts((l) => l.map((x) => {
       if (!ids.has(x.id)) return x;
+      // Em seleções mistas (aba Encaminhados), cada ação só vale para quem está na situação certa.
+      if ((a.type === 'ack' && x.status !== 'pendente') || ((a.type === 'fp' || a.type === 'close' || a.type === 'fwd') && x.status === 'encerrado') || (a.type === 'reopen' && x.status !== 'encerrado')) return x;
       if (a.type === 'ack') return { ...x, status: 'reconhecido', ackBy: ME, ackAt: t };
       if (a.type === 'fp') return { ...x, status: 'encerrado', closedBy: ME, closedAt: t, outcome: 'Falso positivo', fpReason: a.reason, reeval: a.reeval, justification: a.note };
       if (a.type === 'close') return { ...x, status: 'encerrado', closedBy: ME, closedAt: t, outcome: a.outcome, justification: a.note };
       if (a.type === 'reopen') return { ...x, status: 'pendente', ackBy: undefined, ackAt: undefined, closedBy: undefined, closedAt: undefined, outcome: undefined, justification: undefined, fpReason: undefined, reeval: undefined };
-      return { ...x, fwdTo: a.to, fwdNote: a.note, fwdAt: t };
+      return { ...x, fwdBy: ME, fwdTo: a.to, fwdNote: a.note, fwdAt: t };
     }));
     const n = ids.size, s = n === 1 ? '' : 's';
     const msg = a.type === 'ack' ? `${n} alerta${s} reconhecido${s}` : a.type === 'fp' ? `${n} alerta${s} encerrado${s} como falso positivo` : a.type === 'close' ? `${n} alerta${s} encerrado${s}` : a.type === 'reopen' ? `${n} alerta${s} reaberto${s}` : `Encaminhado a ${a.to}`;
@@ -161,6 +177,9 @@ export function AlertsPage({ screen }: { screen: Screen }) {
   const someOn = shown.some((g) => sel.has(g.key));
   const selN = groups.filter((g) => sel.has(g.key)).reduce((n, g) => n + g.items.length, 0);
 
+  // Com o painel ao lado, a linha aberta acompanha a navegação por ↑/↓.
+  useEffect(() => { if (openKey) document.querySelector('.al-row.is-open')?.scrollIntoView({ block: 'nearest' }); }, [openKey]);
+
   // Atalhos: J/K ou ↑/↓ percorrem a fila com o painel aberto.
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -173,8 +192,24 @@ export function AlertsPage({ screen }: { screen: Screen }) {
     return () => document.removeEventListener('keydown', k);
   }, [open, groups, limit]);
 
+  // Ocorrências moram numa aba da Fila: um alerta reconhecido ou encaminhado vira ocorrência.
+  if (tab === 'ocorrencias') {
+    return <OccurrencesPage screen={screen} tabs={(
+      <div className="al-tabs">
+        <Tabs label="Situação" value={tab} onChange={changeTab}
+          options={[
+            { value: 'pendente', label: 'Pendentes', count: counts('pendente') },
+            { value: 'reconhecido', label: 'Reconhecidos', count: counts('reconhecido') },
+            { value: 'encerrado', label: 'Encerrados', count: counts('encerrado') },
+            { value: 'encaminhado', label: 'Encaminhados', count: counts('encaminhado') },
+            { value: 'ocorrencias', label: 'Ocorrências', count: OCC_ACTIVE },
+          ]} />
+      </div>
+    )} onAlerts={() => changeTab('pendente')} queue={counts('pendente')} />;
+  }
+
   return (
-    <div className="dv lc al">
+    <div className={`dv lc al${open && wide ? ' is-split' : ''}`}>
       <div className="dv-main">
         <PageHeader
           title={screen.label}
@@ -198,6 +233,8 @@ export function AlertsPage({ screen }: { screen: Screen }) {
                 { value: 'pendente', label: 'Pendentes', count: counts('pendente') },
                 { value: 'reconhecido', label: 'Reconhecidos', count: counts('reconhecido') },
                 { value: 'encerrado', label: 'Encerrados', count: counts('encerrado') },
+                { value: 'encaminhado', label: 'Encaminhados', count: counts('encaminhado') },
+                { value: 'ocorrencias', label: 'Ocorrências', count: OCC_ACTIVE },
               ]} />
             <span className="dv-tools__sp" />
             {tab === 'pendente' && <span className="al-hour"><b>{lastHour}</b> na última hora</span>}
@@ -262,7 +299,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
               </div>
             )}
 
-            <div className="dv-table al-table" role="table" aria-label="Alertas">
+            <div className={`dv-table al-table${tab === 'encaminhado' ? ' is-fwd' : ''}`} role="table" aria-label="Alertas">
               <div className="dv-tr dv-th" role="row">
                 <span className="dv-c dv-c--chk" role="columnheader">
                   <Checkbox label="Selecionar todos" checked={allOn} indeterminate={!allOn && someOn}
@@ -272,11 +309,11 @@ export function AlertsPage({ screen }: { screen: Screen }) {
                 <span className="dv-c al-c--reason" role="columnheader">Motivo</span>
                 <span className="dv-c al-c--cam" role="columnheader">Câmera</span>
                 <span className="dv-c al-c--when" role="columnheader">Quando</span>
-                <span className="dv-c al-c--trail" role="columnheader">{tab === 'pendente' ? 'Responsável' : tab === 'reconhecido' ? 'Reconhecido por' : 'Desfecho'}</span>
+                <span className="dv-c al-c--trail" role="columnheader">{tab === 'pendente' ? 'Responsável' : tab === 'reconhecido' ? 'Reconhecido por' : tab === 'encaminhado' ? 'Encaminhado a' : 'Desfecho'}</span>
                 <span className="dv-c dv-c--act" role="columnheader"><span className="nx-sr">Ações</span></span>
               </div>
               {shown.map((g) => (
-                <Row key={g.key} g={g} now={now} tab={tab} sel={sel.has(g.key)} open={openKey === g.key} fresh={g.items.some((x) => fresh.has(x.id))}
+                <Row key={g.key} g={g} now={now} tab={stOf(g)} fwdView={tab === 'encaminhado'} sel={sel.has(g.key)} open={openKey === g.key} fresh={g.items.some((x) => fresh.has(x.id))}
                   onSel={(v) => setSel((s) => { const n = new Set(s); if (v) n.add(g.key); else n.delete(g.key); return n; })}
                   onOpen={() => { setStartForm(null); setOpenKey(openKey === g.key ? null : g.key); }}
                   onAck={() => act([g.key], { type: 'ack' })}
@@ -290,8 +327,8 @@ export function AlertsPage({ screen }: { screen: Screen }) {
               {groups.length === 0 && (
                 <div className="dv-empty">
                   <span className="dv-empty__ic"><Icon name={anyFilter ? 'search' : 'check'} /></span>
-                  <b>{anyFilter ? 'Nenhum alerta encontrado' : tab === 'pendente' ? 'Fila zerada' : 'Nada por aqui'}</b>
-                  <span>{anyFilter ? 'Revise a busca ou os filtros aplicados.' : tab === 'pendente' ? 'Novos alertas aparecem aqui assim que chegam.' : `Alertas ${tab === 'reconhecido' ? 'reconhecidos' : 'encerrados'} aparecem aqui.`}</span>
+                  <b>{anyFilter ? 'Nenhum alerta encontrado' : tab === 'pendente' ? 'Fila zerada' : tab === 'encaminhado' ? 'Nenhum alerta encaminhado' : 'Nada por aqui'}</b>
+                  <span>{anyFilter ? 'Revise a busca ou os filtros aplicados.' : tab === 'pendente' ? 'Novos alertas aparecem aqui assim que chegam.' : tab === 'encaminhado' ? 'Alertas que você encaminhar aparecem aqui, com quem recebeu.' : `Alertas ${tab === 'reconhecido' ? 'reconhecidos' : 'encerrados'} aparecem aqui.`}</span>
                   {anyFilter && <Button onClick={clearAll}>Limpar filtros</Button>}
                 </div>
               )}
@@ -300,7 +337,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
         </div>
 
         <footer className="dv-foot">
-          <span>{hits.length.toLocaleString('pt-BR')} de {inTab.length.toLocaleString('pt-BR')} alertas {STATUS_LABEL[tab].toLowerCase()}s</span>
+          <span>{hits.length.toLocaleString('pt-BR')} de {inTab.length.toLocaleString('pt-BR')} alertas {tab === 'encaminhado' ? 'encaminhados por você' : `${STATUS_LABEL[tab].toLowerCase()}s`}</span>
           <span className="dv-tools__sp" />
           <span className="al-foot"><kbd>↑</kbd><kbd>↓</kbd> percorrem a fila com o painel aberto</span>
         </footer>
@@ -309,9 +346,9 @@ export function AlertsPage({ screen }: { screen: Screen }) {
           <div className="dv-bulk" role="toolbar" aria-label="Ações para os selecionados">
             <span className="dv-bulk__n"><b>{selN}</b> {selN === 1 ? 'alerta' : 'alertas'}</span>
             <span className="dv-bulk__sep" />
-            {tab === 'pendente' && <Button icon="check" onClick={() => act([...sel], { type: 'ack' })}>Reconhecer</Button>}
+            {(tab === 'pendente' || tab === 'encaminhado') && <Button icon="check" onClick={() => act([...sel], { type: 'ack' })}>Reconhecer</Button>}
             {tab !== 'encerrado' && <Button icon="thumbDown" onClick={() => setBulkFp(true)}>Falso positivo</Button>}
-            {tab === 'encerrado' && <Button icon="replay" onClick={() => act([...sel], { type: 'reopen' })}>Reabrir</Button>}
+            {(tab === 'encerrado' || tab === 'encaminhado') && <Button icon="replay" onClick={() => act([...sel], { type: 'reopen' })}>Reabrir</Button>}
             <Button icon="download" onClick={() => exportCsv(groups.filter((g) => sel.has(g.key)))}>Exportar</Button>
             <span className="dv-bulk__sep" />
             <IconButton icon="close" label="Limpar seleção" onClick={() => setSel(new Set())} tipPlace="top" />
@@ -319,17 +356,21 @@ export function AlertsPage({ screen }: { screen: Screen }) {
         )}
       </div>
 
-      {open && createPortal(
-        <div className="nx-sheet-back is-soft" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpenKey(null); }}>
-          <div className="nx-sheet dv-dsheet" style={{ width: 'min(520px, 100%)' }}>
+      {open && (() => {
+        const drawer = (
             <AlertDrawer key={open.key + (startForm ?? '')} g={open} startForm={startForm} onClip={() => setClip(open.head)} now={now} pos={[groups.findIndex((x) => x.key === open.key) + 1, groups.length]}
               onPrev={() => { const i = groups.findIndex((x) => x.key === open.key); if (i > 0) setOpenKey(groups[i - 1].key); }}
               onNext={() => { const i = groups.findIndex((x) => x.key === open.key); if (groups[i + 1]) setOpenKey(groups[i + 1].key); }}
               onClose={() => { setOpenKey(null); setStartForm(null); }} onAct={(a) => act([open.key], a)} toast={toast} />
-          </div>
-        </div>,
-        document.body,
-      )}
+        );
+        // Lado a lado: em telas largas o painel fica ao lado da lista, que continua visível e clicável.
+        return wide ? <div className="al-dock">{drawer}</div> : createPortal(
+          <div className="nx-sheet-back is-soft" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpenKey(null); }}>
+            <div className="nx-sheet dv-dsheet" style={{ width: 'min(520px, 100%)' }}>{drawer}</div>
+          </div>,
+          document.body,
+        );
+      })()}
 
       {filterBtn && (() => {
         const g = F_GROUPS.find((x) => x.key === filterBtn.key)!;
@@ -356,6 +397,7 @@ export function AlertsPage({ screen }: { screen: Screen }) {
         const g = groups.find((x) => x.key === rowMenu.key);
         if (!g) return null;
         const close = (fn: () => void) => () => { setRowMenu(null); fn(); };
+        const tab = stOf(g);
         return (
           <Menu anchor={rowMenu.el} onClose={() => setRowMenu(null)}>
             <NavItem role="menuitem" icon="panel" label="Abrir detalhes" onClick={close(() => setOpenKey(g.key))} />
@@ -432,6 +474,14 @@ function FwdDialog({ a, n, onCancel, onConfirm }: { a: Alert; n: number; onCance
   );
 }
 
+/** Lado a lado só cabe a partir de 1100 px; abaixo disso o painel abre por cima da lista. */
+function useWide() {
+  const q = '(min-width: 1100px)';
+  const [w, setW] = useState(() => window.matchMedia(q).matches);
+  useEffect(() => { const m = window.matchMedia(q); const f = () => setW(m.matches); m.addEventListener('change', f); return () => m.removeEventListener('change', f); }, []);
+  return w;
+}
+
 function SoundBtn({ on, onClick }: { on: boolean; onClick: () => void }) {
   const t = useTooltip(on ? 'Desativar alerta sonoro' : 'Ativar alerta sonoro', undefined, true, 'bottom');
   return (
@@ -458,8 +508,8 @@ function CardBtn({ hint, ...rest }: { hint: string } & React.ButtonHTMLAttribute
 
 
 type Quick2 = 'close' | 'fp' | 'fwd' | 'reopen';
-type RowProps = { g: Group; now: number; tab: Status; sel: boolean; open: boolean; fresh: boolean; onSel: (v: boolean) => void; onOpen: () => void; onAck: () => void; onQuick: (f: Quick2) => void; onClip: () => void; onMore: (el: HTMLElement) => void };
-function Row({ g, now, tab, sel, open, fresh, onSel, onOpen, onAck, onQuick, onClip, onMore }: RowProps) {
+type RowProps = { g: Group; now: number; tab: Status; fwdView?: boolean; sel: boolean; open: boolean; fresh: boolean; onSel: (v: boolean) => void; onOpen: () => void; onAck: () => void; onQuick: (f: Quick2) => void; onClip: () => void; onMore: (el: HTMLElement) => void };
+function Row({ g, now, tab, fwdView, sel, open, fresh, onSel, onOpen, onAck, onQuick, onClip, onMore }: RowProps) {
   const a = g.head;
   const c = CAMS[a.cam];
   const n = g.items.length;
@@ -487,7 +537,8 @@ function Row({ g, now, tab, sel, open, fresh, onSel, onOpen, onAck, onQuick, onC
       <span className="dv-c al-c--cam" role="cell"><span className="dv-two"><b className={c.name ? undefined : 'al-noname'}>{camName(c)}</b></span></span>
       <span className="dv-c al-c--when" role="cell"><span className="dv-two"><b title={when(g.last, now)}>{ago(g.last, now)}</b></span></span>
       <span className="dv-c al-c--trail" role="cell">
-        {tab === 'pendente' ? (a.fwdTo ? <span className="dv-two"><b>{a.fwdTo}</b><span>Encaminhado</span></span> : <span className="lc-none">—</span>)
+        {fwdView ? <span className="dv-two"><b>{a.fwdTo}</b><span>{ago(a.fwdAt!, now)} · {a.status === 'pendente' ? 'Aguardando' : a.status === 'reconhecido' ? `Reconhecido por ${a.ackBy}` : 'Encerrado'}</span></span>
+          : tab === 'pendente' ? (a.fwdTo ? <span className="dv-two"><b>{a.fwdTo}</b><span>Encaminhado</span></span> : <span className="lc-none">—</span>)
           : tab === 'reconhecido' ? <span className="dv-two"><b>{a.ackBy}</b><span>{ago(a.ackAt!, now)}</span></span>
           : <span className="dv-two"><b>{a.outcome}</b><span>{a.closedBy} · {ago(a.closedAt!, now)}</span></span>}
       </span>
