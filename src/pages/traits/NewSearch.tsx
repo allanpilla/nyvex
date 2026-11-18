@@ -3,43 +3,61 @@ import { createPortal } from 'react-dom';
 import { Button, DateTimePicker, Icon, IconButton, Segmented } from '../../ds/components';
 import { storage } from '../../lib/storage';
 import { Figure } from './Figure';
-import { Chip, describe, Field, isoLocal, PERIOD_LABEL, Swatches, toggle, TriRow } from './parts';
+import { Vehicle } from './Vehicle';
+import { brandsOf, hasPlate, modelsOf, runVehicleSearch, VCOLORS, vDescribe, VEMPTY, vIsSet, vLabel, vTraits, VTYPES, type VFilters, type VKey, type VObs } from './vehicles';
+import { Chip, describe, Field, isoLocal, PERIOD_LABEL, Swatch, Swatches, toggle, TriRow } from './parts';
 import {
-  AGES, EMPTY, EXTRAS, GENDER_LABEL, isSet, LOCAIS, MOODS, nTraits, runSearch, traitLabel,
+  AGES, BOTTOMS, EMPTY, TOPS, EXTRAS, GENDER_LABEL, isSet, LOCAIS, MOODS, nTraits, runSearch, traitLabel,
   type Filters, type Obs, type TraitKey,
 } from './data';
 
-const STEPS = ['Pessoa', 'Roupas', 'Acessórios', 'Onde e quando', 'Finalidade'];
+const STEPS_P = ['Pessoa', 'Roupas', 'Acessórios', 'Onde e quando', 'Finalidade'];
+const STEPS_V = ['Veículo', 'Cor e placa', 'Onde e quando', 'Finalidade'];
+export type Kind = 'pessoa' | 'veiculo';
 const readPurposes = (): string[] => { try { return JSON.parse(storage.get('nx-traits-purposes') ?? '[]'); } catch { return []; } };
 
-type Props = { initial?: Filters; all: Obs[]; onClose: () => void; onSearch: (f: Filters, purpose: string) => void };
+type Props = { initial?: Filters; initialV?: VFilters; startKind?: Kind; all: Obs[]; allV: VObs[]; onClose: () => void; onSearch: (f: Filters, purpose: string, vf?: VFilters) => void };
 
-/** Nova busca em etapas, com o retrato da pessoa ao lado e uma prévia de quantos registros batem. */
-export function NewSearch({ initial, all, onClose, onSearch }: Props) {
-  const [f, setF] = useState<Filters>(initial ?? EMPTY);
+/**
+ * Nova busca em etapas, de pessoa ou de veículo, com o retrato ao lado e uma prévia de quantos registros batem.
+ * Onde e quando ficam em `f` nos dois modos; no veículo, são copiados para `vf` ao pesquisar.
+ */
+export function NewSearch({ initial, initialV, startKind, all, allV, onClose, onSearch }: Props) {
+  const editing = !!(initial || initialV);
+  const [kind, setKind] = useState<Kind>(initialV ? 'veiculo' : startKind ?? 'pessoa');
+  const STEPS = kind === 'veiculo' ? STEPS_V : STEPS_P;
+  const [f, setF] = useState<Filters>(initial ?? (initialV ? { ...EMPTY, locais: initialV.locais, period: initialV.period, from: initialV.from, to: initialV.to } : EMPTY));
+  const [vf, setVf] = useState<VFilters>(initialV ?? VEMPTY);
   const [step, setStep] = useState(0);
-  const [seen, setSeen] = useState(initial ? STEPS.length - 1 : 0);
+  const [seen, setSeen] = useState(editing ? STEPS.length - 1 : 0);
   const [purpose, setPurpose] = useState('');
   const [tried, setTried] = useState(false);
   const now = useMemo(() => Date.now(), []);
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setF((x) => ({ ...x, [k]: v }));
-  const preview = useMemo(() => runSearch(all, f, now), [all, f, now]);
+  const vq = useMemo<VFilters>(() => ({ ...vf, locais: f.locais, period: f.period, from: f.from, to: f.to }), [vf, f.locais, f.period, f.from, f.to]);
+  const nMatch = useMemo(() => (kind === 'veiculo' ? runVehicleSearch(allV, vq, now).exact.length : runSearch(all, f, now).exact.length), [kind, all, allV, f, vq, now]);
+  const setV = <K extends keyof VFilters>(k: K, v: VFilters[K]) => setVf((x) => ({ ...x, [k]: v }));
+  // Trocar tipo ou marca descarta marcas e modelos que deixaram de existir.
+  const setTypes = (types: VFilters['types']) => setVf((x) => { const bs = brandsOf(types); const brands = x.brands.filter((b) => bs.includes(b)); const ms = modelsOf(types, brands); return { ...x, types, brands, models: x.models.filter((m) => ms.includes(m)), plate: types.length && types.every((t) => !hasPlate(t)) ? '' : x.plate }; });
+  const setBrands = (brands: string[]) => setVf((x) => { const ms = modelsOf(x.types, brands); return { ...x, brands, models: x.models.filter((m) => ms.includes(m)) }; });
+  const switchKind = (k: Kind) => { setKind(k); setStep(0); setSeen(0); setTried(false); };
   const recent = useMemo(readPurposes, []);
 
   const badPeriod = f.period === 'custom' && !!f.from && !!f.to && new Date(f.from) > new Date(f.to);
   const pErr = purpose.trim().length < 3 ? 'Informe uma finalidade com pelo menos 3 caracteres.' : purpose.trim().length > 500 ? 'A finalidade deve ter no máximo 500 caracteres.' : '';
-  const stepOk = (i: number) => (i === 3 ? !badPeriod : i === 4 ? !pErr : true);
+  const WHERE = STEPS.indexOf('Onde e quando');
+  const stepOk = (i: number) => (i === WHERE ? !badPeriod : i === STEPS.length - 1 ? !pErr : true);
   const last = step === STEPS.length - 1;
   const go = (i: number) => {
     if (i > step && !stepOk(step)) { setTried(true); return; }
     setTried(false); setStep(i); setSeen((s) => Math.max(s, i));
   };
   const submit = () => {
-    if (badPeriod) { setStep(3); setTried(true); return; }
+    if (badPeriod) { setStep(WHERE); setTried(true); return; }
     if (pErr) { setTried(true); return; }
     const p = purpose.trim();
     storage.set('nx-traits-purposes', JSON.stringify([p, ...recent.filter((x) => x !== p)].slice(0, 4)));
-    onSearch(f, p);
+    onSearch(f, p, kind === 'veiculo' ? vq : undefined);
   };
 
   useEffect(() => {
@@ -51,13 +69,25 @@ export function NewSearch({ initial, all, onClose, onSearch }: Props) {
     return () => document.removeEventListener('keydown', k, true);
   });
 
+  const dressOnly = f.tops.length === 1 && f.tops[0] === 'vestido';
+  // Só vestido: parte de baixo não se aplica, então limpa o que estava marcado.
+  const setTops = (v: Filters['tops']) => setF((x) => ({ ...x, tops: v, ...(v.length === 1 && v[0] === 'vestido' ? { bottoms: [], lower: [] } : {}) }));
   const group = (ks: TraitKey[]) => ks.filter((k) => isSet(f, k)).map((k) => traitLabel(f, k)).join(' · ');
-  const review: [string, string, number][] = [
+  const vgroup = (ks: VKey[]) => ks.filter((k) => vIsSet(vf, k)).map((k) => vLabel(vf, k)).join(' · ');
+  const plateOff = vf.types.length > 0 && vf.types.every((t) => !hasPlate(t));
+  const models = modelsOf(vf.types, vf.brands);
+  const where: [string, string, number] = ['Onde e quando', `${f.locais.length ? f.locais.join(', ') : 'Todos os locais'} · ${PERIOD_LABEL[f.period]}`, WHERE];
+  const review: [string, string, number][] = kind === 'veiculo' ? [
+    ['Veículo', vgroup(['types', 'brands', 'models']) || 'Qualquer', 0],
+    ['Cor e placa', vgroup(['colors', 'plate']) || 'Qualquer', 1],
+    where,
+  ] : [
     ['Pessoa', group(['gender', 'ages']) || 'Qualquer', 0],
-    ['Roupas', group(['upper', 'lower']) || 'Qualquer cor', 1],
+    ['Roupas', group(['tops', 'upper', 'bottoms', 'lower']) || 'Qualquer cor', 1],
     ['Acessórios', group(['hat', 'glasses', 'backpack', 'extras', 'moods']) || 'Tanto faz', 2],
-    ['Onde e quando', `${f.locais.length ? f.locais.join(', ') : 'Todos os locais'} · ${PERIOD_LABEL[f.period]}`, 3],
+    where,
   ];
+  const nT = kind === 'veiculo' ? vTraits(vf) : nTraits(f);
 
   return createPortal(
     <div className="nx-modal-back" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -67,6 +97,9 @@ export function NewSearch({ initial, all, onClose, onSearch }: Props) {
             <span className="nx-sheet__eyebrow">{initial ? 'Editar busca' : 'Nova busca'}</span>
             <h2 id="tr-wiz-t">Busca por característica</h2>
           </div>
+          {!editing && <span className="tr-wiz__kind"><Segmented<Kind> label="O que procurar" value={kind} onChange={switchKind}
+            options={[{ value: 'pessoa', label: <><Icon name="faces" size={16} />Pessoa</> }, { value: 'veiculo', label: <><Icon name="car" size={16} />Veículo</> }]} /></span>}
+          <span className="dv-tools__sp" />
           <IconButton icon="close" label="Fechar" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
         </header>
 
@@ -83,20 +116,55 @@ export function NewSearch({ initial, all, onClose, onSearch }: Props) {
         <div className="tr-wiz__main">
           <aside className="tr-wiz__side" aria-label="Retrato da busca">
             <div className="tr-wiz__stage">
-              <Figure upper={f.upper} lower={f.lower} gender={f.gender} hat={f.hat === 'sim'} glasses={f.glasses === 'sim'} backpack={f.backpack === 'sim'} extras={f.extras}
-                onPart={(p) => go(p === 'head' ? 0 : 1)} />
+              {kind === 'veiculo' ? <Vehicle type={vf.types[0]} colors={vf.colors} /> : <Figure upper={f.upper} lower={f.lower} gender={f.gender} hat={f.hat === 'sim'} glasses={f.glasses === 'sim'} backpack={f.backpack === 'sim'} extras={f.extras} top={f.tops[0]} bottom={f.bottoms[0]}
+                onPart={(p) => go(p === 'head' ? 0 : 1)} />}
             </div>
             <span className="tr-eyebrow">Retrato da busca</span>
-            <p className="tr-wiz__desc">{nTraits(f) ? describe(f) : 'Qualquer pessoa. Escolha características para estreitar.'}</p>
+            <p className="tr-wiz__desc">{kind === 'veiculo' ? (nT ? vDescribe(vf) : 'Qualquer veículo. Escolha características para estreitar.') : nT ? describe(f) : 'Qualquer pessoa. Escolha características para estreitar.'}</p>
             <div className="tr-wiz__est" aria-live="polite">
-              <b>{preview.exact.length.toLocaleString('pt-BR')}</b>
-              <span>{preview.exact.length === 1 ? 'registro bate' : 'registros batem'} agora<br />{PERIOD_LABEL[f.period].toLowerCase()}</span>
+              <b>{nMatch.toLocaleString('pt-BR')}</b>
+              <span>{nMatch === 1 ? (kind === 'veiculo' ? 'passagem bate' : 'registro bate') : kind === 'veiculo' ? 'passagens batem' : 'registros batem'} agora<br />{PERIOD_LABEL[f.period].toLowerCase()}</span>
             </div>
-            {nTraits(f) > 0 && <Button icon="eraser" className="tr-clear" onClick={() => setF({ ...EMPTY, period: f.period, from: f.from, to: f.to, locais: f.locais })}>Limpar características<span className="tr-clear__n">{nTraits(f)}</span></Button>}
+            {nT > 0 && <Button icon="eraser" className="tr-clear" onClick={() => (kind === 'veiculo' ? setVf(VEMPTY) : setF({ ...EMPTY, period: f.period, from: f.from, to: f.to, locais: f.locais }))}>Limpar características<span className="tr-clear__n">{nT}</span></Button>}
           </aside>
 
-          <div className="tr-wiz__body" key={step}>
-            {step === 0 && (
+          <div className="tr-wiz__body" key={kind + step}>
+            {kind === 'veiculo' && step === 0 && (
+              <>
+                <Field label="Tipo" count={vf.types.length} onClear={() => setTypes([])}>
+                  <div className="tr-chips">{VTYPES.map((t) => <Chip key={t.id} on={vf.types.includes(t.id)} onClick={() => setTypes(toggle(vf.types, t.id))}>{t.label}</Chip>)}</div>
+                </Field>
+                <Field label="Marca" hint={vf.types.length ? 'dos tipos escolhidos' : undefined} count={vf.brands.length} onClear={() => setBrands([])}>
+                  <div className="tr-chips">{brandsOf(vf.types).map((b) => <Chip key={b} on={vf.brands.includes(b)} onClick={() => setBrands(toggle(vf.brands, b))}>{b}</Chip>)}</div>
+                </Field>
+                <Field label="Modelo" count={vf.models.length} onClear={() => setV('models', [])}>
+                  {vf.types.length || vf.brands.length
+                    ? <div className="tr-chips">{models.map((m) => <Chip key={m} on={vf.models.includes(m)} onClick={() => setV('models', toggle(vf.models, m))}>{m}</Chip>)}</div>
+                    : <p className="tr-tip is-plain">Escolha o tipo ou a marca para ver os modelos.</p>}
+                </Field>
+              </>
+            )}
+            {kind === 'veiculo' && step === 1 && (
+              <>
+                <Field label="Cor" count={vf.colors.length} onClear={() => setV('colors', [])}>
+                  <div className="tr-sws" role="group" aria-label="Cores do veículo">
+                    {VCOLORS.map((c) => <Swatch key={c.id} c={c} on={vf.colors.includes(c.id)} onClick={() => setV('colors', toggle(vf.colors, c.id))} />)}
+                  </div>
+                </Field>
+                <Field label="Placa" hint={plateOff ? 'bicicleta não tem placa' : 'completa ou só um trecho'}>
+                  <div className={`tr-plate${plateOff ? ' is-off' : ''}`}>
+                    <label className="tr-plate__box">
+                      <span className="tr-plate__band">BRASIL</span>
+                      <input value={vf.plate} disabled={plateOff} maxLength={8} placeholder="ABC1D23" aria-label="Placa" spellCheck={false} autoComplete="off"
+                        onChange={(e) => setV('plate', e.target.value.toUpperCase().replace(/[^A-Z0-9?\- ]/g, ''))} />
+                    </label>
+                    <p className="tr-tip is-plain">Use <b>?</b> no caractere que não deu para ler, como <b>AB?1D2?</b>. Vale placa antiga e Mercosul.</p>
+                  </div>
+                </Field>
+                <p className="tr-tip"><Icon name="infoFill" size={14} />Marque mais de uma cor quando estiver em dúvida. À noite, prata, branco e cinza se confundem.</p>
+              </>
+            )}
+            {kind === 'pessoa' && step === 0 && (
               <>
                 <Field label="Gênero" hint="como reportado pelo motor">
                   <Segmented<'' | 'M' | 'F'> label="Gênero" value={f.gender} onChange={(v) => set('gender', v)}
@@ -107,18 +175,22 @@ export function NewSearch({ initial, all, onClose, onSearch }: Props) {
                 </Field>
               </>
             )}
-            {step === 1 && (
+            {kind === 'pessoa' && step === 1 && (
               <>
-                <Field label="Roupa superior" hint="camisa, blusa, jaqueta" count={f.upper.length} onClear={() => set('upper', [])}>
+                <Field label="Parte de cima" hint="peça e cor" count={f.upper.length + f.tops.length} onClear={() => setF((x) => ({ ...x, upper: [], tops: [] }))}>
+                  <div className="tr-chips">{TOPS.map((t) => <Chip key={t.id} on={f.tops.includes(t.id)} onClick={() => setTops(toggle(f.tops, t.id))}>{t.label}</Chip>)}</div>
                   <Swatches value={f.upper} onChange={(v) => set('upper', v)} kind="upper" />
                 </Field>
-                <Field label="Roupa inferior" hint="calça, bermuda, saia" count={f.lower.length} onClear={() => set('lower', [])}>
-                  <Swatches value={f.lower} onChange={(v) => set('lower', v)} kind="lower" />
+                <Field label="Parte de baixo" hint={dressOnly ? 'o vestido já cobre a parte de baixo' : 'peça e cor'} count={f.lower.length + f.bottoms.length} onClear={() => setF((x) => ({ ...x, lower: [], bottoms: [] }))}>
+                  <div className={`tr-lowerbox${dressOnly ? ' is-off' : ''}`} aria-disabled={dressOnly || undefined}>
+                    <div className="tr-chips">{BOTTOMS.map((t) => <Chip key={t.id} on={f.bottoms.includes(t.id)} onClick={() => set('bottoms', toggle(f.bottoms, t.id))}>{t.label}</Chip>)}</div>
+                    <Swatches value={f.lower} onChange={(v) => set('lower', v)} kind="lower" />
+                  </div>
                 </Field>
                 <p className="tr-tip"><Icon name="infoFill" size={14} />Marque mais de uma cor quando estiver em dúvida. Com pouca luz, preto, azul-marinho e cinza se confundem.</p>
               </>
             )}
-            {step === 2 && (
+            {kind === 'pessoa' && step === 2 && (
               <>
                 <Field label="Na pessoa">
                   <div className="tr-tris">
@@ -135,7 +207,7 @@ export function NewSearch({ initial, all, onClose, onSearch }: Props) {
                 </Field>
               </>
             )}
-            {step === 3 && (
+            {step === WHERE && (
               <>
                 <Field label="Onde" hint={f.locais.length ? undefined : 'todos os locais'} count={f.locais.length} onClear={() => set('locais', [])}>
                   <div className="tr-chips">{LOCAIS.map((l) => <Chip key={l} on={f.locais.includes(l)} onClick={() => set('locais', toggle(f.locais, l))}>{l}</Chip>)}</div>
@@ -153,7 +225,7 @@ export function NewSearch({ initial, all, onClose, onSearch }: Props) {
                 </Field>
               </>
             )}
-            {step === 4 && (
+            {step === STEPS.length - 1 && (
               <>
                 <Field label="Finalidade da consulta" hint="obrigatória">
                   <p className="tr-tip is-plain">Descreva o caso ou a razão operacional. Esta informação será registrada na trilha de auditoria.</p>

@@ -4,7 +4,7 @@ import { Alert, Button, Icon, IconButton, Menu, NavItem } from '../../ds/compone
 import { copy } from '../devices/parts';
 import { FaceImg } from '../faces/FaceImg';
 import { Figure } from './Figure';
-import { camName, camOf, colorBg, COLOR, EXTRAS, GENDER_LABEL, isSet, MOODS, traitOk, when, type Filters, type Obs, type TraitKey } from './data';
+import { BOTTOM_LABEL, TOP_LABEL, camName, camOf, colorBg, COLOR, EXTRAS, GENDER_LABEL, isSet, MOODS, traitOk, when, type Filters, type Obs, type TraitKey } from './data';
 
 type Props = {
   o: Obs; f: Filters; all: Obs[]; now: number;
@@ -48,7 +48,7 @@ export function TraitDrawer({ o, f, all, now, onOpen, onClose, toast, onSearchLi
             <span className="fc-hero__det">Track #{o.track}</span>
           </div>
           <div className="tr-dhero__fig">
-            <Figure upper={[o.upper]} lower={[o.lower]} gender={o.gender} hat={o.hat} glasses={o.glasses} backpack={o.backpack} extras={o.extras} />
+            <Figure upper={[o.upper]} lower={[o.lower]} gender={o.gender} hat={o.hat} glasses={o.glasses} backpack={o.backpack} extras={o.extras} top={o.top} bottom={o.bottom} />
             <span>Como o motor descreveu</span>
           </div>
         </div>
@@ -57,7 +57,7 @@ export function TraitDrawer({ o, f, all, now, onOpen, onClose, toast, onSearchLi
 
         <div className="fc-acts2">
           <Button variant="primary" icon="tv" onClick={() => { navigate('/mural-de-video'); toast(`Gravação de ${camName(o.src)} às ${new Date(o.at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`); }}>Ver gravação</Button>
-          <Button icon="search" onClick={() => onSearchLike({ gender: o.gender, ages: [o.age], upper: [o.upper], lower: [o.lower], hat: o.hat ? 'sim' : '', glasses: o.glasses ? 'sim' : '', backpack: o.backpack ? 'sim' : 'nao', extras: [], moods: [] })}>Buscar parecidos</Button>
+          <Button icon="search" onClick={() => onSearchLike({ gender: o.gender, ages: [o.age], upper: [o.upper], lower: o.top === 'vestido' ? [] : [o.lower], tops: [o.top], bottoms: o.top === 'vestido' ? [] : [o.bottom], hat: o.hat ? 'sim' : '', glasses: o.glasses ? 'sim' : '', backpack: o.backpack ? 'sim' : 'nao', extras: [], moods: [] })}>Buscar parecidos</Button>
           <span className="dv-tools__sp" />
           <IconButton icon="more" label="Mais ações" onClick={(e) => setMore(more ? null : e.currentTarget)} tipPlace="bottom" />
         </div>
@@ -67,8 +67,12 @@ export function TraitDrawer({ o, f, all, now, onOpen, onClose, toast, onSearchLi
           <div className="tr-attrs">
             <Attr label="Gênero" value={GENDER_LABEL[o.gender]} conf={o.conf.gender} asked={asked('gender')} ok={ok('gender')} />
             <Attr label="Faixa etária" value={`${o.age} anos`} conf={o.conf.age} asked={asked('ages')} ok={ok('ages')} />
-            <Attr label="Roupa superior" value={<><i className="tr-dot" style={{ background: colorBg(o.upper) }} />{COLOR[o.upper].label}</>} conf={o.conf.upper} asked={asked('upper')} ok={ok('upper')} />
-            <Attr label="Roupa inferior" value={<><i className="tr-dot" style={{ background: colorBg(o.lower) }} />{COLOR[o.lower].label}</>} conf={o.conf.lower} asked={asked('lower')} ok={ok('lower')} />
+            <Attr label="Parte de cima" value={TOP_LABEL[o.top]} conf={o.conf.top} asked={asked('tops')} ok={ok('tops')} />
+            <Attr label="Cor de cima" value={<><i className="tr-dot" style={{ background: colorBg(o.upper) }} />{COLOR[o.upper].label}</>} conf={o.conf.upper} asked={asked('upper')} ok={ok('upper')} />
+            {o.top !== 'vestido' && <>
+              <Attr label="Parte de baixo" value={BOTTOM_LABEL[o.bottom]} conf={o.conf.bottom} asked={asked('bottoms')} ok={ok('bottoms')} />
+              <Attr label="Cor de baixo" value={<><i className="tr-dot" style={{ background: colorBg(o.lower) }} />{COLOR[o.lower].label}</>} conf={o.conf.lower} asked={asked('lower')} ok={ok('lower')} />
+            </>}
             <Attr label="Boné ou chapéu" value={yn(o.hat)} conf={o.conf.hat} asked={asked('hat')} ok={ok('hat')} />
             <Attr label="Óculos" value={yn(o.glasses)} conf={o.conf.glasses} asked={asked('glasses')} ok={ok('glasses')} />
             <Attr label="Mochila" value={yn(o.backpack)} conf={o.conf.backpack} asked={asked('backpack')} ok={ok('backpack')} />
@@ -114,7 +118,7 @@ export function TraitDrawer({ o, f, all, now, onOpen, onClose, toast, onSearchLi
   );
 }
 
-function Attr({ label, value, conf, asked, ok, guess }: { label: string; value: ReactNode; conf?: number; asked: boolean; ok: boolean; guess?: boolean }) {
+export function Attr({ label, value, conf, asked, ok, guess }: { label: string; value: ReactNode; conf?: number; asked: boolean; ok: boolean; guess?: boolean }) {
   return (
     <div className={`tr-attr${asked ? (ok ? ' is-ok' : ' is-miss') : ''}`}>
       <span className="tr-attr__l">{label}{guess && <span className="tr-badge">palpite</span>}</span>

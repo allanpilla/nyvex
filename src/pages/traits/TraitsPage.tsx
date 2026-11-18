@@ -9,8 +9,11 @@ import { Figure } from './Figure';
 import { NewSearch } from './NewSearch';
 import { SearchMotion } from './SearchMotion';
 import { TraitDrawer } from './TraitDrawer';
-import { Card, describe, PERIOD_LABEL } from './parts';
-import { buildObs, camName, isSet, ME, nextCode, runSearch, score, seedSearches, TRAIT_KEYS, traitLabel, when, type Filters, type Obs, type Search } from './data';
+import { Card, dayKey, dayLabel, describe, PERIOD_LABEL } from './parts';
+import { buildObs, camName, EMPTY, isSet, ME, nextCode, runSearch, score, seedSearches, TRAIT_KEYS, traitLabel, when, type Filters, type Obs, type Search } from './data';
+import { Vehicle } from './Vehicle';
+import { VehicleResults } from './VehicleResults';
+import { buildVehicles, runVehicleSearch, seedVehicleSearches, vDescribe, type VFilters } from './vehicles';
 import '../mural/mural.css';
 import '../devices/devices.css';
 import '../watchlists/watchlists.css';
@@ -19,9 +22,9 @@ import '../occurrences/occurrences.css';
 import './traits.css';
 
 type Sort = 'recent' | 'match';
-type FKey = 'by' | 'local' | 'period';
+type FKey = 'kind' | 'by' | 'local' | 'period';
 type LFilters = Record<FKey, string[]>;
-const LEMPTY: LFilters = { by: [], local: [], period: [] };
+const LEMPTY: LFilters = { kind: [], by: [], local: [], period: [] };
 type LSortKey = 'code' | 'n' | 'at';
 const LSORT: [LSortKey, string][] = [['at', 'Data'], ['code', 'Busca'], ['n', 'Resultados']];
 const PAGE = 48;
@@ -33,7 +36,9 @@ export function TraitsPage({ screen }: { screen: Screen }) {
   const { toast } = useUi();
   const [now] = useState(() => Date.now());
   const all = useMemo(() => buildObs(now), [now]);
-  const [list, setList] = useState<Search[]>(() => seedSearches(all, now));
+  const allV = useMemo(() => buildVehicles(now), [now]);
+  const [list, setList] = useState<Search[]>(() => [...seedSearches(all, now), ...seedVehicleSearches(allV, now, ME).map((v) => ({ ...v, id: '', code: '', f: { ...EMPTY, locais: v.vf.locais, period: v.vf.period } }))]
+    .sort((a, b) => b.at - a.at).map((s, i) => ({ ...s, id: `s${i}`, code: `BC-${String(418 - i).padStart(4, '0')}` })));
   const [q, setQ] = useState('');
   const [lf, setLf] = useState<LFilters>(LEMPTY);
   const [showF, setShowF] = useState(false);
@@ -42,14 +47,15 @@ export function TraitsPage({ screen }: { screen: Screen }) {
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rowMenu, setRowMenu] = useState<{ el: HTMLElement; id: string } | null>(null);
   const [spin, setSpin] = useState(false);
-  const [wizard, setWizard] = useState<{ initial?: Filters } | null>(null);
+  const [wizard, setWizard] = useState<{ initial?: Filters; initialV?: VFilters } | null>(null);
+  const redo = (s: Search) => setWizard(s.vf ? { initialV: s.vf } : { initial: s.f });
   const [openSearch, setOpenSearch] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const create = (f: Filters, purpose: string) => {
+  const create = (f: Filters, purpose: string, vf?: VFilters) => {
     const at = Date.now();
-    const r = runSearch(all, f, at);
-    const s: Search = { id: `n${at}`, code: nextCode(), f, purpose, by: ME, me: true, at, n: r.exact.length, people: r.people };
+    const r = vf ? (({ exact, vehicles }) => ({ exact, people: vehicles }))(runVehicleSearch(allV, vf, at)) : runSearch(all, f, at);
+    const s: Search = { id: `n${at}`, code: nextCode(), f: vf ? { ...EMPTY, locais: vf.locais, period: vf.period, from: vf.from, to: vf.to } : f, vf, purpose, by: ME, me: true, at, n: r.exact.length, people: r.people };
     setWizard(null);
     setList((l) => [s, ...l]);
     setOpenSearch(s.id);
@@ -59,16 +65,18 @@ export function TraitsPage({ screen }: { screen: Screen }) {
 
   const locsOf = (s: Search) => (s.f.locais.length ? s.f.locais : [ALL_LOC]);
   const F_GROUPS: { key: FKey; label: string; opts: [string, string][] }[] = [
+    { key: 'kind', label: 'Procurando', opts: [['pessoa', 'Pessoa'], ['veiculo', 'Veículo']] },
     { key: 'by', label: 'Feita por', opts: [...new Set([ME, ...list.map((s) => s.by)])].map((b) => [b, b]) },
     { key: 'local', label: 'Local', opts: [...new Set([ALL_LOC, ...list.flatMap(locsOf)])].map((l) => [l, l]) },
     { key: 'period', label: 'Período', opts: (Object.keys(PERIOD_LABEL) as Filters['period'][]).map((p) => [p, PERIOD_LABEL[p]]) },
   ];
   const fLabel = (k: FKey, v: string) => F_GROUPS.find((g) => g.key === k)!.opts.find((o) => o[0] === v)?.[1] ?? v;
-  const matches = (s: Search, fl: LFilters) => (fl.by.length === 0 || fl.by.includes(s.by))
+  const matches = (s: Search, fl: LFilters) => (fl.kind.length === 0 || fl.kind.includes(s.vf ? 'veiculo' : 'pessoa'))
+    && (fl.by.length === 0 || fl.by.includes(s.by))
     && (fl.local.length === 0 || locsOf(s).some((l) => fl.local.includes(l)))
     && (fl.period.length === 0 || fl.period.includes(s.f.period));
   const nq = norm(q.trim());
-  const textMatch = (s: Search) => !nq || norm(`${s.code} ${describe(s.f)} ${s.purpose} ${s.by} ${s.f.locais.join(' ')}`).includes(nq);
+  const textMatch = (s: Search) => !nq || norm(`${s.code} ${s.vf ? `veiculo ${vDescribe(s.vf)}` : describe(s.f)} ${s.purpose} ${s.by} ${s.f.locais.join(' ')}`).includes(nq);
   const hits = list.filter((s) => matches(s, lf) && textMatch(s));
   const rows = [...hits].sort((a, b) => (sort.k === 'n' ? a.n - b.n : sort.k === 'code' ? a.code.localeCompare(b.code) : a.at - b.at) * sort.dir);
   const nF = F_GROUPS.filter((g) => lf[g.key].length).length;
@@ -92,7 +100,9 @@ export function TraitsPage({ screen }: { screen: Screen }) {
         />
 
         {cur ? (
-          <Results key={cur.id} s={cur} all={all} busy={busy} onBack={() => setOpenSearch(null)} onEdit={() => setWizard({ initial: cur.f })} onLike={(nf) => setWizard({ initial: { ...cur.f, ...nf } })} toast={toast} />
+          cur.vf
+            ? <VehicleResults key={cur.id} s={cur} all={allV} busy={busy} onBack={() => setOpenSearch(null)} onEdit={() => redo(cur)} onLike={(nf) => setWizard({ initialV: { ...cur.vf!, ...nf } })} toast={toast} />
+            : <Results key={cur.id} s={cur} all={all} busy={busy} onBack={() => setOpenSearch(null)} onEdit={() => redo(cur)} onLike={(nf) => setWizard({ initial: { ...cur.f, ...nf } })} toast={toast} />
         ) : (
           <>
             <div className="dv-body tr-list">
@@ -152,15 +162,17 @@ export function TraitsPage({ screen }: { screen: Screen }) {
                         <Checkbox label={`Selecionar ${s.code}`} checked={sel.has(s.id)} onChange={(v) => setSel((x) => { const n = new Set(x); if (v) n.add(s.id); else n.delete(s.id); return n; })} />
                       </span>
                       <span className="dv-c dv-c--name" role="cell">
-                        <span className="dv-kind tr-kind"><Figure size="sm" upper={s.f.upper} lower={s.f.lower} gender={s.f.gender} hat={s.f.hat === 'sim'} glasses={s.f.glasses === 'sim'} backpack={s.f.backpack === 'sim'} extras={s.f.extras} /></span>
-                        <span className="dv-name"><b>{describe(s.f)}</b><span className="tr-code">{s.code}</span></span>
+                        {s.vf ? <span className="dv-kind tr-kind is-veh"><Vehicle size="sm" type={s.vf.types[0]} colors={s.vf.colors} /></span> : <span className="dv-kind tr-kind"><Figure size="sm" upper={s.f.upper} lower={s.f.lower} gender={s.f.gender} hat={s.f.hat === 'sim'} glasses={s.f.glasses === 'sim'} backpack={s.f.backpack === 'sim'} extras={s.f.extras} top={s.f.tops[0]} bottom={s.f.bottoms[0]} /></span>}
+                        <span className="dv-name"><b>{s.vf ? vDescribe(s.vf) : describe(s.f)}</b><span className="tr-code">{s.code}</span></span>
                       </span>
                       <span className="dv-c tr-c-purp" role="cell">{s.purpose}</span>
                       <span className="dv-c tr-c-where" role="cell"><span className="dv-two"><b>{s.f.locais.length ? s.f.locais.join(', ') : ALL_LOC}</b><span>{PERIOD_LABEL[s.f.period]}</span></span></span>
-                      <span className="dv-c tr-c-n" role="cell"><span className="dv-two"><b className="tr-num">{s.n.toLocaleString('pt-BR')} {s.n === 1 ? 'registro' : 'registros'}</b><span>cerca de {s.people} {s.people === 1 ? 'pessoa' : 'pessoas'}</span></span></span>
+                      <span className="dv-c tr-c-n" role="cell"><span className="dv-two">{s.vf
+                        ? <><b className="tr-num">{s.n.toLocaleString('pt-BR')} {s.n === 1 ? 'passagem' : 'passagens'}</b><span>{s.people} {s.people === 1 ? 'veículo' : 'veículos'}</span></>
+                        : <><b className="tr-num">{s.n.toLocaleString('pt-BR')} {s.n === 1 ? 'registro' : 'registros'}</b><span>cerca de {s.people} {s.people === 1 ? 'pessoa' : 'pessoas'}</span></>}</span></span>
                       <span className="dv-c tr-c-by" role="cell"><span className="nx-avatar tr-av">{initials(s.by)}</span><span className="dv-two"><b>{s.by}</b><span>{when(s.at, now)}</span></span></span>
                       <span className="dv-c dv-c--act" role="cell" onClick={(e) => e.stopPropagation()}>
-                        <IconButton icon="edit" label="Refazer com ajustes" onClick={() => setWizard({ initial: s.f })} tipPlace="top" />
+                        <IconButton icon="edit" label="Refazer com ajustes" onClick={() => redo(s)} tipPlace="top" />
                         <IconButton icon="more" label="Mais ações" onClick={(e) => setRowMenu(rowMenu?.id === s.id ? null : { el: e.currentTarget, id: s.id })} tipPlace="top" />
                       </span>
                     </div>
@@ -220,7 +232,7 @@ export function TraitsPage({ screen }: { screen: Screen }) {
         return (
           <Menu anchor={rowMenu.el} onClose={() => setRowMenu(null)}>
             <NavItem role="menuitem" icon="panel" label="Ver resultados" onClick={close(() => setOpenSearch(s.id))} />
-            <NavItem role="menuitem" icon="edit" label="Refazer com ajustes" onClick={close(() => setWizard({ initial: s.f }))} />
+            <NavItem role="menuitem" icon="edit" label="Refazer com ajustes" onClick={close(() => redo(s))} />
             <div className="nx-menu__sep" />
             <NavItem role="menuitem" icon="download" label="Exportar resultados" onClick={close(() => toast(`Resultados de ${s.code} enviados para Exportações`))} />
             <NavItem role="menuitem" icon="copy" label="Copiar código" onClick={close(() => copy(s.code, toast, 'Código copiado'))} />
@@ -228,7 +240,7 @@ export function TraitsPage({ screen }: { screen: Screen }) {
         );
       })()}
 
-      {wizard && <NewSearch initial={wizard.initial} all={all} onClose={() => setWizard(null)} onSearch={create} />}
+      {wizard && <NewSearch initial={wizard.initial} initialV={wizard.initialV} all={all} allV={allV} onClose={() => setWizard(null)} onSearch={create} />}
     </div>
   );
 }
@@ -248,14 +260,6 @@ function Th({ k, sort, onSort, cls, children }: { k: LSortKey; sort: { k: LSortK
 }
 
 /* ───────────── resultados de uma busca ───────────── */
-
-const dayKey = (t: number) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
-const dayLabel = (t: number, now: number) => {
-  const k = dayKey(t);
-  if (k === dayKey(now)) return 'Hoje';
-  if (k === dayKey(now - 86400e3)) return 'Ontem';
-  return new Date(t).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
-};
 
 function Results({ s, all, busy, onBack, onEdit, onLike, toast }: { s: Search; all: Obs[]; busy: boolean; onBack: () => void; onEdit: () => void; onLike: (f: Partial<Filters>) => void; toast: (m: string) => void }) {
   const [sort, setSort] = useState<Sort>('recent');

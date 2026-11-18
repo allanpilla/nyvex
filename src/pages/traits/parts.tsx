@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Icon, Segmented, useTooltip } from '../../ds/components';
 import { FaceImg } from '../faces/FaceImg';
 import { Figure } from './Figure';
-import { camName, camOf, colorBg, COLOR, COLORS, GENDER_LABEL, isSet, obsTrait, score, TRAIT_KEYS, traitLabel, when, type Color, type Filters, type Obs, type TraitKey, type Tri } from './data';
+import { BOTTOM_SHORT, TOP_SHORT, camName, camOf, colorBg, COLORS, GENDER_LABEL, isSet, obsTrait, score, TRAIT_KEYS, traitLabel, when, type Color, type Filters, type Obs, type TraitKey, type Tri } from './data';
 
 /* Peças compartilhadas pela tela de buscas, pelo modal de nova busca e pelos resultados. */
 
@@ -39,7 +39,7 @@ export function Swatches({ value, onChange, kind }: { value: Color[]; onChange: 
     </div>
   );
 }
-export function Swatch({ c, on, onClick }: { c: (typeof COLORS)[number]; on: boolean; onClick: () => void }) {
+export function Swatch({ c, on, onClick }: { c: { id: string; label: string; hex: string; css?: string }; on: boolean; onClick: () => void }) {
   const tip = useTooltip(c.label, undefined, true, 'top');
   return (
     <button type="button" className={`tr-sw${on ? ' is-on' : ''}${c.id === 'jeans' ? ' is-jeans' : ''}`} style={{ '--c': c.css ?? c.hex } as React.CSSProperties} aria-pressed={on} aria-label={c.label} {...tip} onClick={onClick}>
@@ -102,15 +102,14 @@ export function Card({ o, n = 1, f, now, on, miss, onOpen }: { o: Obs; n?: numbe
         <FaceImg seed={o.seed} night={cam.night} />
         <span className="fc-det">{sc}%</span>
         {n > 1 && <span className="tr-stack" {...tip}><Icon name="stack" size={12} />{n}×</span>}
-        <span className="tr-card__fig"><Figure size="sm" upper={[o.upper]} lower={[o.lower]} gender={o.gender} hat={o.hat} glasses={o.glasses} backpack={o.backpack} extras={o.extras} /></span>
+        <span className="tr-card__fig"><Figure size="sm" upper={[o.upper]} lower={[o.lower]} gender={o.gender} hat={o.hat} glasses={o.glasses} backpack={o.backpack} extras={o.extras} top={o.top} bottom={o.bottom} /></span>
         {miss && <span className="tr-miss"><Icon name="warn" size={12} />{obsTrait(o, miss)}</span>}
       </span>
       <span className="tr-card__body">
         <b>{GENDER_LABEL[o.gender]} · {o.age}</b>
         <span className="tr-card__wear">
-          <i style={{ background: colorBg(o.upper) }} />{COLOR[o.upper].label}
-          <span>/</span>
-          <i style={{ background: colorBg(o.lower) }} />{COLOR[o.lower].label}
+          <i style={{ background: colorBg(o.upper) }} />{TOP_SHORT[o.top]}
+          {o.top !== 'vestido' && <><span>/</span><i style={{ background: colorBg(o.lower) }} />{BOTTOM_SHORT[o.bottom]}</>}
           {(o.backpack || o.hat || o.glasses) && <span className="tr-card__acc">{o.hat && TRI_ICON.hat}{o.glasses && TRI_ICON.glasses}{o.backpack && TRI_ICON.backpack}</span>}
         </span>
         <span className="tr-card__meta"><span className={cam.name ? undefined : 'is-id'}>{camName(o.src)}</span><time>{when(o.at, now)}</time></span>
@@ -118,3 +117,12 @@ export function Card({ o, n = 1, f, now, on, miss, onOpen }: { o: Obs; n?: numbe
     </button>
   );
 }
+
+export const dayKey = (t: number) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
+export const dayLabel = (t: number, now: number) => {
+  const k = dayKey(t);
+  if (k === dayKey(now)) return 'Hoje';
+  if (k === dayKey(now - 86400e3)) return 'Ontem';
+  return new Date(t).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+};
+

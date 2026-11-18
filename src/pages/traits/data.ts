@@ -6,6 +6,7 @@
  * com gênero, faixa etária, óculos e boné anotados a partir da foto; roupas, acessórios e horários são sorteados.
  */
 import { SOURCES, srcName, type Source } from '../faces/data';
+import type { VFilters } from './vehicles';
 
 export type Gender = 'M' | 'F';
 export type Age = '18-24' | '25-34' | '35-44' | '45-59' | '60+';
@@ -13,6 +14,25 @@ export type Color = 'preto' | 'branco' | 'cinza' | 'azul' | 'azul-marinho' | 've
 export type Mood = 'neutro' | 'alegre' | 'alerta' | 'tenso';
 export type Extra = 'bolsa' | 'mala' | 'guarda-chuva' | 'capacete' | 'mascara';
 export type Tri = '' | 'sim' | 'nao';
+/** Tipo de peça. Vestido é peça única: cobre em cima e embaixo, com a mesma cor. */
+export type Top = 'camiseta' | 'manga-longa' | 'regata' | 'jaqueta' | 'vestido';
+export type Bottom = 'calca' | 'bermuda' | 'saia' | 'vestido';
+export const TOPS: { id: Top; label: string; word: string }[] = [
+  { id: 'camiseta', label: 'Camiseta', word: 'camiseta' },
+  { id: 'manga-longa', label: 'Camisa ou blusa', word: 'camisa ou blusa' },
+  { id: 'regata', label: 'Regata', word: 'regata' },
+  { id: 'jaqueta', label: 'Jaqueta ou moletom', word: 'jaqueta ou moletom' },
+  { id: 'vestido', label: 'Vestido', word: 'vestido' },
+];
+export const BOTTOMS: { id: Bottom; label: string; word: string }[] = [
+  { id: 'calca', label: 'Calça', word: 'calça' },
+  { id: 'bermuda', label: 'Bermuda ou short', word: 'bermuda ou short' },
+  { id: 'saia', label: 'Saia', word: 'saia' },
+];
+export const TOP_SHORT: Record<Top, string> = { camiseta: 'Camiseta', 'manga-longa': 'Camisa', regata: 'Regata', jaqueta: 'Jaqueta', vestido: 'Vestido' };
+export const BOTTOM_SHORT: Record<Bottom, string> = { calca: 'Calça', bermuda: 'Bermuda', saia: 'Saia', vestido: 'Vestido' };
+export const TOP_LABEL = Object.fromEntries(TOPS.map((t) => [t.id, t.label])) as Record<Top, string>;
+export const BOTTOM_LABEL = { ...Object.fromEntries(BOTTOMS.map((t) => [t.id, t.label])), vestido: 'Vestido' } as Record<Bottom, string>;
 
 export const GENDER_LABEL: Record<Gender, string> = { M: 'Masculino', F: 'Feminino' };
 export const AGES: Age[] = ['18-24', '25-34', '35-44', '45-59', '60+'];
@@ -57,13 +77,15 @@ export type Obs = {
   age: Age;
   upper: Color;
   lower: Color;
+  top: Top;
+  bottom: Bottom;
   hat: boolean;
   glasses: boolean;
   backpack: boolean;
   extras: Extra[];
   mood: Mood;
   /** Confiança do motor por atributo (0–100). Humor é sempre baixo: é palpite. */
-  conf: { gender: number; age: number; upper: number; lower: number; hat: number; glasses: number; backpack: number; mood: number };
+  conf: { gender: number; age: number; upper: number; lower: number; top: number; bottom: number; hat: number; glasses: number; backpack: number; mood: number };
 };
 
 /**
@@ -109,6 +131,10 @@ export function buildObs(now: number): Obs[] {
     const upper = pickW(r, UPPER_W);
     let lower = pickW(r, LOWER_W);
     if (lower === upper && lower !== 'preto') lower = 'jeans';
+    const top = pickW<Top>(r, p.gender === 'F' ? [['camiseta', 34], ['manga-longa', 24], ['regata', 9], ['jaqueta', 15], ['vestido', 18]] : [['camiseta', 46], ['manga-longa', 22], ['regata', 6], ['jaqueta', 26]]);
+    const bottom: Bottom = top === 'vestido' ? 'vestido' : pickW<Bottom>(r, p.gender === 'F' ? [['calca', 56], ['bermuda', 18], ['saia', 26]] : [['calca', 70], ['bermuda', 30]]);
+    if (top === 'vestido') lower = upper;
+    else if (lower === 'jeans' && bottom === 'saia' && r() < .5) lower = 'preto';
     const backpack = r() < 0.32;
     const extras: Extra[] = [];
     if (p.gender === 'F' ? r() < 0.4 : r() < 0.08) extras.push('bolsa');
@@ -131,10 +157,10 @@ export function buildObs(now: number): Obs[] {
       const c = (lo: number, hi: number) => Math.round(lo + r() * (hi - lo));
       out.push({
         id: `o${pi}-${v}`, person: pi, seed: p.seed, src: cam.id, at, track: ++track,
-        gender: p.gender, age: p.age, upper, lower, hat: p.hat, glasses: p.glasses,
+        gender: p.gender, age: p.age, upper, lower, top, bottom, hat: p.hat, glasses: p.glasses,
         backpack: v > 0 && r() < 0.08 ? !backpack : backpack,
         extras: extras.filter(() => r() > 0.08), mood: pickW(r, [['neutro', 60], ['alegre', 18], ['alerta', 14], ['tenso', 8]] as [Mood, number][]),
-        conf: { gender: c(82, 98), age: c(58, 86), upper: c(74, 97), lower: c(66, 94), hat: c(80, 97), glasses: c(70, 95), backpack: c(72, 95), mood: c(31, 58) },
+        conf: { gender: c(82, 98), age: c(58, 86), upper: c(74, 97), lower: c(66, 94), top: c(70, 95), bottom: c(68, 94), hat: c(80, 97), glasses: c(70, 95), backpack: c(72, 95), mood: c(31, 58) },
       });
     }
   });
@@ -148,6 +174,8 @@ export type Filters = {
   ages: Age[];
   upper: Color[];
   lower: Color[];
+  tops: Top[];
+  bottoms: Bottom[];
   hat: Tri;
   glasses: Tri;
   backpack: Tri;
@@ -158,11 +186,11 @@ export type Filters = {
   from: string;
   to: string;
 };
-export const EMPTY: Filters = { gender: '', ages: [], upper: [], lower: [], hat: '', glasses: '', backpack: '', extras: [], moods: [], locais: [], period: '7d', from: '', to: '' };
+export const EMPTY: Filters = { gender: '', ages: [], upper: [], lower: [], tops: [], bottoms: [], hat: '', glasses: '', backpack: '', extras: [], moods: [], locais: [], period: '7d', from: '', to: '' };
 
 /** Atributos de descrição (sem período e local) que o filtro está pedindo. */
-export type TraitKey = 'gender' | 'ages' | 'upper' | 'lower' | 'hat' | 'glasses' | 'backpack' | 'extras' | 'moods';
-export const TRAIT_KEYS: TraitKey[] = ['gender', 'ages', 'upper', 'lower', 'hat', 'glasses', 'backpack', 'extras', 'moods'];
+export type TraitKey = 'gender' | 'ages' | 'tops' | 'upper' | 'bottoms' | 'lower' | 'hat' | 'glasses' | 'backpack' | 'extras' | 'moods';
+export const TRAIT_KEYS: TraitKey[] = ['gender', 'ages', 'tops', 'upper', 'bottoms', 'lower', 'hat', 'glasses', 'backpack', 'extras', 'moods'];
 export const isSet = (f: Filters, k: TraitKey) => { const v = f[k]; return Array.isArray(v) ? v.length > 0 : v !== ''; };
 export const nTraits = (f: Filters) => TRAIT_KEYS.filter((k) => isSet(f, k)).length;
 
@@ -173,6 +201,8 @@ export function traitOk(o: Obs, f: Filters, k: TraitKey): boolean {
     case 'ages': return !f.ages.length || f.ages.includes(o.age);
     case 'upper': return !f.upper.length || f.upper.includes(o.upper);
     case 'lower': return !f.lower.length || f.lower.includes(o.lower);
+    case 'tops': return !f.tops.length || f.tops.includes(o.top);
+    case 'bottoms': return !f.bottoms.length || f.bottoms.includes(o.bottom);
     case 'hat': return tri(f.hat, o.hat);
     case 'glasses': return tri(f.glasses, o.glasses);
     case 'backpack': return tri(f.backpack, o.backpack);
@@ -186,6 +216,7 @@ export function range(f: Filters, now: number): [number, number] {
   return [now - ({ '1h': 3600e3, '24h': 86400e3, '7d': 7 * 86400e3 } as const)[f.period], now];
 }
 
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** Rótulo curto de um atributo pedido, para chips e “o que faltou”. */
 export function traitLabel(f: Filters, k: TraitKey): string {
   const list = (a: string[]) => a.join(' ou ');
@@ -194,6 +225,8 @@ export function traitLabel(f: Filters, k: TraitKey): string {
     case 'ages': return `${list(f.ages)} anos`;
     case 'upper': return `Superior ${list(f.upper.map((c) => COLOR[c].label.toLowerCase()))}`;
     case 'lower': return `Inferior ${list(f.lower.map((c) => COLOR[c].label.toLowerCase()))}`;
+    case 'tops': return cap(list(f.tops.map((t) => TOPS.find((x) => x.id === t)!.word)));
+    case 'bottoms': return cap(list(f.bottoms.map((t) => BOTTOMS.find((x) => x.id === t)!.word)));
     case 'hat': return f.hat === 'sim' ? 'Com boné' : 'Sem boné';
     case 'glasses': return f.glasses === 'sim' ? 'Com óculos' : 'Sem óculos';
     case 'backpack': return f.backpack === 'sim' ? 'Com mochila' : 'Sem mochila';
@@ -208,6 +241,8 @@ export function obsTrait(o: Obs, k: TraitKey): string {
     case 'ages': return `${o.age} anos`;
     case 'upper': return `superior ${COLOR[o.upper].label.toLowerCase()}`;
     case 'lower': return `inferior ${COLOR[o.lower].label.toLowerCase()}`;
+    case 'tops': return TOP_LABEL[o.top].toLowerCase();
+    case 'bottoms': return BOTTOM_LABEL[o.bottom].toLowerCase();
     case 'hat': return o.hat ? 'com boné' : 'sem boné';
     case 'glasses': return o.glasses ? 'com óculos' : 'sem óculos';
     case 'backpack': return o.backpack ? 'com mochila' : 'sem mochila';
@@ -223,6 +258,8 @@ export function score(o: Obs, f: Filters): number {
   if (f.ages.length) ks.push('age');
   if (f.upper.length) ks.push('upper');
   if (f.lower.length) ks.push('lower');
+  if (f.tops.length) ks.push('top');
+  if (f.bottoms.length) ks.push('bottom');
   if (f.hat) ks.push('hat');
   if (f.glasses) ks.push('glasses');
   if (f.backpack) ks.push('backpack');
@@ -346,7 +383,8 @@ export function runSearch(all: Obs[], f: Filters, at: number): Result {
   return { exact, near, buckets, cams: [...byCam.entries()].sort((x, y) => y[1] - x[1]), people: new Set(exact.map((o) => o.person)).size };
 }
 
-export type Search = { id: string; code: string; f: Filters; purpose: string; by: string; me: boolean; at: number; n: number; people: number };
+/** Busca feita. Com `vf`, é de veículo: `f` guarda só onde e quando, e `people` conta veículos. */
+export type Search = { id: string; code: string; f: Filters; vf?: VFilters; purpose: string; by: string; me: boolean; at: number; n: number; people: number };
 export const ME = 'Você';
 let codeN = 418;
 export const nextCode = () => `BC-${String(++codeN).padStart(4, '0')}`;
@@ -357,10 +395,10 @@ export function seedSearches(all: Obs[], now: number): Search[] {
   const rows: [string, string, number, Partial<Filters>][] = [
     [ME, 'Apuração do incidente 42 no acesso norte', 0.4, { gender: 'M', upper: ['preto'], lower: ['jeans'], backpack: 'sim' }],
     ['Marina Costa', 'Furto de bicicleta no bicicletário do Bloco 01', 2.2, { upper: ['vermelho', 'laranja'], locais: ['Bloco 01'] }],
-    ['Rafael Souza', 'Aluna não localizada pela família, vista pela última vez no Bloco 03', 5.5, { gender: 'F', ages: ['18-24'], lower: ['jeans'] }],
+    ['Rafael Souza', 'Aluna não localizada pela família, vista pela última vez no Bloco 03', 5.5, { gender: 'F', ages: ['18-24'], tops: ['vestido'] }],
     [ME, 'Ocorrência OC-2026-0139: dano ao patrimônio na sala de leituras', 21, { gender: 'M', ages: ['25-34'], upper: ['preto', 'cinza'], locais: ['Bloco 07'] }],
     ['Juliana Alves', 'Comportamento suspeito relatado pela portaria', 46, { upper: ['azul-marinho'], backpack: 'sim' }],
-    ['Marina Costa', 'Verificação de denúncia anônima', 70, { upper: ['amarelo', 'laranja'] }],
+    ['Marina Costa', 'Verificação de denúncia anônima', 70, { tops: ['jaqueta'], upper: ['amarelo', 'laranja'] }],
     ['Rafael Souza', 'Objeto esquecido no Bloco 04: localizar o dono', 97, { extras: ['bolsa'], locais: ['Bloco 04'] }],
   ];
   return rows.map(([by, purpose, h, p], i) => {
