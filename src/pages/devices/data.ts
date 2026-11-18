@@ -175,6 +175,12 @@ export function availability(d: Device): ('ok' | 'warn' | 'bad')[] {
   });
 }
 
+/** Disponibilidade (%) de cada bloco de 30 min nas últimas 24 h, derivada dos blocos acima. */
+export function availabilityPct(d: Device): number[] {
+  const r = rng(hash(d.id + 'ap'));
+  return availability(d).map((s) => (s === 'ok' ? 93 + r() * 7 : s === 'warn' ? 80 + r() * 9.9 : r() * 72));
+}
+
 /** Latência (ms) das últimas 24 h, 48 pontos. */
 export function latencySeries(d: Device): number[] {
   const r = rng(hash(d.id + 'lt'));

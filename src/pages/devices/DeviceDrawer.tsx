@@ -3,7 +3,7 @@ import { Alert, Button, Icon, IconButton, Menu, NavItem, Segmented, useTooltip, 
 import { useUi } from '../../lib/useUi';
 import { CAM_BY_ID } from '../mural/data';
 import { sceneUrl } from '../mural/scene';
-import { availability, categoryOf, eventsFor, KIND_ICON, latencySeries, typeOf, uptimeTone, type Device, type Situacao } from './data';
+import { availabilityPct, categoryOf, eventsFor, KIND_ICON, latencySeries, typeOf, uptimeTone, type Device, type Situacao } from './data';
 import { ago, copy, latTone, StatusPill } from './parts';
 import type { IconName } from '../../ds/icons/icons';
 
@@ -62,13 +62,6 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
         <Alert type={d.situacao !== 'ativo' ? 'information' : d.conn === 'offline' ? 'error' : d.conn === 'instavel' ? 'warning' : 'information'}>{d.note}</Alert>
       )}
 
-      <div className="dv-drawer__acts">
-        <Button icon="edit" onClick={onEdit}>Editar</Button>
-        {d.camId && <Button icon="tv" onClick={onMural} disabled={inactive}>Ver no mural</Button>}
-        {d.camId && <Button icon="replay" onClick={onRestart} disabled={inactive}>Reiniciar</Button>}
-        {d.camId && <IconButton icon="sliders" label="Ajustes de câmera" onClick={() => toast('Ajustes de câmera: brilho, contraste, foco e perfil de stream · simulado no protótipo')} tipPlace="bottom" disabled={inactive} />}
-        <IconButton icon="more" label="Mais ações" onClick={(e) => setMore(more ? null : e.currentTarget)} tipPlace="bottom" />
-      </div>
 
       <div className="dv-drawer__tabs">
         <Segmented label="Seções" value={tab} onChange={setTab} size="sm" options={[
@@ -104,6 +97,15 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
         {tab === 'log' && <Events d={d} />}
       </div>
 
+      <footer className="dv-drawer__foot">
+        <IconButton icon="more" label="Mais ações" onClick={(e) => setMore(more ? null : e.currentTarget)} tipPlace="top" />
+        {d.camId && <IconButton icon="sliders" label="Ajustes de câmera" onClick={() => toast('Ajustes de câmera: brilho, contraste, foco e perfil de stream · simulado no protótipo')} tipPlace="top" disabled={inactive} />}
+        <span className="dv-tools__sp" />
+        {d.camId && <Button icon="replay" onClick={onRestart} disabled={inactive}>Reiniciar</Button>}
+        {d.camId && <Button icon="tv" onClick={onMural} disabled={inactive}>Ver no mural</Button>}
+        <Button variant="primary" icon="edit" onClick={onEdit}>Editar</Button>
+      </footer>
+
       {more && (
         <Menu anchor={more} onClose={() => setMore(null)}>
           <NavItem role="menuitem" icon="copy" label="Copiar IP" onClick={() => { setMore(null); copy(d.ip, toast, 'IP copiado'); }} />
@@ -137,7 +139,7 @@ function CopyVal({ v, what, mono = true }: { v: string; what: string; mono?: boo
 }
 
 function Health({ d }: { d: Device }) {
-  const av = useMemo(() => availability(d), [d]);
+  const av = useMemo(() => availabilityPct(d), [d]);
   const lat = useMemo(() => latencySeries(d), [d]);
   const tipApi = useTooltipApi();
   if (d.situacao === 'inativo') return <p className="dv-muted">Dispositivo desativado: a saúde não é monitorada. Reative para voltar a receber sinal e alertas.</p>;
@@ -151,9 +153,10 @@ function Health({ d }: { d: Device }) {
       </div>
 
       <section className="dv-sec">
-        <div className="dv-sec__head"><h3>Disponibilidade · últimas 24 h</h3><span className="dv-legend"><i className="is-ok" />ok <i className="is-warn" />instável <i className="is-bad" />fora</span></div>
-        <div className="dv-avail" role="img" aria-label="Disponibilidade em blocos de 30 minutos">
-          {av.map((s, i) => <i key={i} className={`is-${s}`} onMouseEnter={(e) => tipApi.show(e.currentTarget, `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'} · ${s === 'ok' ? 'ok' : s === 'warn' ? 'instável' : 'fora'}`, undefined, 'top')} onMouseLeave={tipApi.hide} />)}
+        <div className="dv-sec__head"><h3>Disponibilidade · últimas 24 h</h3><span className="dv-legend"><i className="is-ok" />≥ 90% <i className="is-warn" />80–89% <i className="is-bad" />&lt; 80%</span></div>
+        <div className="dv-avail is-grad" role="img" aria-label="Disponibilidade nas últimas 24 horas"
+          style={{ background: `linear-gradient(90deg, ${av.map((v, i) => `${v >= 90 ? 'var(--dv-ok)' : v >= 80 ? 'var(--dv-warn)' : 'var(--dv-bad)'} ${((i + 0.5) / av.length) * 100}%`).join(', ')})` }}>
+          {av.map((v, i) => <i key={i} onMouseEnter={(e) => tipApi.show(e.currentTarget, `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'} · ${v.toFixed(1).replace('.', ',')}%`, undefined, 'top')} onMouseLeave={tipApi.hide} />)}
         </div>
         <div className="dv-axis"><span>24 h atrás</span><span>agora</span></div>
       </section>
