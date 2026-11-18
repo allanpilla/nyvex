@@ -5,6 +5,7 @@ import { CAM_BY_ID } from '../mural/data';
 import { sceneUrl } from '../mural/scene';
 import { availabilityPct, categoryOf, eventsFor, KIND_ICON, latencySeries, typeOf, uptimeTone, type Device, type Situacao } from './data';
 import { ago, copy, latTone, StatusPill } from './parts';
+import { CameraSettings } from './CameraSettings';
 import type { IconName } from '../../ds/icons/icons';
 
 type Tab = 'geral' | 'saude' | 'log';
@@ -30,6 +31,7 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
   const { toast } = useUi();
   const [tab, setTab] = useState<Tab>('geral');
   const [more, setMore] = useState<HTMLElement | null>(null);
+  const [cs, setCs] = useState(false);
   const cam = d.camId ? CAM_BY_ID[d.camId] : undefined;
   const inactive = d.situacao === 'inativo';
 
@@ -99,15 +101,17 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
 
       <footer className="dv-drawer__foot">
         <IconButton icon="more" label="Mais ações" onClick={(e) => setMore(more ? null : e.currentTarget)} tipPlace="top" />
-        {d.camId && <IconButton icon="sliders" label="Ajustes de câmera" onClick={() => toast('Ajustes de câmera: brilho, contraste, foco e perfil de stream · simulado no protótipo')} tipPlace="top" disabled={inactive} />}
         <span className="dv-tools__sp" />
-        {d.camId && <Button icon="replay" onClick={onRestart} disabled={inactive}>Reiniciar</Button>}
+        {d.camId && <Button icon="sliders" onClick={() => setCs(true)} disabled={inactive}>Ajustes de câmera</Button>}
         {d.camId && <Button icon="tv" onClick={onMural} disabled={inactive}>Ver no mural</Button>}
         <Button variant="primary" icon="edit" onClick={onEdit}>Editar</Button>
       </footer>
 
+      {cs && <CameraSettings d={d} onClose={() => setCs(false)} />}
+
       {more && (
         <Menu anchor={more} onClose={() => setMore(null)}>
+          {d.camId && !inactive && <NavItem role="menuitem" icon="replay" label="Reiniciar câmera" onClick={() => { setMore(null); onRestart(); }} />}
           <NavItem role="menuitem" icon="copy" label="Copiar IP" onClick={() => { setMore(null); copy(d.ip, toast, 'IP copiado'); }} />
           <NavItem role="menuitem" icon="alert" label="Ver alertas deste dispositivo" onClick={() => { setMore(null); toast('Abre a Fila de alertas filtrada · simulado no protótipo'); }} />
           <div className="nx-menu__sep" />

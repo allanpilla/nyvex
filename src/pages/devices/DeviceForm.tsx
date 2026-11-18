@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Alert, Button, Combobox, Icon, Sheet, type StatusType } from '../../ds/components';
 import { DEVICES, DEV_LOCAIS, PROFILES, TYPE_BY_NAME, TYPES, profileFor, type Device } from './data';
 import { norm } from './parts';
+import { CameraSettings } from './CameraSettings';
 
 type Props = { edit?: Device; existing: Device[]; onClose: () => void; onSave: (d: Device) => void };
 
@@ -25,6 +26,7 @@ export function DeviceForm({ edit, existing, onClose, onSave }: Props) {
   const [pass, setPass] = useState(edit ? 'Nyv3x#2026' : '');
   const [show, setShow] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [cs, setCs] = useState(false);
   const [test, setTest] = useState<'idle' | 'run' | 'ok' | 'fail'>(edit ? 'ok' : 'idle');
 
   const t = type ? TYPE_BY_NAME[type] : undefined;
@@ -207,6 +209,23 @@ export function DeviceForm({ edit, existing, onClose, onSave }: Props) {
             </div>
           )}
       </section>
+
+      {video && t && (
+        <section className="dv-card2">
+          <h3>Ajustes de câmera</h3>
+          <p>Perímetro, linha e máscara sobre a imagem, ajustes de imagem, ações, diagnóstico, homologação e algoritmos de IA.</p>
+          <div className="dv-testrow">
+            <span>{ip.trim() ? 'Pode ajustar agora ou depois, pela ficha do dispositivo.' : 'Informe o endereço IP para abrir a imagem da câmera.'}</span>
+            <Button icon="sliders" onClick={() => setCs(true)} disabled={!ip.trim()}>Abrir ajustes</Button>
+          </div>
+        </section>
+      )}
+      {cs && (
+        <CameraSettings preview onClose={() => setCs(false)} d={{
+          id: edit?.id ?? nextId, name: name.trim() || nextId, vendor: prof?.vendor ?? 'Genérico', model: prof?.model ?? 'ONVIF',
+          ip: ip.trim(), port: Number(port) || 554, certified: prof?.certified ?? false, situacao: 'ativo', conn: test === 'fail' ? 'offline' : 'online', camId: edit?.camId,
+        }} />
+      )}
     </Sheet>
   );
 }

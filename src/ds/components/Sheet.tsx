@@ -9,7 +9,7 @@ export function Sheet({ eyebrow, title, onClose, footer, children, width = 560, 
   const ref = useRef<HTMLFormElement>(null);
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !document.querySelector('.nx-menu, .nx-smodal')) { e.stopPropagation(); onClose(); }
+      if (e.key === 'Escape' && !document.querySelector('.nx-menu, .nx-smodal, .cs-back')) { e.stopPropagation(); onClose(); }
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSubmit) { e.preventDefault(); onSubmit(); }
     };
     document.addEventListener('keydown', k, true);
