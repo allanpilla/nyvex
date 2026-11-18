@@ -1,0 +1,56 @@
+/* Auditoria (VMS): mesma tabela das outras listagens (dv-tcard is-t2), somente leitura. */
+.dv-cards.au-cards { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+@container dvmain (max-width: 1000px) { .dv-cards.au-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container dvmain (max-width: 560px) { .dv-cards.au-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.au-table .dv-tr { --cols: 116px minmax(200px, 1.3fr) 128px minmax(220px, 1.6fr) minmax(150px, 1fr) 88px; min-height: 60px; }
+.au-th { font-size: 13px; color: var(--nx-text-sub); }
+.au-kind { font-size: 11px; font-weight: 600; color: var(--nx-text-sub); }
+.au-kind.is-sys { color: var(--nx-text-soft); }
+.au-c--at .dv-two b { font-weight: 500; }
+.au-c--at .dv-two span { font-variant-numeric: tabular-nums; }
+.au-res { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.au-res > .nx-icon { flex: none; color: var(--nx-text-soft); }
+.au-id { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px; color: var(--nx-text-soft); }
+.au-id.is-full { white-space: normal; word-break: break-all; color: var(--nx-text-main); }
+.is-t2 .au-table .nx-badge--neutral { --tone: var(--nx-text-soft); }
+
+.au-more { align-self: center; height: 32px; padding: 0 14px; border-radius: 8px; font-size: 13px; color: var(--nx-text-main); border: 1px solid var(--nx-stroke); }
+.au-more:hover { background: var(--nx-bg-hover); }
+.au-more span { color: var(--nx-text-soft); }
+.au-foot__note { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+
+@container (max-width: 1080px) { .au-table .dv-tr { --cols: 104px minmax(180px, 1.2fr) 120px minmax(200px, 1.6fr) 88px; } .au-c--id { display: none; } }
+@container (max-width: 720px) { .au-table .dv-tr { --cols: 92px minmax(0, 1fr) 112px 44px; } .au-c--res { display: none; } .au-table .dv-c--act .nx-icon-btn:not(:last-child) { display: none; } .au-table .dv-kind { display: none; } }
+@container dvmain (max-width: 760px) { .au-foot__note { display: none; } }
+
+/* painel do evento */
+.au-dkind { width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; color: var(--tone, var(--nx-text-sub)); background: color-mix(in srgb, var(--tone, var(--nx-text-soft)) 14%, transparent); }
+.au-dkind.is-success { --tone: var(--nx-success); }
+.au-dkind.is-warning { --tone: #f2ae40; }
+.au-dkind.is-danger { --tone: #f2556f; }
+.au-dkind.is-info { --tone: var(--nx-primary); }
+.au-info .dv-info__row { grid-template-columns: 112px minmax(0, 1fr); }
+.au-info dd { overflow: visible; }
+.au-who { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 0; }
+.au-av { width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; color: var(--nx-text-sub); box-shadow: inset 0 0 0 1px var(--nx-stroke); }
+.au-inline { display: flex; align-items: center; gap: 8px; }
+.au-inline > .nx-icon { color: var(--nx-text-soft); }
+.au-code { margin-left: auto; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 11px; color: var(--nx-text-soft); }
+.au-wrap { white-space: normal; line-height: 18px; }
+.au-ip, .au-muted { color: var(--nx-text-soft); font-size: 12px; }
+.au-diff { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-radius: 10px; background: var(--nx-bg-canvas); }
+.au-diff li { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
+.au-diff li + li { border-top: 1px solid var(--nx-stroke); }
+.au-diff__f { font-size: 12px; color: var(--nx-text-soft); }
+.au-diff__v { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; }
+.au-diff__v > .nx-icon { color: var(--nx-text-soft); }
+.au-diff__b { color: var(--nx-text-soft); text-decoration: line-through; text-decoration-color: color-mix(in srgb, #f2556f 60%, transparent); }
+.au-diff__b.is-empty { text-decoration: none; }
+.au-diff__a { color: var(--nx-text-main); font-weight: 500; }
+.au-note { margin: 0; display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 18px; color: var(--nx-text-soft); }
+.au-note .nx-icon { flex: none; margin-top: 2px; }
+
+/* Exportar é a única ação do cabeçalho: não some nas larguras menores */
+@container dvmain (max-width: 1000px) { .au .dv-main .nx-ph-head__actions .nx-btn--secondary { display: inline-flex; } }
+.au .is-t2 .dv-search { flex: 1 1 200px; max-width: 320px; min-width: 150px; }
