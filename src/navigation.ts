@@ -56,6 +56,7 @@ export const NAV: NavGroup[] = [
     { id: 'veic', actions: ['Importar', 'Cadastrar veículo'], path: '/veiculos', label: 'Veículos', icon: 'car', description: 'Cadastro único de veículos.' },
   ]),
   s('inteligencia', 'Inteligência', 'flash', false, [
+    { id: 'engines', path: '/engines', label: 'Engines', icon: 'stack', description: 'Saúde dos serviços especialistas (face, placas, vídeo e rotas), sondada agora.' },
     { id: 'analises', path: '/analises', label: 'Análises', icon: 'chart', description: 'Indicadores e análises de eventos (Analytics).' },
   ]),
 ];
