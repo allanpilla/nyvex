@@ -5,10 +5,10 @@ import { copy } from '../devices/parts';
 import { FaceImg } from './FaceImg';
 import { hms, KIND_LABEL, SRC, srcName, STATUS_LABEL, type Face } from './data';
 
-type Props = { f: Face; all: Face[]; onOpen: (id: string) => void; onClose: () => void; onOnlySource: () => void; toast: (m: string) => void };
+type Props = { f: Face; all: Face[]; onOpen: (id: string) => void; onClose: () => void; toast: (m: string) => void };
 
 /** Detalhe da captura. Na tela atual o card não abre nada; aqui o clique leva à revisão e às ações. */
-export function FaceDrawer({ f, all, onOpen, onClose, onOnlySource, toast }: Props) {
+export function FaceDrawer({ f, all, onOpen, onClose, toast }: Props) {
   const navigate = useNavigate();
   const [more, setMore] = useState<HTMLElement | null>(null);
   const [review, setReview] = useState<'procede' | 'descartado' | null>(null);
@@ -96,7 +96,6 @@ export function FaceDrawer({ f, all, onOpen, onClose, onOnlySource, toast }: Pro
         <Menu anchor={more} onClose={() => setMore(null)}>
           {f.kind === 'watchlist' && <NavItem role="menuitem" icon="eye" label="Abrir watchlist" onClick={() => { setMore(null); navigate('/listas-de-observacao'); }} />}
           <NavItem role="menuitem" icon="tv" label="Ver câmera no mural" onClick={() => { setMore(null); navigate('/mural-de-video'); toast(`Abra ${srcName(s)} no mural`); }} />
-          <NavItem role="menuitem" icon="filter" label="Mostrar só esta fonte" onClick={() => { setMore(null); onOnlySource(); }} />
           <NavItem role="menuitem" icon="download" label="Baixar recorte" onClick={() => { setMore(null); toast('Recorte salvo em Exportações'); }} />
         </Menu>
       )}
