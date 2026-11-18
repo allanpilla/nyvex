@@ -12,6 +12,7 @@ import { SettingsPage } from './settings/SettingsPage';
 import { MatrixPage } from './matrix/MatrixPage';
 import { AuditPage } from './audit/AuditPage';
 import { EnginesPage } from './engines/EnginesPage';
+import { AnalyticsPage } from './analytics/AnalyticsPage';
 
 /**
  * Telas já desenhadas, por id do menu. Ao criar uma tela nova:
@@ -32,4 +33,5 @@ export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> =
   matriz: MatrixPage,
   auditoria: AuditPage,
   engines: EnginesPage,
+  analiticos: AnalyticsPage,
 };

@@ -58,6 +58,7 @@ export const NAV: NavGroup[] = [
     { id: 'recursos', path: '/recursos', label: 'Recursos', icon: 'door', description: 'Portas, catracas e demais recursos do controle de acesso.' },
   ]),
   s('inteligencia', 'Inteligência', 'flash', false, [
+    { id: 'analiticos', path: '/analiticos-por-camera', label: 'Analíticos por câmera', icon: 'sparkle', description: 'O que a IA analisa em cada câmera, com ações em massa.' },
     { id: 'analises', path: '/analises', label: 'Análises', icon: 'chart', description: 'Indicadores e análises de eventos (Analytics).' },
     { id: 'forense', path: '/busca-forense', label: 'Busca forense', icon: 'film', description: 'Busca nas gravações por pessoa, veículo ou característica.' },
   ]),
