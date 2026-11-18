@@ -37,9 +37,8 @@ export const NAV: NavGroup[] = [
     { id: 'watch', actions: ['Nova lista'], path: '/listas-de-observacao', label: 'Listas de observação', icon: 'eye', description: 'Listas de pessoas e veículos acompanhados (watchlists).' },
     { id: 'faces', path: '/faces-ao-vivo', label: 'Faces ao vivo', icon: 'faces', description: 'Grade de faces capturadas em tempo real.' },
     { id: 'alertas', actions: ['Triar em lote'], path: '/alertas', label: 'Fila de alertas', icon: 'alert', count: '3.772', description: 'Alertas de face, placa e vídeo aguardando triagem.' },
-    { id: 'ocor', actions: ['Nova ocorrência'], path: '/ocorrencias', label: 'Ocorrências', icon: 'ocor', description: 'Central de despacho: do registro ao encerramento.' },
     { id: 'caracteristicas', path: '/caracteristicas', label: 'Características', icon: 'search', description: 'Busca de pessoas vistas pelas câmeras pela aparência (roupa, idade, acessórios).' },
-    { id: 'placas', path: '/rede-de-placas', label: 'Rede de placas', icon: 'share', description: 'Conexões entre placas, locais e passagens (Plate Network).' },
+    { id: 'matriz', path: '/matriz-de-relacionamento', label: 'Matriz de relacionamento', icon: 'grid', description: 'Quantas vezes pessoas e veículos sem cadastro foram vistos juntos no campus (antigas Rede de placas e Teia de relacionamento).' },
   ]),
   s('infra', 'Infraestrutura', 'camera', true, [
     { id: 'mural', actions: ['Novo layout'], path: '/mural-de-video', label: 'Mural de vídeo', icon: 'tv', description: 'Grade de câmeras ao vivo.' },
@@ -58,9 +57,6 @@ export const NAV: NavGroup[] = [
   ]),
   s('inteligencia', 'Inteligência', 'flash', false, [
     { id: 'analises', path: '/analises', label: 'Análises', icon: 'chart', description: 'Indicadores e análises de eventos (Analytics).' },
-  ]),
-  s('engines', 'Engines', 'stack', false, [
-    { id: 'relacoes', path: '/relacoes', label: 'Relações', icon: 'nodes', description: 'Vínculos entre pessoas, veículos e locais (Relations).' },
   ]),
 ];
 

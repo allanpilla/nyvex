@@ -6,10 +6,10 @@ import { LocationsPage } from './locations/LocationsPage';
 import { WatchlistsPage } from './watchlists/WatchlistsPage';
 import { FacesPage } from './faces/FacesPage';
 import { AlertsPage } from './alerts/AlertsPage';
-import { OccurrencesPage } from './occurrences/OccurrencesPage';
 import { TraitsPage } from './traits/TraitsPage';
 import { UsersPage } from './users/UsersPage';
 import { SettingsPage } from './settings/SettingsPage';
+import { MatrixPage } from './matrix/MatrixPage';
 
 /**
  * Telas já desenhadas, por id do menu. Ao criar uma tela nova:
@@ -24,8 +24,8 @@ export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> =
   watch: WatchlistsPage,
   faces: FacesPage,
   alertas: AlertsPage,
-  ocor: OccurrencesPage,
   caracteristicas: TraitsPage,
   users: UsersPage,
   config: SettingsPage,
+  matriz: MatrixPage,
 };

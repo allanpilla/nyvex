@@ -35,7 +35,7 @@ export type Alert = {
   closedBy?: string; closedAt?: number;
   outcome?: string; justification?: string;
   fpReason?: string; reeval?: boolean;
-  fwdTo?: string; fwdNote?: string; fwdAt?: number;
+  fwdBy?: string; fwdTo?: string; fwdNote?: string; fwdAt?: number;
 };
 
 export const ME = 'Você';
@@ -159,6 +159,13 @@ function build(now: number): Alert[] {
   out.push(close(makeAlert('perimetro', 'c1', now - 2 * D - 4 * H), 'Elisa Santos', 9 * MIN, { outcome: 'Falso positivo', fpReason: 'Sombra, reflexo ou chuva', reeval: true }));
   out.push(close(makeAlert('linha', 'c2', now - 1 * D - 7 * H), 'Bruno Tavares', 14 * MIN, { outcome: 'Sem ocorrência no local', justification: 'Ronda verificou: funcionário da limpeza.' }));
   out.push(close(makeAlert('placa', 'c10', now - 4 * D - 1 * H, { plate: 'QWE7J81', list: 'Veículos com restrição · Estacionamento', score: 95 }), 'Fernanda Okada', 4 * MIN, { outcome: 'Ocorrência confirmada · resolvida no local', justification: 'Entrada negada na cancela; condutor orientado.' }));
+  // Encaminhados por você: alguns ainda pendentes com o destinatário, um já reconhecido e um encerrado.
+  const fwd = (a: Alert, to: string, after: number, note: string) => Object.assign(a, { fwdBy: ME, fwdTo: to, fwdAt: a.at + after, fwdNote: note });
+  out.push(fwd(makeAlert('objeto', 'c6', now - 34 * MIN, { note: 'Caixa sem dono há 8 min' }), 'Elisa Santos', 3 * MIN, 'Verificar a caixa perto da escada.'));
+  out.push(fwd(makeAlert('face', 'c3', now - 2 * H - 10 * MIN, { person: 'Marcos Vieira Lopes', score: 84, list: 'Mandados em aberto', seed: 148 }), 'Supervisão PC-1', 6 * MIN, 'Confirmar identidade antes de acionar a equipe.'));
+  out.push(fwd(makeAlert('permanencia', 'c4', now - 5 * H, { note: 'Parado há 9 min no corredor' }), 'Bruno Tavares', 4 * MIN, ''));
+  out.push(Object.assign(fwd(makeAlert('placa', 'c10', now - 1 * D - 3 * H, { plate: 'FTR4B22', list: 'Veículos com restrição · Estacionamento', score: 96 }), 'Fernanda Okada', 2 * MIN, 'Checar com a cancela.'), { status: 'reconhecido' as Status, ackBy: 'Fernanda Okada', ackAt: now - 1 * D - 2 * H }));
+  out.push(close(fwd(makeAlert('aglomeracao', 'c6', now - 2 * D - 5 * H, { note: '20 pessoas · limite 10' }), 'Elisa Santos', 5 * MIN, 'Ver se é evento autorizado.'), 'Elisa Santos', 25 * MIN, { outcome: 'Sem ocorrência no local', justification: 'Evento acadêmico autorizado.' }));
   return out.sort((a, b) => b.at - a.at);
 }
 

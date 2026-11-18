@@ -39,7 +39,8 @@ const FEED: [string, string, string, number][] = [
   ['Perímetro', 'Pessoa', 'Bloco 07 Sala Alimentação', 15], ['Objeto', 'Mochila sem dono', 'Bloco 08 Saguão', 19], ['LPR', 'BRA2E19', 'Estacionamento · Cancela Norte', 21],
 ];
 
-export function OccurrencesPage({ screen }: { screen: Screen }) {
+/** Dentro da Fila de alertas (aba Ocorrências): recebe a barra de abas e volta para os alertas pelo card “Alertas na fila”. */
+export function OccurrencesPage({ screen, tabs, onAlerts, queue = QUEUE }: { screen: Screen; tabs?: ReactNode; onAlerts?: () => void; queue?: number }) {
   const { toast } = useUi();
   const navigate = useNavigate();
   const { hide: hideTip } = useTooltipApi();
@@ -139,11 +140,12 @@ export function OccurrencesPage({ screen }: { screen: Screen }) {
         <PageHeader
           title={screen.label}
           description="Central de despacho: do registro ao encerramento."
-          icon="ocor"
+          icon={tabs ? 'alert' : 'ocor'}
           actions={<Button variant="primary" icon="plus" onClick={() => { setOpenId(null); setCreating('nova'); }}>Nova ocorrência</Button>}
         />
 
         <div className="dv-body">
+          {tabs}
           <section className="dv-sum oc-sum" aria-label="Resumo">
             <div className="dv-cards oc-cards" role="group" aria-label="Filtrar">
               {cards.map((c) => {
@@ -164,9 +166,9 @@ export function OccurrencesPage({ screen }: { screen: Screen }) {
                 <span className="dv-card__top"><Icon name="activity" size={16} />Tempo de resposta</span>
                 <b>{avg ? dur(avg) : '—'}</b><span className="oc-card__sub">despacho → chegada · 7 d</span>
               </div>
-              <CardBtn hint="Abrir a Fila de alertas" className="dv-card is-neutral" onClick={() => navigate('/alertas')}>
+              <CardBtn hint="Abrir a Fila de alertas" className="dv-card is-neutral" onClick={() => (onAlerts ? onAlerts() : navigate('/alertas'))}>
                 <span className="dv-card__top"><Icon name="alert" size={16} />Alertas na fila</span>
-                <b>{QUEUE.toLocaleString('pt-BR')}</b><span className="oc-card__sub oc-link">aguardando triagem <Icon name="arrowRight" size={12} /></span>
+                <b>{queue.toLocaleString('pt-BR')}</b><span className="oc-card__sub oc-link">aguardando triagem <Icon name="arrowRight" size={12} /></span>
               </CardBtn>
             </div>
           </section>
