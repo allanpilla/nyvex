@@ -21,11 +21,34 @@ const LIGHT = [
   { value: 'branca', label: 'Luz branca' },
   { value: 'off', label: 'Desligada' },
 ];
-const AI: [string, string, boolean][] = [
-  ['pessoas', 'Detecção de pessoas', true], ['veiculos', 'Detecção de veículos', true], ['intrusao', 'Intrusão de perímetro', true],
-  ['linha', 'Cruzamento de linha', true], ['face', 'Reconhecimento facial', false], ['lpr', 'Leitura de placas (LPR)', false],
-  ['abandono', 'Objeto abandonado', false], ['aglomeracao', 'Aglomeração', false],
+type Need = 'area' | 'linha' | 'licenca' | null;
+type Algo = { k: string; label: string; code: string; desc: string; need: Need; on: boolean };
+const AI_GROUPS: [string, Algo[]][] = [
+  ['Perímetro e área', [
+    { k: 'intrusao', label: 'Intrusão', code: 'INTRUSION_DETECTION', desc: 'Pessoa entrando na área de interesse configurada.', need: 'area', on: true },
+    { k: 'linha', label: 'Cruzamento de linha', code: 'LINE_CROSSING', desc: 'Pessoa cruzando a linha virtual no sentido definido.', need: 'linha', on: true },
+    { k: 'contagem', label: 'Contagem de pessoas', code: 'PEOPLE_COUNTING', desc: 'Conta quem cruza a linha virtual, separando entrada e saída. Não gera alerta: o resultado fica em Inteligência.', need: 'linha', on: false },
+    { k: 'permanencia', label: 'Permanência indevida', code: 'PERMANENCIA_INDEVIDA', desc: 'Pessoa parada na área de interesse por mais tempo que o configurado.', need: 'area', on: false },
+    { k: 'ocupacao', label: 'Ocupação da zona', code: 'QUEUE_OCCUPANCY', desc: 'Número de pessoas na área acima do limite.', need: 'area', on: false },
+  ]],
+  ['Objetos e veículos', [
+    { k: 'veiculos', label: 'Detecção de veículos', code: 'VEHICLE_DETECTION', desc: 'Veículo entrando ou parado na área de interesse.', need: 'area', on: false },
+    { k: 'abandono', label: 'Objeto abandonado', code: 'ABANDONED_OBJECT', desc: 'Objeto deixado na cena por mais tempo que o configurado.', need: null, on: false },
+  ]],
+  ['Identificação', [
+    { k: 'face', label: 'Reconhecimento facial', code: 'FACE_RECOGNITION', desc: 'Compara rostos com as listas de pessoas cadastradas.', need: 'licenca', on: false },
+    { k: 'lpr', label: 'Leitura de placas (LPR)', code: 'LPR', desc: 'Lê placas de veículos e compara com as listas cadastradas.', need: 'licenca', on: false },
+  ]],
 ];
+const AI = AI_GROUPS.flatMap(([, l]) => l);
+const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+type Sched = { de: string; ate: string; dias: number[] };
+const schedText = (h?: Sched) => {
+  if (!h) return null;
+  const hrs = h.de && h.ate ? `${h.de}–${h.ate}` : 'Dia todo';
+  const d = h.dias.length === 7 || !h.dias.length ? 'todos os dias' : h.dias.join() === '0,1,2,3,4' ? 'Seg a Sex' : h.dias.map((i) => DAYS[i]).join(', ');
+  return `${hrs} · ${d}`;
+};
 const DIAG: [string, string][] = [['Ping', '4 ms'], ['Stream RTSP', 'H.264 · 1920×1080 · 15 fps'], ['Controle ISAPI / ONVIF', 'Respondendo'], ['Relógio (NTP)', 'Sincronizado · desvio 0,2 s'], ['Cartão SD', '58% livre']];
 
 const uuid = (s: string) => {
@@ -57,7 +80,9 @@ export function CameraSettings({ d, onClose, preview }: { d: Cam; onClose: () =>
   const [led, setLed] = useState(60);
   const [sens, setSens] = useState(75);
   const [dir, setDir] = useState<Dir>('ambos');
-  const [ai, setAi] = useState<Record<string, boolean>>(Object.fromEntries(AI.map(([k, , on]) => [k, on])));
+  const [ai, setAi] = useState<Record<string, boolean>>(Object.fromEntries(AI.map((a) => [a.k, a.on])));
+  const [sched, setSched] = useState<Record<string, Sched>>({ intrusao: { de: '18:00', ate: '06:00', dias: [0, 1, 2, 3, 4, 5, 6] } });
+  const [limit, setLimit] = useState('4');
   const [diag, setDiag] = useState<'idle' | 'run' | 'done'>('idle');
   const svg = useRef<SVGSVGElement>(null);
 
@@ -96,7 +121,7 @@ export function CameraSettings({ d, onClose, preview }: { d: Cam; onClose: () =>
   const up = () => { if (drag?.k === 'line' && tool === 'linha') { setDraft(null); setTool('mover'); } if (drag?.k === 'mask') setTool('mover'); setDrag(null); };
   const grab = (k: 'poly' | 'line', i: number) => (e: React.PointerEvent) => { if (tool !== 'mover') return; e.stopPropagation(); svg.current?.setPointerCapture(e.pointerId); setDrag({ k, i }); setDirty(true); };
 
-  const testFire = () => { setFire(true); toast('Disparo de teste enviado · a regra de intrusão gerou um alerta simulado'); setTimeout(() => setFire(false), 1400); };
+  const testFire = () => { if (fire) return; setFire(true); toast(`Alerta de teste disparado: intrusão em ${d.name}`); setTimeout(() => setFire(false), 4000); };
   const runDiag = () => { setDiag('run'); setTimeout(() => setDiag('done'), 1200); };
   const filter = `brightness(${0.5 + img.brilho / 100}) contrast(${0.5 + img.contraste / 100}) saturate(${img.saturacao / 50})`;
   const polyPts = (draft && tool === 'poligono' ? draft : poly).map((p) => p.join(',')).join(' ');
@@ -123,7 +148,7 @@ export function CameraSettings({ d, onClose, preview }: { d: Cam; onClose: () =>
               <span className={`cs-live${preview ? ' is-prev' : offline ? ' is-off' : ''}`}><i />{preview ? 'Prévia' : offline ? 'Sem sinal' : 'Ao vivo'}</span>
               <span className="dv-tools__sp" />
               <Button icon="grid" className={grid ? 'is-active' : undefined} onClick={() => setGrid(!grid)}>Grade</Button>
-              <Button icon="flash" onClick={testFire}>Testar disparo</Button>
+              <Button icon="flash" className={fire ? 'cs-firebtn is-on' : 'cs-firebtn'} onClick={testFire}>{fire ? 'Disparando…' : 'Testar disparo'}</Button>
               <IconButton icon="snapshot" label="Baixar frame" onClick={() => toast('Frame salvo · simulado no protótipo')} tipPlace="top" />
               <IconButton icon="refresh" label="Atualizar imagem" onClick={() => toast('Imagem atualizada')} tipPlace="top" />
             </div>
@@ -136,12 +161,14 @@ export function CameraSettings({ d, onClose, preview }: { d: Cam; onClose: () =>
                 {grid && Array.from({ length: 9 }, (_, i) => <g key={i} className="cs-grid"><line x1={(i + 1) * 100} x2={(i + 1) * 100} y1="0" y2="1000" /><line y1={(i + 1) * 100} y2={(i + 1) * 100} x1="0" x2="1000" /></g>)}
                 <defs><pattern id="cs-hatch" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="16" className="cs-hatch" /></pattern></defs>
                 {mask && <rect className="cs-mask" x={Math.min(mask[0][0], mask[1][0])} y={Math.min(mask[0][1], mask[1][1])} width={Math.abs(mask[1][0] - mask[0][0])} height={Math.abs(mask[1][1] - mask[0][1])} />}
-                <polygon points={polyPts} className={`cs-poly${draft && tool === 'poligono' ? ' is-draft' : ''}`} />
+                <polygon points={polyPts} className={`cs-poly${draft && tool === 'poligono' ? ' is-draft' : ''}${fire ? ' is-fire' : ''}`} />
                 <line x1={line[0][0]} y1={line[0][1]} x2={line[1][0]} y2={line[1][1]} className="cs-line" />
                 {(draft && tool === 'poligono' ? draft : poly).map((p, i) => <circle key={`p${i}`} cx={p[0]} cy={p[1]} r="14" className="cs-h is-poly" onPointerDown={grab('poly', i)} />)}
                 {line.map((p, i) => <circle key={`l${i}`} cx={p[0]} cy={p[1]} r="14" className="cs-h is-line" onPointerDown={grab('line', i)} />)}
               </svg>
               <span className="cs-tag" style={{ left: `${poly.reduce((a, p) => a + p[0], 0) / poly.length / 10}%`, top: `${Math.min(...poly.map((p) => p[1])) / 10}%` }}><Icon name="shield" size={12} />Zona de intrusão · {sens}%</span>
+              {fire && <span className="cs-alert" role="status"><Icon name="shield" size={14} />Alerta disparado: intrusão detectada (pessoa identificada na zona 1)</span>}
+              {fire && (() => { const cx = poly.reduce((a, p) => a + p[0], 0) / poly.length / 10, cy = poly.reduce((a, p) => a + p[1], 0) / poly.length / 10; return <span className="cs-hit" style={{ left: `${cx}%`, top: `${cy}%` }}><em>Pessoa · 94%</em></span>; })()}
               {cursor && <span className="cs-cursor is-mono">x {cursor[0]} · y {cursor[1]}</span>}
               <span className="cs-tag is-line" style={{ left: `${mid[0] / 10}%`, top: `${mid[1] / 10}%` }}>A {dir === 'ab' ? '→' : dir === 'ba' ? '←' : '↔'} B</span>
             </div>
@@ -261,16 +288,33 @@ export function CameraSettings({ d, onClose, preview }: { d: Cam; onClose: () =>
                 </div>
               )}
 
-              {tab === 'ia' && (
-                <Group title="Algoritmos ativos nesta câmera" icon="sparkle">
-                  {AI.map(([k, label]) => (
-                    <div key={k} className="cs-toggle">
-                      <span><b>{label}</b>{(k === 'face' || k === 'lpr') && <small>Requer licença de análise</small>}</span>
-                      <Switch label={label} checked={ai[k]} onChange={(v) => setAi({ ...ai, [k]: v })} />
+              {tab === 'ia' && (() => {
+                const nOn = AI.filter((a) => ai[a.k]).length;
+                const has = (n: Need) => n === 'area' ? poly.length >= 3 : n === 'linha' ? true : n !== 'licenca';
+                return (
+                  <>
+                    <div className="cs-aihead">
+                      <p className="dv-muted">A IA analisa nesta câmera só os algoritmos ligados aqui e envia cada ocorrência ao núcleo como alerta.</p>
+                      <span className={`cs-aicount${nOn >= Number(limit) ? ' is-full' : ''}`}>{nOn} de {limit} ativos</span>
+                      <span className="cs-ailimit"><span>Limite</span><Select label="Limite de algoritmos" value={limit} onChange={setLimit} options={['2', '4', '6', '8'].map((v) => ({ value: v, label: v }))} /></span>
                     </div>
-                  ))}
-                </Group>
-              )}
+                    {AI_GROUPS.map(([g, list]) => (
+                      <section key={g} className="cs-aigrp">
+                        <h4>{g}</h4>
+                        {list.map((a) => (
+                          <AiRow key={a.k} a={a} on={ai[a.k]} ok={has(a.need)} sched={sched[a.k]}
+                            onToggle={(v) => {
+                              if (v && nOn >= Number(limit)) { toast(`Limite de ${limit} algoritmos atingido. Desligue outro ou aumente o limite.`); return; }
+                              if (v && !has(a.need)) { toast('Requer licença de análise facial e de placas'); return; }
+                              setAi({ ...ai, [a.k]: v });
+                            }}
+                            onSched={(h) => { setSched({ ...sched, [a.k]: h }); toast(`Horário salvo: ${a.label}`); }} />
+                        ))}
+                      </section>
+                    ))}
+                  </>
+                );
+              })()}
             </div>
           </section>
         </div>
@@ -284,6 +328,52 @@ export function CameraSettings({ d, onClose, preview }: { d: Cam; onClose: () =>
       </div>
     </div>,
     document.body,
+  );
+}
+
+function AiRow({ a, on, ok, sched, onToggle, onSched }: { a: Algo; on: boolean; ok: boolean; sched?: Sched; onToggle: (v: boolean) => void; onSched: (h: Sched) => void }) {
+  const [open, setOpen] = useState(false);
+  const [de, setDe] = useState(sched?.de ?? '');
+  const [ate, setAte] = useState(sched?.ate ?? '');
+  const [dias, setDias] = useState<number[]>(sched?.dias ?? [0, 1, 2, 3, 4, 5, 6]);
+  const tag = a.need === 'licenca' ? ['Requer licença', 'is-warn'] : a.need === 'area' ? ['Área configurada', 'is-ok'] : a.need === 'linha' ? ['Linha configurada', 'is-ok'] : null;
+  const bad = !!de !== !!ate;
+  return (
+    <div className={`cs-ai${open ? ' is-open' : ''}${on ? ' is-on' : ''}`}>
+      <div className="cs-ai__row">
+        <Switch label={a.label} checked={on} onChange={onToggle} disabled={!ok && !on} />
+        <span className="cs-ai__txt">
+          <span className="cs-ai__t"><b>{a.label}</b><code>{a.code}</code>{tag && <span className={`cs-ai__tag ${tag[1]}`}>{tag[0]}</span>}</span>
+          <small>{a.desc}</small>
+          {sched && <span className="cs-ai__when"><Icon name="clock" size={12} />{schedText(sched)}</span>}
+        </span>
+        <button type="button" className={`cs-ai__clk${open ? ' is-open' : ''}`} aria-expanded={open} aria-label={`Horário de ${a.label}`} title="Horário" onClick={() => setOpen(!open)}>
+          <Icon name="clock" size={14} /><Icon name="chevron" size={12} />
+        </button>
+      </div>
+      {open && (
+        <div className="cs-sched">
+          <div className="cs-sched__hrs">
+            <span className="dv-field__l">Horário</span>
+            <span className="nx-input"><input type="time" value={de} onChange={(e) => setDe(e.target.value)} aria-label="Das" /></span>
+            <span className="cs-sched__sep">até</span>
+            <span className="nx-input"><input type="time" value={ate} onChange={(e) => setAte(e.target.value)} aria-label="Até" /></span>
+            <small>{bad ? 'Preencha os dois horários' : 'Vazio = dia todo'}</small>
+          </div>
+          <div className="cs-sched__days" role="group" aria-label="Dias da semana">
+            {DAYS.map((d, i) => (
+              <button key={d} type="button" aria-pressed={dias.includes(i)} className={`cs-day${dias.includes(i) ? ' is-on' : ''}`}
+                onClick={() => setDias(dias.includes(i) ? dias.filter((x) => x !== i) : [...dias, i].sort())}>{d}</button>
+            ))}
+          </div>
+          <div className="cs-sched__acts">
+            {sched && <button type="button" className="dv-link" onClick={() => { setDe(''); setAte(''); setDias([0, 1, 2, 3, 4, 5, 6]); onSched({ de: '', ate: '', dias: [0, 1, 2, 3, 4, 5, 6] }); }}>Sem restrição</button>}
+            <span className="dv-tools__sp" />
+            <Button icon="check" disabled={bad || !dias.length} onClick={() => { onSched({ de, ate, dias }); setOpen(false); }}>Salvar horário</Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
