@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Checkbox, Icon, IconButton, Menu, useTooltip, useTooltipApi } from '../../ds/components';
 import { KIND_ICON, KIND_LABEL, type Device, type Kind } from '../devices/data';
 import { ENV_LABEL, HEALTH_LABEL, LAYERS, fmtDate, type Env, type Loc, type LocHealth } from './data';
@@ -38,14 +38,26 @@ function Count({ k, n, tone }: { k: Kind; n: number; tone: string }) {
 type Pin = { id: string; x: number; y: number; label: string; env: Env; h: LocHealth; on?: boolean };
 
 /** Mapa esquemático (sem tiles externos): ruas, quadras e os pins dos locais. */
-export function MapCanvas({ pins, onPin, perimeter, tall, children }: {
-  pins: Pin[]; onPin?: (id: string) => void; perimeter?: Loc['perimeter']; tall?: boolean; children?: React.ReactNode;
+export function MapCanvas({ pins, onPin, perimeter, tall, onMove, pick, children }: {
+  pins: Pin[]; onPin?: (id: string) => void; perimeter?: Loc['perimeter']; tall?: boolean;
+  /** Com onMove, o pin em destaque pode ser arrastado; com pick, um clique no mapa posiciona o pin. */
+  onMove?: (x: number, y: number) => void; pick?: boolean; children?: React.ReactNode;
 }) {
   const tip = useTooltipApi();
   const [zoom, setZoom] = useState(1);
+  const world = useRef<HTMLDivElement>(null);
+  const drag = useRef(false);
+  const at = (e: React.PointerEvent | React.MouseEvent) => {
+    const r = world.current!.getBoundingClientRect();
+    const c = (v: number) => Math.max(2, Math.min(98, v));
+    onMove?.(c(((e.clientX - r.left) / r.width) * 100), c(((e.clientY - r.top) / r.height) * 100));
+  };
   return (
-    <div className={`lc-mapc${tall ? ' is-tall' : ''}`}>
-      <div className="lc-mapc__world" style={{ transform: `scale(${zoom})` }}>
+    <div className={`lc-mapc${tall ? ' is-tall' : ''}${pick ? ' is-pick' : ''}`}>
+      <div ref={world} className="lc-mapc__world" style={{ transform: `scale(${zoom})` }}
+        onClick={(e) => { if (pick && onMove && !(e.target as HTMLElement).closest('.lc-pin2')) at(e); }}
+        onPointerMove={(e) => { if (drag.current) at(e); }}
+        onPointerUp={() => { drag.current = false; }}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" className="lc-mapc__bg">
           <path d="M-5 30 C20 26 40 34 60 28 S90 22 105 26" className="lc-st is-main" />
           <path d="M-5 72 C25 70 45 78 70 70 S95 66 105 68" className="lc-st" />
@@ -61,9 +73,10 @@ export function MapCanvas({ pins, onPin, perimeter, tall, children }: {
             : <path d="M36 50 L64 52" className="lc-perim is-path" style={{ stroke: perimeter.color, opacity: perimeter.opacity / 100 }} />)}
         </svg>
         {pins.map((p) => (
-          <button key={p.id} type="button" className={`lc-pin2 is-${p.env} is-h-${p.h}${p.on ? ' is-on' : ''}`} style={{ left: `${p.x}%`, top: `${p.y}%` }}
-            tabIndex={onPin ? 0 : -1} aria-label={p.label}
-            onClick={() => onPin?.(p.id)} onMouseEnter={(e) => tip.show(e.currentTarget, `${p.label} · ${HEALTH_LABEL[p.h]}`, undefined, 'top')} onMouseLeave={tip.hide}>
+          <button key={p.id} type="button" className={`lc-pin2 is-${p.env} is-h-${p.h}${p.on ? ' is-on' : ''}${onMove && p.on ? ' is-drag' : ''}`} style={{ left: `${p.x}%`, top: `${p.y}%` }}
+            tabIndex={onPin ? 0 : -1} aria-label={onMove && p.on ? `${p.label}: arraste para posicionar` : p.label}
+            onPointerDown={(e) => { if (onMove && p.on) { drag.current = true; world.current?.setPointerCapture(e.pointerId); e.preventDefault(); } }}
+            onClick={() => onPin?.(p.id)} onMouseEnter={(e) => tip.show(e.currentTarget, onMove && p.on ? 'Arraste para posicionar' : `${p.label} · ${HEALTH_LABEL[p.h]}`, undefined, 'top')} onMouseLeave={tip.hide}>
             <Icon name="pin" size={p.on ? 22 : 16} />
           </button>
         ))}

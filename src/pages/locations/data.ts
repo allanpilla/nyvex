@@ -1,5 +1,4 @@
-// Locais fictícios do protótipo, no mesmo modelo do sistema atual:
-// internos (instalações: prédios, portarias, áreas) e externos (via pública: cidade → bairro → via).
+// Locais fictícios do protótipo: blocos do campus, cada um dividido em andares (Térreo, 1º andar…).
 import { DEVICES, type Device } from '../devices/data';
 import type { IconName } from '../../ds/icons/icons';
 
@@ -91,42 +90,20 @@ const CAMPUS: Loc[] = [
 // O bloco 7 tem área monitorada (KML) importada.
 CAMPUS[6].perimeter = { kind: 'area', vertices: 9, areaKm2: 0.004, color: '#2f8cff', opacity: 60, source: 'KML', updated: stamp('b7', 40) };
 
-/** Território: cidade → bairros → vias, gerados a partir do endereço. */
-const DISTRICTS: [string, string[]][] = [
-  ['Tarumã', ['Rua Konrad Adenauer', 'Avenida Victor Ferreira do Amaral', 'Rua Guilherme Ihlenfeldt', 'Rua Paulo Kissula']],
-  ['Abranches', ['Rua Abílio Sebastião da Silva', 'Rodovia dos Minérios', 'Marginal da Rodovia dos Minérios', 'Praça Irmã Tereza', 'Condomínio Ilha do Arvoredo', 'Rua Adelírio da Veiga']],
-  ['Bacacheri', ['Avenida Erasto Gaertner', 'Rua Rio Jari', 'Rua Costa Rica']],
-  ['Cabral', ['Rua Mateus Leme', 'Avenida Paraná', 'Rua Chichorro Júnior']],
-  ['Centro', ['Rua XV de Novembro', 'Praça Tiradentes', 'Avenida Marechal Floriano Peixoto', 'Terminal Guadalupe']],
-  ['Jardim Social', ['Rua Ivo Leão', 'Avenida Nossa Senhora da Luz']],
-];
-const city: Loc = {
-  id: 'curitiba', name: 'Curitiba', autoName: true, kind: 'territorio', env: 'outdoor', exposure: 'exposto', zone: 'Cidade', parentId: null,
-  uf: 'PR', city: 'Curitiba', lat: -25.4284, lng: -49.2733, people: [], created: stamp('cwb', 1), updated: stamp('cwb', 1),
-  perimeter: { kind: 'area', vertices: 3120, areaKm2: 435.5, color: '#2f8cff', opacity: 60, source: 'OpenStreetMap', updated: stamp('cwb', 1), reference: true },
-};
-const terr: Loc[] = [city];
-DISTRICTS.forEach(([d, streets], i) => {
-  const did = `curitiba--${slug(d)}`;
-  terr.push({
-    id: did, name: d, autoName: true, kind: 'territorio', env: 'outdoor', exposure: 'exposto', zone: 'Bairro', parentId: city.id, uf: 'PR', city: 'Curitiba', district: d,
-    lat: +(city.lat + (rnd(did) - 0.5) * 0.08).toFixed(6), lng: +(city.lng + (rnd(did + 'g') - 0.5) * 0.08).toFixed(6), people: [], created: city.created, updated: city.updated,
-    perimeter: { kind: 'area', vertices: 180 + Math.floor(rnd(did) * 400), areaKm2: +(2 + rnd(did + 'a') * 6).toFixed(1), color: '#2f8cff', opacity: 60, source: 'OpenStreetMap', updated: city.updated, reference: true },
-  });
-  streets.forEach((s) => {
-    const sid = `${did}--${slug(s)}`;
-    const st = STREET_TYPES.find((t) => s.startsWith(t)) ?? (s.startsWith('Terminal') ? 'Rua' : s.startsWith('Condomínio') || s.startsWith('Marginal') ? 'Rua' : 'Rua');
-    terr.push({
-      id: sid, name: s, autoName: true, kind: 'territorio', env: 'outdoor', exposure: 'exposto', zone: 'Via', parentId: did, uf: 'PR', city: 'Curitiba', district: d, street: s, streetType: st,
-      placeType: s.startsWith('Praça') ? 'Praça' : s.startsWith('Terminal') ? 'Terminal' : undefined,
-      lane: i % 2 ? undefined : 'Faixa 2 de 3', flow: i % 3 ? undefined : 'Bairro → Centro',
-      lat: +(city.lat + (rnd(sid) - 0.5) * 0.09).toFixed(6), lng: +(city.lng + (rnd(sid + 'g') - 0.5) * 0.09).toFixed(6), people: [], created: city.created, updated: city.updated,
-      perimeter: { kind: 'caminho', vertices: 2 + Math.floor(rnd(sid) * 30), color: '#2f8cff', opacity: 60, source: 'OpenStreetMap', updated: city.updated },
-    });
+/** Andares de cada bloco: são os sub-locais. */
+export const FLOOR_NAMES = ['Subsolo', 'Térreo', '1º andar', '2º andar', '3º andar', '4º andar', '5º andar', 'Mezanino', 'Cobertura'];
+const N_FLOORS: Record<string, number> = { 'Bloco 1': 4, 'Bloco 2': 4, 'Bloco 3': 3, 'Bloco 4': 3, 'Bloco 5': 3, 'Bloco 6': 2, 'Bloco 7': 2, 'Bloco 8': 3, 'Bloco 9': 2 };
+const FLOORS: Loc[] = CAMPUS.flatMap((b) => {
+  const n = N_FLOORS[b.building ?? ''] ?? (b.name.startsWith('Clínicas') ? 2 : 0);
+  return Array.from({ length: n }, (_, i) => {
+    const name = FLOOR_NAMES[i + 1];
+    return { ...b, id: `${b.id}--${slug(name)}`, name, parentId: b.id, floor: name, sector: undefined, people: [], perimeter: undefined, created: b.created, updated: b.updated } satisfies Loc;
   });
 });
+CAMPUS.forEach((b) => { if (N_FLOORS[b.building ?? '']) b.floor = undefined; });
+export const isFloor = (l: Pick<Loc, 'parentId'>) => l.parentId != null;
 
-export const LOCS: Loc[] = [...CAMPUS, ...terr];
+export const LOCS: Loc[] = [...CAMPUS, ...FLOORS];
 
 /** Onde cada dispositivo do protótipo está instalado (local do inventário → local cadastrado). */
 const DEV_MAP: [RegExp, string][] = [
@@ -137,7 +114,13 @@ const DEV_MAP: [RegExp, string][] = [
   [/^NVR principal|^Servidor/, 'Bloco 9 — Tecnologia & Data center'], [/^NVR secundário/, 'Bloco 8 — Administrativo'],
 ];
 const BY_NAME = Object.fromEntries(CAMPUS.map((l) => [l.name, l.id]));
-export const locOfDevice = (d: Device) => BY_NAME[DEV_MAP.find(([re]) => re.test(d.name))?.[1] ?? ''] ?? null;
+/** Local do dispositivo: o andar, quando o bloco tem andares (distribuição fixa do protótipo). */
+export const locOfDevice = (d: Device) => {
+  const block = BY_NAME[DEV_MAP.find(([re]) => re.test(d.name))?.[1] ?? ''] ?? null;
+  if (!block) return null;
+  const fl = FLOORS.filter((f) => f.parentId === block);
+  return fl.length ? fl[(hash(d.id) >>> 0) % fl.length].id : block;
+};
 
 /** Dispositivos do local e dos sub-locais. */
 export function devicesOf(l: Loc, all: Loc[], devs: Device[] = DEVICES): Device[] {

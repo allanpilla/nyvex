@@ -3,8 +3,8 @@ import { Button, Combobox, Icon, IconButton, Menu, NavItem, Tabs, useTooltip } f
 import { useUi } from '../../lib/useUi';
 import { KIND_ICON, type Device } from '../devices/data';
 import { ago, ConnPill, copy } from '../devices/parts';
-import { EXPO_LABEL, fmtDate, KIND_LABEL, PEOPLE, pathOf, type Loc, type LocHealth } from './data';
-import { EnvBadge, MapCanvas } from './parts';
+import { childrenOf, ENV_LABEL, fmtDate, isFloor, PEOPLE, pathOf, type Loc, type LocHealth } from './data';
+import { MapCanvas } from './parts';
 
 type Tab = 'info' | 'infra' | 'rel' | 'analises' | 'eventos';
 type Props = {
@@ -24,7 +24,8 @@ export function LocationDrawer({ l, locs, devs, health, onClose, onOpen, onEdit,
   const path = pathOf(l, locs);
   const cams = devs.filter((d) => d.kind === 'camera' && d.situacao !== 'inativo');
   const idTip = useTooltip('Copiar ID', undefined, true, 'bottom');
-  const out = l.env === 'outdoor' && !!l.city;
+  const floor = isFloor(l);
+  const floors = childrenOf(l.id, locs);
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -38,39 +39,25 @@ export function LocationDrawer({ l, locs, devs, health, onClose, onOpen, onEdit,
 
   // Só linhas com valor: campo vazio não vira “—”.
   const rows: [string, React.ReactNode][] = [
-    ['Exposição', EXPO_LABEL[l.exposure]],
-    ['Zona', l.zone],
-    ['Tipo de lugar', l.placeType],
-    ['Local pai', path.length ? <button type="button" className="dv-link" onClick={() => onOpen(path[path.length - 1].id)}>{path.map((p) => p.name).join(' / ')}</button> : null],
-    ...(out ? [
-      ['UF · Cidade', `${l.uf} · ${l.city}`],
-      ['Bairro', l.district],
-      ['Rua', l.street ? `${l.streetType && !l.street.startsWith(l.streetType) ? `${l.streetType} · ` : ''}${l.street}${l.number ? `, ${l.number}` : ''}` : null],
-      ['Faixa', l.lane],
-      ['Sentido / fluxo', l.flow],
-      ['Referência', l.reference],
-    ] as [string, React.ReactNode][] : [
-      ['Prédio / bloco', l.building],
-      ['Andar', l.floor],
-      ['Setor', l.sector],
-    ] as [string, React.ReactNode][]),
+    ['Bloco', path.length ? <button type="button" className="dv-link" onClick={() => onOpen(path[path.length - 1].id)}>{path.map((p) => p.name).join(' / ')}</button> : null],
+    ['Andares', !floor ? (floors.length ? floors.map((f) => f.name).join(' · ') : 'Nenhum andar cadastrado') : null],
+    ['Ambiente', ENV_LABEL[l.env]],
+    ['Setor', l.sector],
     ['Coordenadas', <CopyVal v={`${l.lat}, ${l.lng}`} what="Coordenadas copiadas" />],
-    ['Área monitorada', l.perimeter ? `${l.perimeter.reference ? 'Limite territorial' : l.perimeter.kind === 'area' ? 'Área' : 'Caminho'} · ${l.perimeter.source}${l.perimeter.areaKm2 != null ? ` · ${l.perimeter.areaKm2.toLocaleString('pt-BR')} km²` : ''}` : null],
   ];
 
   return (
     <aside className="dv-drawer" aria-label={`Detalhes de ${l.name}`}>
       <header className="dv-drawer__head">
-        <span className={`dv-kind is-lg lc-kind is-${l.env}`}><Icon name={l.env === 'indoor' ? 'stack' : 'map'} size={20} /></span>
+        <span className={`dv-kind is-lg lc-kind is-${l.env}`}><Icon name={floor ? 'stack' : l.env === 'indoor' ? 'pin' : 'map'} size={20} /></span>
         <div className="dv-drawer__title">
-          <h2>{l.name}</h2>
-          <p>{KIND_LABEL[l.kind]}{l.autoName ? ' · nome gerado pelo endereço' : ''}</p>
+          <h2>{floor ? `${path.at(-1)?.name ?? ''} · ${l.name}` : l.name}</h2>
+          <p>{floor ? `Andar · ${path.at(-1)?.name ?? ''}` : `Bloco do campus · ${floors.length} ${floors.length === 1 ? 'andar' : 'andares'}`}</p>
         </div>
         <IconButton icon="close" label="Fechar painel" shortcut="Esc" onClick={onClose} tipPlace="bottom" />
       </header>
 
       <div className="dv-drawer__status lc-meta">
-        <EnvBadge env={l.env} />
         <button type="button" className="lc-meta__id" onClick={() => copy(l.id, toast, 'ID copiado')} {...idTip}>ID {l.id.slice(0, 12)}</button>
         <span>Criado {fmtDate(l.created)}</span>
         <span>Atualizado {fmtDate(l.updated)}</span>
@@ -93,7 +80,7 @@ export function LocationDrawer({ l, locs, devs, health, onClose, onOpen, onEdit,
       <div className="dv-drawer__body" key={tab}>
         {tab === 'info' && (
           <>
-            <MapCanvas pins={[{ id: l.id, x: 50, y: 48, label: l.name, env: l.env, h: health, on: true }]} perimeter={l.perimeter} />
+            <MapCanvas pins={[{ id: l.id, x: 50, y: 48, label: l.name, env: l.env, h: health, on: true }]} />
             <dl className="dv-info">
               {rows.filter(([, v]) => v != null && v !== '').map(([k, v]) => <div key={k} className="dv-info__row"><dt>{k}</dt><dd>{v}</dd></div>)}
             </dl>
@@ -131,7 +118,7 @@ export function LocationDrawer({ l, locs, devs, health, onClose, onOpen, onEdit,
 
       {more && (
         <Menu anchor={more} onClose={() => setMore(null)}>
-          <NavItem role="menuitem" icon="plus" label="Adicionar sub-local" onClick={() => { setMore(null); onAddChild(); }} />
+          {!floor && <NavItem role="menuitem" icon="plus" label="Adicionar andar" onClick={() => { setMore(null); onAddChild(); }} />}
           <NavItem role="menuitem" icon="copy" label="Copiar coordenadas" onClick={() => { setMore(null); copy(`${l.lat}, ${l.lng}`, toast, 'Coordenadas copiadas'); }} />
           <div className="nx-menu__sep" />
           <NavItem role="menuitem" icon="trash" label="Excluir" className="is-danger" onClick={() => { setMore(null); onDelete(); }} />

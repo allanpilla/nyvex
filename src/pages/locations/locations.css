@@ -1,5 +1,5 @@
 /* Locais: reaproveita a estrutura de Dispositivos (.dv-*) e acrescenta árvore, ambiente e mapa. */
-.lc-table .dv-tr { --cols: 40px minmax(260px, 2.6fr) minmax(130px, 1fr) minmax(96px, .7fr) minmax(110px, .8fr) 84px minmax(150px, 1.1fr) 116px; }
+.lc-table .dv-tr { --cols: 40px minmax(260px, 3fr) minmax(90px, .6fr) minmax(140px, 1fr) 116px; }
 .lc-table .dv-tr.is-dim { opacity: .5; }
 .lc-twisty { width: 20px; height: 20px; flex: none; display: grid; place-items: center; border-radius: 4px; color: var(--nx-text-soft); margin-right: -4px; }
 .lc-twisty .nx-icon { transform: rotate(-90deg); transition: transform .15s var(--nx-ease); }
@@ -23,10 +23,10 @@
 .lc-none { color: var(--nx-text-soft); font-size: 13px; }
 .lc-dot { padding: 0; background: none; }
 .lc-c--subs { font-variant-numeric: tabular-nums; }
-@container (max-width: 1180px) { .lc-table .dv-tr { --cols: 40px minmax(240px, 2.4fr) minmax(130px, 1fr) minmax(96px, .7fr) minmax(110px, .8fr) minmax(150px, 1.1fr) 116px; } .lc-c--subs { display: none; } }
-@container (max-width: 960px) { .lc-table .dv-tr { --cols: 40px minmax(220px, 2fr) minmax(130px, 1fr) minmax(110px, .8fr) minmax(140px, 1fr) 116px; } .lc-c--zone { display: none; } }
-@container (max-width: 760px) { .lc-table .dv-tr { --cols: 40px minmax(0, 1fr) 140px 116px; } .lc-c--type, .lc-c--devs { display: none; } }
-@container (max-width: 520px) { .lc-table .dv-tr { --cols: 36px minmax(0, 1fr) 44px; } .lc-c--health { display: none; } .lc-table .dv-c--act .nx-icon-btn:not(:last-child) { display: none; } }
+
+
+@container (max-width: 760px) { .lc-table .dv-tr { --cols: 40px minmax(0, 1fr) 80px 116px; } .lc-c--devs { display: none; } }
+@container (max-width: 520px) { .lc-table .dv-tr { --cols: 36px minmax(0, 1fr) 44px; } .lc-c--subs { display: none; } .lc-table .dv-c--act .nx-icon-btn:not(:last-child) { display: none; } }
 
 /* Resumo: instalações x territórios */
 .lc-split { width: 260px; }
@@ -128,3 +128,12 @@
 .dv-drawer .lc-tabs { flex: none; padding: 0 16px; gap: 16px; }
 .dv-drawer .lc-tabs .nx-tab { font-size: 13px; padding: 0; gap: 5px; }
 .dv-drawer .lc-tabs .nx-tab__n { min-width: 16px; height: 16px; line-height: 16px; padding: 0 4px; }
+
+.lc-table .dv-tr.is-floor { min-height: 48px; background: color-mix(in srgb, var(--nx-bg-hover) 30%, transparent); }
+.lc-table .dv-tr.is-floor .dv-name b { font-weight: 400; }
+.lc-mapc.is-pick, .lc-mapc.is-pick .lc-mapc__world { cursor: crosshair; }
+.lc-pin2.is-drag { cursor: grab; touch-action: none; }
+.lc-pin2.is-drag:active { cursor: grabbing; }
+.lc-coords__hint { grid-column: 1 / -1; margin: 0; font-size: 12px; color: var(--nx-text-soft); }
+.lc-mapc__hint { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: var(--nx-radius-md); background: var(--nx-bg-surface); border: 1px solid var(--nx-primary); font-size: 12px; color: var(--nx-text-main); }
+.lc-mapc__top { pointer-events: none; } .lc-mapc__top > * { pointer-events: auto; }
