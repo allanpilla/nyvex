@@ -102,7 +102,7 @@ export function DeviceDrawer({ d, onClose, onMural, onRestart, onEdit, onSituaca
       <footer className="dv-drawer__foot">
         <IconButton icon="more" label="Mais ações" onClick={(e) => setMore(more ? null : e.currentTarget)} tipPlace="top" />
         <span className="dv-tools__sp" />
-        {d.camId && <Button icon="sliders" onClick={() => setCs(true)} disabled={inactive}>Ajustes de câmera</Button>}
+        {d.kind === 'camera' && <Button icon="sliders" onClick={() => setCs(true)}>Ajustes de câmera</Button>}
         {d.camId && <Button icon="tv" onClick={onMural} disabled={inactive}>Ver no mural</Button>}
         <Button variant="primary" icon="edit" onClick={onEdit}>Editar</Button>
       </footer>
