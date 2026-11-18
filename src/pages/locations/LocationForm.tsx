@@ -111,6 +111,10 @@ export function LocationForm({ edit, parentId, locs, onClose, onSave }: Props) {
               <span className="nx-input"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Bloco 10 — Reitoria" autoFocus={!edit} /></span>
               {err('name') && <span className="dv-field__h">{err('name')}</span>}
             </label>
+          </>
+        )}
+        <div className="dv-row">
+          {!floorMode && (
             <div className="dv-field">
               <span className="dv-field__l">Ambiente<i>*</i></span>
               <Segmented label="Ambiente" value={env} onChange={setEnv} options={[
@@ -118,12 +122,13 @@ export function LocationForm({ edit, parentId, locs, onClose, onSave }: Props) {
                 { value: 'outdoor', label: <><Icon name="map" size={14} />Externo</> },
               ]} />
             </div>
-          </>
-        )}
-        <label className="dv-field lc-half">
-          <span className="dv-field__l">Setor <span className="al-opt">opcional</span></span>
-          <span className="nx-input"><input value={sector} onChange={(e) => setSector(e.target.value)} placeholder="Recepção, Laboratórios…" /></span>
-        </label>
+          )}
+          <label className="dv-field">
+            <span className="dv-field__l">Setor <span className="al-opt">opcional</span></span>
+            <span className="nx-input"><input value={sector} onChange={(e) => setSector(e.target.value)} placeholder="Recepção, Laboratórios…" /></span>
+          </label>
+          {floorMode && <span />}
+        </div>
       </section>
 
       <section className="dv-card2">
