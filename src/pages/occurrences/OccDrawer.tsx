@@ -244,7 +244,7 @@ export function OccDrawer({ o, all, now, busy, onClose, onMove, onNote, onAdd, o
           <div className="nx-menu__sep" />
           {o.cam && <NavItem role="menuitem" icon="tv" label="Ver câmera no mural" onClick={() => { setMore(null); navigate('/mural-de-video'); }} />}
           <NavItem role="menuitem" icon="copy" label="Copiar código" onClick={() => { setMore(null); copy(o.code, toast, 'Código copiado'); }} />
-          <NavItem role="menuitem" icon="external" label="Copiar link" onClick={() => { setMore(null); copy(`${location.origin}${location.pathname}#/ocorrencias/${o.code}`, toast, 'Link copiado'); }} />
+          <NavItem role="menuitem" icon="external" label="Copiar link" onClick={() => { setMore(null); copy(`${location.origin}${location.pathname}#/alertas?aba=ocorrencias&oc=${o.code}`, toast, 'Link copiado'); }} />
         </Menu>
       )}
     </aside>

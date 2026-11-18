@@ -14,6 +14,8 @@ const router = createHashRouter([
         const Page = PAGES[screen.id] ?? PlaceholderPage;
         return { path: screen.path, element: <Page screen={screen} /> };
       }),
+      // Ocorrências virou aba da Fila de alertas; o endereço antigo continua funcionando.
+      { path: '/ocorrencias/*', element: <Navigate to="/alertas?aba=ocorrencias" replace /> },
       { path: '*', element: <Navigate to={HOME_PATH} replace /> },
     ],
   },

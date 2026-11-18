@@ -156,3 +156,21 @@
 .al-sum i { font-style: normal; color: var(--nx-text-soft); flex: none; width: 52px; }
 .al-sum b { font-weight: 500; color: var(--nx-text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .al-sum em { font-style: normal; color: var(--nx-text-soft); flex: none; }
+
+/* Aba Encaminhados: “Encaminhado a” é a coluna principal, então ela fica e a câmera sai antes */
+@container (max-width: 1360px) { .al-table.is-fwd .al-c--trail { display: flex; } .al-table.is-fwd .al-c--cam { display: none; } }
+@container (max-width: 1100px) { .al-table.is-fwd .dv-tr { --cols: 40px minmax(220px, 2fr) minmax(160px, 1fr) minmax(140px, 1fr) 272px; } .al-table.is-fwd .al-c--when { display: none; } }
+@container (max-width: 860px) { .al-table.is-fwd .dv-tr { --cols: 40px minmax(0, 1.6fr) minmax(140px, 1fr) 160px; } .al-table.is-fwd .al-c--reason { display: none; } }
+
+/* Lado a lado: lista à esquerda, alerta aberto (com a imagem) à direita */
+.al-dock { width: 480px; flex: none; min-height: 0; display: flex; border-left: 1px solid var(--nx-stroke); background: var(--nx-bg-surface); }
+.al-dock .dv-drawer { width: 100%; height: 100%; animation: none; }
+.al.is-split .al-foot { display: none; }
+/* Na lista ao lado do painel: alerta, motivo, quando e Reconhecer; as ações rápidas ficam no painel */
+.al.is-split .al-table .dv-tr { --cols: 40px minmax(0, 1.6fr) minmax(150px, 1fr) 84px 168px; }
+.al.is-split .al-table .al-c--when { display: flex; }
+.al.is-split .al-table .al-c--cam, .al.is-split .al-table .al-c--trail, .al.is-split .al-table .al-acts-row .al-qa { display: none; }
+.al.is-split .al-table.is-fwd .dv-tr { --cols: 40px minmax(0, 1.4fr) minmax(150px, 1fr) 168px; }
+.al.is-split .al-table.is-fwd .al-c--trail { display: flex; }
+.al.is-split .al-table.is-fwd .al-c--reason, .al.is-split .al-table.is-fwd .al-c--when { display: none; }
+.al.is-split .al-acts-row .al-ack { min-width: 0; }
