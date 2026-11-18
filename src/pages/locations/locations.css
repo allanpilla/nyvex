@@ -137,3 +137,5 @@
 .lc-coords__hint { grid-column: 1 / -1; margin: 0; font-size: 12px; color: var(--nx-text-soft); }
 .lc-mapc__hint { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: var(--nx-radius-md); background: var(--nx-bg-surface); border: 1px solid var(--nx-primary); font-size: 12px; color: var(--nx-text-main); }
 .lc-mapc__top { pointer-events: none; } .lc-mapc__top > * { pointer-events: auto; }
+.dv-field.lc-envfield .nx-seg { align-self: stretch; display: flex; }
+.lc-envfield .nx-seg__opt { flex: 1; justify-content: center; }

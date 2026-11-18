@@ -115,7 +115,7 @@ export function LocationForm({ edit, parentId, locs, onClose, onSave }: Props) {
         )}
         <div className="dv-row">
           {!floorMode && (
-            <div className="dv-field">
+            <div className="dv-field lc-envfield">
               <span className="dv-field__l">Ambiente<i>*</i></span>
               <Segmented label="Ambiente" value={env} onChange={setEnv} options={[
                 { value: 'indoor', label: <><Icon name="stack" size={14} />Interno</> },
