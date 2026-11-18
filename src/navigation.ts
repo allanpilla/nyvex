@@ -44,20 +44,24 @@ export const NAV: NavGroup[] = [
     { id: 'mural', actions: ['Novo layout'], path: '/mural-de-video', label: 'Mural de vídeo', icon: 'tv', description: 'Grade de câmeras ao vivo.' },
     { id: 'disp', actions: ['Adicionar dispositivo'], path: '/dispositivos', label: 'Dispositivos', icon: 'dev', description: 'Inventário e saúde dos equipamentos.' },
     { id: 'locais', actions: ['Novo local'], path: '/locais', label: 'Locais', icon: 'pin', description: 'Locais em lista ou árvore, com mapa.' },
+    { id: 'espacial', path: '/busca-espacial', label: 'Busca espacial', icon: 'nodes', description: 'Busca de eventos e câmeras por área desenhada no mapa.' },
   ]),
   s('admin', 'Administração', 'settings', false, [
     { id: 'users', actions: ['Novo usuário'], path: '/usuarios', label: 'Usuários e permissões', icon: 'shield', description: 'Quem acessa o sistema e o que cada papel pode fazer.' },
     { id: 'config', path: '/configuracoes', label: 'Configurações', icon: 'settings', description: 'Preferências do cliente nesta plataforma.' },
     { id: 'custom', path: '/personalizar-menu', label: 'Personalizar menu', icon: 'custom', description: 'Montagem do menu por arrastar.' },
     { id: 'auditoria', path: '/auditoria', label: 'Auditoria (VMS)', icon: 'audit', description: 'Registro de ações de usuários no VMS.' },
+    { id: 'refinamento', path: '/refinamento-ia', label: 'Refinamento da IA', icon: 'sparkle', description: 'Ajuste fino dos modelos de IA com os casos revisados pelos operadores.' },
+    { id: 'engines', path: '/engines', label: 'Engines', icon: 'stack', description: 'Saúde dos serviços especialistas (face, placas, vídeo e rotas), sondada agora.' },
   ]),
   s('identidade', 'Identidade', 'idcard', false, [
     { id: 'pessoas', actions: ['Importar', 'Cadastrar pessoa'], path: '/pessoas', label: 'Pessoas', icon: 'people', description: 'Cadastro único de pessoas.' },
     { id: 'veic', actions: ['Importar', 'Cadastrar veículo'], path: '/veiculos', label: 'Veículos', icon: 'car', description: 'Cadastro único de veículos.' },
+    { id: 'recursos', path: '/recursos', label: 'Recursos', icon: 'door', description: 'Portas, catracas e demais recursos do controle de acesso.' },
   ]),
   s('inteligencia', 'Inteligência', 'flash', false, [
-    { id: 'engines', path: '/engines', label: 'Engines', icon: 'stack', description: 'Saúde dos serviços especialistas (face, placas, vídeo e rotas), sondada agora.' },
     { id: 'analises', path: '/analises', label: 'Análises', icon: 'chart', description: 'Indicadores e análises de eventos (Analytics).' },
+    { id: 'forense', path: '/busca-forense', label: 'Busca forense', icon: 'film', description: 'Busca nas gravações por pessoa, veículo ou característica.' },
   ]),
 ];
 
