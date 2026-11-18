@@ -353,23 +353,25 @@ function AiRow({ a, on, ok, sched, onToggle, onSched }: { a: Algo; on: boolean; 
       </div>
       {open && (
         <div className="cs-sched">
+          <span className="cs-sched__l">Horário</span>
           <div className="cs-sched__hrs">
-            <span className="dv-field__l">Horário</span>
             <span className="nx-input"><input type="time" value={de} onChange={(e) => setDe(e.target.value)} aria-label="Das" /></span>
             <span className="cs-sched__sep">até</span>
             <span className="nx-input"><input type="time" value={ate} onChange={(e) => setAte(e.target.value)} aria-label="Até" /></span>
-            <small>{bad ? 'Preencha os dois horários' : 'Vazio = dia todo'}</small>
+            <small className={bad ? 'is-err' : undefined}>{bad ? 'Preencha os dois horários' : 'Vazio = dia todo'}</small>
           </div>
-          <div className="cs-sched__days" role="group" aria-label="Dias da semana">
+          <span className="cs-sched__l">Dias</span>
+          <div className="nx-seg cs-days" role="group" aria-label="Dias da semana">
             {DAYS.map((d, i) => (
-              <button key={d} type="button" aria-pressed={dias.includes(i)} className={`cs-day${dias.includes(i) ? ' is-on' : ''}`}
+              <button key={d} type="button" aria-pressed={dias.includes(i)} className={`nx-seg__opt${dias.includes(i) ? ' is-on' : ''}`}
                 onClick={() => setDias(dias.includes(i) ? dias.filter((x) => x !== i) : [...dias, i].sort())}>{d}</button>
             ))}
           </div>
           <div className="cs-sched__acts">
-            {sched && <button type="button" className="dv-link" onClick={() => { setDe(''); setAte(''); setDias([0, 1, 2, 3, 4, 5, 6]); onSched({ de: '', ate: '', dias: [0, 1, 2, 3, 4, 5, 6] }); }}>Sem restrição</button>}
+            {sched && <button type="button" className="dv-link" onClick={() => { setDe(''); setAte(''); setDias([0, 1, 2, 3, 4, 5, 6]); onSched({ de: '', ate: '', dias: [0, 1, 2, 3, 4, 5, 6] }); }}>Remover restrição</button>}
             <span className="dv-tools__sp" />
-            <Button icon="check" disabled={bad || !dias.length} onClick={() => { onSched({ de, ate, dias }); setOpen(false); }}>Salvar horário</Button>
+            <Button onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button variant="primary" icon="check" disabled={bad || !dias.length} onClick={() => { onSched({ de, ate, dias }); setOpen(false); }}>Salvar horário</Button>
           </div>
         </div>
       )}
