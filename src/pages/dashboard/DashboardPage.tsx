@@ -33,6 +33,7 @@ function Kpi({ icon, label, value, sub, tone, viz, hero, onClick }: { icon: Icon
         {viz && <span className="pd-kpi__viz">{viz}</span>}
       </span>
       <span className="pd-kpi__sub">{sub}</span>
+      <span className="pd-kpi__go" aria-hidden="true"><Icon name="arrowRight" size={14} /></span>
     </button>
   );
 }
@@ -240,14 +241,14 @@ export function DashboardPage({ screen }: { screen: Screen }) {
             sub={<><Trend v={trendAll} /> nesta hora vs. média 24 h</>}
             viz={<Spark id="sp-all" data={sAll} w={140} h={44} />} onClick={() => nav('/alertas')} />
           <Kpi icon="flash" label="Prioridade alta" value={fmt(HOT.length)} tone={HOT.length ? 'bad' : undefined}
-            sub={`${hot24} nas últimas 24 h`} viz={<Spark id="sp-hot" data={sHot} />} onClick={() => { setFeed('alert'); nav('/alertas'); }} />
+            sub={`${hot24} nas últimas 24 h`} viz={<Spark id="sp-hot" data={sHot} />} onClick={() => nav('/alertas')} />
           <Kpi icon="ocor" label="Ocorrências em aberto" value={String(openOcc.length)} tone={lateN ? 'warn' : undefined}
             sub={lateN ? `${lateN} fora do prazo` : 'todas no prazo'}
             viz={<span className="pd-stack" title={stages.map(([l, n]) => `${l}: ${n}`).join(' · ')}>{stages.map(([l, n]) => <i key={l} style={{ flexGrow: n }} />)}</span>}
-            onClick={() => setFeed('occ')} />
+            onClick={() => nav('/alertas')} />
           <Kpi icon="camera" label="Câmeras no ar" value={`${onCount}/${cams.length}`} tone="ok"
             sub={offCams.length ? `${offCams.length} fora do ar · mais antiga ${hb(offCams[0].dev.hb)}` : 'todas no ar'}
-            viz={<Ring pct={Math.round((onCount / cams.length) * 100)} />} onClick={() => { setTab('mapa'); setFilter(offCams.length ? 'off' : 'on'); }} />
+            viz={<Ring pct={Math.round((onCount / cams.length) * 100)} />} onClick={() => nav('/dispositivos')} />
           <Kpi icon="server" label="Engines no ar" value={`${engUp}/${engs.length}`} tone={engs.length - engUp ? 'warn' : 'ok'}
             sub={`${engs.length - engUp} com problema`}
             viz={<span className="pd-pips">{engs.map((e) => <i key={e.slug} className={`is-${engState(e)}`} />)}</span>} onClick={() => nav('/engines')} />
