@@ -4,6 +4,7 @@ import type { IconName } from '../../ds/icons/icons';
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import { norm } from '../devices/parts';
+import { FilterToggle } from '../devices/tableModel';
 import { CameraSettings } from '../devices/CameraSettings';
 import { A_LOCAIS, ACAMS, ANALYTICS, BY_K, GROUPS, initialConfig, LICENSE, offline, PROFILES, type ACam } from './data';
 import '../devices/devices.css';
@@ -49,7 +50,8 @@ export function AnalyticsPage({ screen }: { screen: Screen }) {
   const [colMenu, setColMenu] = useState<{ k: string; el: HTMLElement } | null>(null);
   const [bulk, setBulk] = useState<BulkMenu>(null);
   const [rowMenu, setRowMenu] = useState<{ id: string; el: HTMLElement } | null>(null);
-  const [fMenu, setFMenu] = useState<{ key: 'local' | 'an'; el: HTMLElement } | null>(null);
+  const [fMenu, setFMenu] = useState<{ key: 'sit' | 'local' | 'an'; el: HTMLElement } | null>(null);
+  const [showF, setShowF] = useState(false);
   const [clip, setClip] = useState<{ id: string; ks: string[] } | null>(null);
   const [cs, setCs] = useState<ACam | null>(null);
 
@@ -108,7 +110,8 @@ export function AnalyticsPage({ screen }: { screen: Screen }) {
   ];
 
   const colTip = (k: string, t: Tri) => `${t === 'on' ? 'Desligar' : 'Ligar'} ${BY_K[k].short.toLowerCase()} ${rows.length === ACAMS.length ? 'em todas as câmeras' : `nas ${plural(rows.length, 'câmera exibida', 'câmeras exibidas')}`}`;
-  const fLabel = (key: 'local' | 'an') => key === 'local' ? (locs.length === 0 ? 'todos' : locs.length === 1 ? locs[0] : `${locs.length} selecionados`) : (onlyK ? BY_K[onlyK].short : 'qualquer');
+  const nF = [quick !== 'all', locs.length > 0, !!onlyK].filter(Boolean).length;
+  const fLabel = (key: 'sit' | 'local' | 'an') => key === 'sit' ? (quick === 'all' ? 'todas' : cards.find((c) => c.k === quick)!.label) : key === 'local' ? (locs.length === 0 ? 'todos' : locs.length === 1 ? locs[0] : `${locs.length} selecionados`) : (onlyK ? BY_K[onlyK].short : 'qualquer');
 
   return (
     <div className="dv wl ac">
@@ -120,25 +123,6 @@ export function AnalyticsPage({ screen }: { screen: Screen }) {
           </>} />
 
         <div className="dv-body">
-          <section className="dv-sum" aria-label="Resumo">
-            <div className="dv-cards" role="group" aria-label="Filtrar câmeras">
-              {cards.map((c) => {
-                const on = quick === c.k;
-                return (
-                  <CardBtn key={c.k} hint={c.hint} aria-pressed={on}
-                    className={`dv-card is-${c.tone}${on ? ' is-on' : ''}${c.n === 0 && c.k !== 'all' ? ' is-zero' : ''}`}
-                    onClick={() => setQuick(on || c.k === 'all' ? 'all' : c.k)}>
-                    <span className="dv-card__top"><Icon name={c.icon} size={16} />{c.label}</span>
-                    <b>{c.n}</b>
-                  </CardBtn>
-                );
-              })}
-            </div>
-            <div className="dv-meters">
-              {(['face', 'placa'] as const).map((k) => <Meter key={k} label={`Licenças de ${BY_K[k].short.toLowerCase()}`} value={use(k)} total={LICENSE[k]} />)}
-            </div>
-          </section>
-
           {over.length > 0 && (
             <Alert type="error" title="Mais câmeras do que licenças">
               {over.map((k) => `${BY_K[k].short} está marcado em ${use(k)} câmeras e a licença cobre ${LICENSE[k]}`).join('. ')}. Desligue o excedente ou amplie a licença para salvar.
@@ -148,6 +132,9 @@ export function AnalyticsPage({ screen }: { screen: Screen }) {
           <section className="dv-tcard is-t2 ac-card" aria-label="Analíticos por câmera">
             <div className="dv-tools">
               <span className="wl-title"><b>{rows.length}</b> {rows.length === 1 ? 'câmera' : 'câmeras'}</span>
+              <span className="ac-lics" aria-label="Licenças em uso">
+                {(['face', 'placa'] as const).map((k) => <Lic key={k} label={BY_K[k].short} value={use(k)} total={LICENSE[k]} />)}
+              </span>
               <span className="dv-tools__sp" />
               <label className="nx-input dv-search">
                 <Icon name="search" size={16} />
@@ -155,18 +142,22 @@ export function AnalyticsPage({ screen }: { screen: Screen }) {
                   onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); (e.target as HTMLInputElement).blur(); } }} />
                 {q ? <button type="button" className="dv-search__x" aria-label="Limpar busca" onClick={() => setQ('')}><Icon name="close" size={14} /></button> : null}
               </label>
-              {(['local', 'an'] as const).map((key) => {
-                const on = key === 'local' ? locs.length > 0 : !!onlyK;
+              <FilterToggle on={showF} count={nF} onClick={() => setShowF((v) => !v)} />
+            </div>
+
+            {showF && <div className="dv-filters" role="group" aria-label="Filtros">
+              {(['sit', 'local', 'an'] as const).map((key) => {
+                const on = key === 'sit' ? quick !== 'all' : key === 'local' ? locs.length > 0 : !!onlyK;
                 return (
                   <button key={key} type="button" className={`dv-fdrop${on ? ' is-on' : ''}${fMenu?.key === key ? ' is-open' : ''}`} aria-haspopup="true" aria-expanded={fMenu?.key === key}
                     onClick={(e) => setFMenu(fMenu?.key === key ? null : { key, el: e.currentTarget })}>
-                    <span className="dv-fdrop__k">{key === 'local' ? 'Local' : 'Com'}:</span>
+                    <span className="dv-fdrop__k">{key === 'sit' ? 'Situação' : key === 'local' ? 'Local' : 'Analítico'}:</span>
                     <span className="dv-fdrop__v">{fLabel(key)}</span>
                     <Icon name="chevron" size={14} />
                   </button>
                 );
               })}
-            </div>
+            </div>}
 
             {anyFilter && (
               <div className="dv-chips">
@@ -174,7 +165,7 @@ export function AnalyticsPage({ screen }: { screen: Screen }) {
                 {quick !== 'all' && <Chip onRemove={() => setQuick('all')}>{cards.find((c) => c.k === quick)!.label}</Chip>}
                 {q.trim() && <Chip onRemove={() => setQ('')}>“{q.trim()}”</Chip>}
                 {locs.map((l) => <Chip key={l} onRemove={() => setLocs(locs.filter((x) => x !== l))}><span className="dv-chip__k">Local:</span> {l}</Chip>)}
-                {onlyK && <Chip onRemove={() => setOnlyK(null)}><span className="dv-chip__k">Com:</span> {BY_K[onlyK].short}</Chip>}
+                {onlyK && <Chip onRemove={() => setOnlyK(null)}><span className="dv-chip__k">Analítico:</span> {BY_K[onlyK].short}</Chip>}
                 <button type="button" className="dv-chips__clear" onClick={() => { setQ(''); setLocs([]); setOnlyK(null); setQuick('all'); }}>Limpar filtros</button>
                 <span className="ac-chips__note">As caixas do cabeçalho agem só nas câmeras exibidas.</span>
               </div>
@@ -378,7 +369,16 @@ export function AnalyticsPage({ screen }: { screen: Screen }) {
       {fMenu && (
         <Menu anchor={fMenu.el} align="left" onClose={() => setFMenu(null)} className="dv-fmenu">
           <div className="dv-fmenu__body">
-            {fMenu.key === 'local' ? (
+            {fMenu.key === 'sit' ? (
+              <>
+                <div className="nx-menu__title">Situação</div>
+                {cards.map((c) => (
+                  <Checkbox key={c.k} label={c.label} checked={quick === c.k} onChange={() => { setQuick(quick === c.k ? 'all' : c.k); }}>
+                    <span className="dv-fmenu__l">{c.k === 'all' ? 'Todas as câmeras' : c.label}</span><span className="dv-fmenu__n">{c.n}</span>
+                  </Checkbox>
+                ))}
+              </>
+            ) : fMenu.key === 'local' ? (
               <>
                 <div className="nx-menu__title">Local</div>
                 {A_LOCAIS.map((l) => (
@@ -389,7 +389,7 @@ export function AnalyticsPage({ screen }: { screen: Screen }) {
               </>
             ) : (
               <>
-                <div className="nx-menu__title">Câmeras com</div>
+                <div className="nx-menu__title">Câmeras com o analítico</div>
                 {ANALYTICS.map((a) => (
                   <Checkbox key={a.k} label={a.label} checked={onlyK === a.k} onChange={() => setOnlyK(onlyK === a.k ? null : a.k)}>
                     <span className="dv-fmenu__l">{a.label}</span><span className="dv-fmenu__n">{ACAMS.filter((c) => cfg[c.id].includes(a.k)).length}</span>
@@ -399,7 +399,7 @@ export function AnalyticsPage({ screen }: { screen: Screen }) {
             )}
           </div>
           <div className="dv-fmenu__foot">
-            <Button disabled={fMenu.key === 'local' ? !locs.length : !onlyK} onClick={() => (fMenu.key === 'local' ? setLocs([]) : setOnlyK(null))}>Limpar</Button>
+            <Button disabled={fMenu.key === 'sit' ? quick === 'all' : fMenu.key === 'local' ? !locs.length : !onlyK} onClick={() => (fMenu.key === 'sit' ? setQuick('all') : fMenu.key === 'local' ? setLocs([]) : setOnlyK(null))}>Limpar</Button>
             <Button variant="primary" onClick={() => setFMenu(null)}>Ver {rows.length}</Button>
           </div>
         </Menu>
@@ -451,21 +451,19 @@ function ColHead({ a, n, total, open, onOpen }: { a: string; n: number; total: n
   );
 }
 
-function Meter({ label, value, total }: { label: string; value: number; total: number }) {
+/** Licença em uso, compacta, ao lado do total da lista. Vermelha quando passa do contratado. */
+function Lic({ label, value, total }: { label: string; value: number; total: number }) {
   const pct = total ? Math.round((value / total) * 100) : 0;
   const tone = value > total ? 'bad' : pct >= 90 ? 'warn' : 'ok';
+  const tip = useTooltip(value > total ? `${value - total} câmeras acima da licença de ${label.toLowerCase()}` : `${total - value} licenças de ${label.toLowerCase()} livres`, undefined, true, 'bottom');
   return (
-    <div className={`dv-meter ac-meter is-${tone}`}>
-      <div className="dv-meter__top"><span>{label}</span></div>
-      <div className="dv-meter__val"><b>{value}</b><span>/ {total}</span><em>{value > total ? `${value - total} a mais` : `${total - value} livres`}</em></div>
-      <div className={`dv-meter__bar is-${tone}`} role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={total}><i style={{ width: `${Math.min(100, pct)}%` }} /></div>
-    </div>
+    <span className={`ac-lic is-${tone}`} {...tip}>
+      <span>Licenças de {label.toLowerCase()}</span>
+      <b>{value}<small>/{total}</small></b>
+      <span className="ac-lic__bar" role="progressbar" aria-label={`Licenças de ${label.toLowerCase()}`} aria-valuenow={value} aria-valuemin={0} aria-valuemax={total}><i style={{ width: `${Math.min(100, pct)}%` }} /></span>
+    </span>
   );
 }
 function Chip({ children, onRemove }: { children: ReactNode; onRemove: () => void }) {
   return <span className="dv-chip">{children}<button type="button" aria-label="Remover filtro" onClick={onRemove}><Icon name="close" size={12} /></button></span>;
-}
-function CardBtn({ hint, ...rest }: { hint: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const tip = useTooltip(hint, undefined, true, 'bottom');
-  return <button type="button" {...tip} {...rest} />;
 }

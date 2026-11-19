@@ -117,3 +117,16 @@
 .ac-foot__note .nx-icon { flex: none; }
 .ac-foot__note > span { overflow: hidden; text-overflow: ellipsis; }
 .ac-bmenu__hint { padding: 0 8px 6px; font-size: 12px; color: var(--nx-text-soft); }
+
+/* licenças compactas na barra da lista */
+.ac-lics { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--nx-stroke); }
+.ac-lic { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--nx-stroke); font-size: 12px; color: var(--nx-text-soft); white-space: nowrap; cursor: default; }
+.ac-lic b { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--nx-text-main); }
+.ac-lic b small { font-size: 12px; font-weight: 400; color: var(--nx-text-soft); }
+.ac-lic__bar { width: 36px; height: 4px; border-radius: 99px; background: var(--nx-bg-badge); overflow: hidden; }
+.ac-lic__bar i { display: block; height: 100%; border-radius: inherit; background: var(--nx-success); transition: width .3s var(--nx-ease); }
+.ac-lic.is-warn .ac-lic__bar i { background: #f2ae40; }
+.ac-lic.is-bad { border-color: color-mix(in srgb, #f2556f 45%, transparent); background: color-mix(in srgb, #f2556f 8%, transparent); }
+.ac-lic.is-bad b, .ac-lic.is-bad b small { color: #f2556f; }
+.ac-lic.is-bad .ac-lic__bar i { background: #f2556f; }
+@container dvmain (max-width: 900px) { .ac-lic > span:first-child { display: none; } }
