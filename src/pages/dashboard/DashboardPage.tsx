@@ -77,7 +77,7 @@ function Gauge({ value, total, caption }: { value: number; total: number; captio
             stroke={i < on ? mix(i / Math.max(on - 1, 1)) : 'var(--nx-bg-badge)'} strokeWidth="3" strokeLinecap="round" />;
         })}
       </svg>
-      <span className="pd-gauge__v"><strong>{value}<small>/{total}</small></strong><em>{caption}</em></span>
+      <span className="pd-gauge__v" title={caption}><strong>{value}<small>/{total}</small></strong></span>
     </span>
   );
 }

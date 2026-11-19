@@ -403,3 +403,6 @@
 .pd-stagebar__legend i { width: 6px; height: 6px; border-radius: 2px; background: var(--nx-primary); }
 .pd-stagebar__legend { justify-content: flex-start; gap: 14px; padding-right: 0; }
 .pd-stagebar__bar i:nth-child(3), .pd-stagebar__legend span:nth-child(3) i { background: color-mix(in srgb, var(--nx-primary) 35%, var(--nx-bg-surface)); }
+/* medidor centralizado na altura do card, só com o 47/50 */
+.pd-kpi.is-gauge .pd-kpi__row { top: 50%; bottom: auto; transform: translateY(-50%); }
+.pd-gauge__v { bottom: 8px; }
