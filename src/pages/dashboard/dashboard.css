@@ -377,3 +377,13 @@
   .pd-kpi.is-hero { grid-column: span 2; }
 }
 @media (max-width: 720px) { .pd-kpis { grid-template-columns: minmax(0, 1fr); } .pd-kpi.is-hero { grid-column: auto; } }
+/* medidor maior, ocupando a altura do card */
+.pd-kpi.is-gauge .pd-kpi__row { right: 8px; bottom: 4px; }
+.pd-kpi.is-gauge .pd-kpi__sub { padding-right: 184px; }
+.pd-gauge { width: 176px; height: 96px; }
+.pd-gauge::after { bottom: -26px; height: 70px; }
+.pd-gauge__v { bottom: 4px; }
+.pd-gauge__v strong { font-size: 30px; }
+.pd-gauge__v strong small { font-size: 14px; }
+.pd-gauge__v em { font-size: 11.5px; margin-top: 4px; }
+.pd-kpi.is-gauge .pd-kpi__go { top: 8px; right: 8px; }

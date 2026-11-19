@@ -58,7 +58,7 @@ function Spark({ data, w = 96, h = 32, id }: { data: number[]; w?: number; h?: n
 /** Medidor semicircular de tracinhos: preenchido conforme a %, cor pela saúde. */
 function Gauge({ value, total, caption }: { value: number; total: number; caption: string }) {
   const pct = total ? value / total : 0;
-  const N = 34, W = 132, H = 74, cx = W / 2, cy = H - 4, r1 = 48, r2 = 62;
+  const N = 38, W = 176, H = 96, cx = W / 2, cy = H - 6, r1 = 62, r2 = 82;
   const on = Math.round(pct * N);
   // verde quando ≥ 90%, âmbar entre 75 e 90%, vermelho abaixo
   const [a, b] = pct >= 0.9 ? ['#3bb8d6', '#38c793'] : pct >= 0.75 ? ['#f2c94c', '#f2994a'] : ['#f2994a', '#f2556f'];
@@ -74,7 +74,7 @@ function Gauge({ value, total, caption }: { value: number; total: number; captio
           const ang = Math.PI - (i / (N - 1)) * Math.PI;
           const cos = Math.cos(ang), sin = Math.sin(ang);
           return <line key={i} x1={cx + cos * r1} y1={cy - sin * r1} x2={cx + cos * r2} y2={cy - sin * r2}
-            stroke={i < on ? mix(i / Math.max(on - 1, 1)) : 'var(--nx-bg-badge)'} strokeWidth="2.6" strokeLinecap="round" />;
+            stroke={i < on ? mix(i / Math.max(on - 1, 1)) : 'var(--nx-bg-badge)'} strokeWidth="3" strokeLinecap="round" />;
         })}
       </svg>
       <span className="pd-gauge__v"><strong>{value}<small>/{total}</small></strong><em>{caption}</em></span>
@@ -264,7 +264,7 @@ export function DashboardPage({ screen }: { screen: Screen }) {
             viz={<span className="pd-stages">{stages.map(([l, n]) => <span key={l}><strong>{n}</strong><small>{l}</small></span>)}</span>}
             onClick={() => nav('/alertas')} />
           <Kpi icon="camera" label="Câmeras no ar" value="" className="is-gauge"
-            sub={offCams.length ? <>{offCams.length} fora do ar<br />mais antiga há {hb(offCams[0].dev.hb)}</> : 'todas no ar'}
+            sub={offCams.length ? <>{offCams.length} fora do ar<br />mais antiga: {hb(offCams[0].dev.hb).replace(' 0 min', '')}</> : 'todas no ar'}
             viz={<Gauge value={onCount} total={cams.length} caption={`${Math.round((onCount / cams.length) * 100)}% no ar`} />} onClick={() => nav('/dispositivos')} />
           <Kpi icon="server" label="Engines no ar" value={`${engUp}/${engs.length}`} tone={engs.length - engUp ? 'warn' : 'ok'}
             sub={`${engs.length - engUp} com problema`}
