@@ -41,7 +41,7 @@ export function FaceDrawer({ f, all, onOpen, onClose, toast }: Props) {
 
         {f.kind === 'watchlist' && (
           <Alert type="warning" title={`Match com ${f.match!.person} · ${f.match!.score}%`}>
-            Lista “{f.match!.list}”. Um match pede revisão humana e não confirma identidade.
+            Lista “{f.match!.list}”.
           </Alert>
         )}
         {f.kind === 'observacao' && (
