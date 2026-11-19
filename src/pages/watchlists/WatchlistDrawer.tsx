@@ -201,7 +201,7 @@ export function WatchlistDrawer({ w, onClose, onEdit, onToggle, onExport, onChan
                 <div className="dv-info__row"><dt>ID</dt><dd><button type="button" className="dv-copyval is-mono" onClick={() => copy(w.id, toast, 'ID copiado')}><span>{w.id}</span><Icon name="copy" size={14} /></button></dd></div>
               </dl>
             </section>
-            <Alert type="information" title="Leitura operacional">Um match pede revisão humana e não confirma identidade. A ausência de alertas nesta amostra não equivale a zero histórico.</Alert>
+            <Alert type="information" title="Leitura operacional">A ausência de alertas nesta amostra não equivale a zero histórico.</Alert>
           </>
         )}
       </div>

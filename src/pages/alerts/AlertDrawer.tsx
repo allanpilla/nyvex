@@ -96,8 +96,8 @@ export function AlertDrawer({ startForm = null, onClip, g, now, pos, onPrev, onN
         </div>
 
         {(a.kind === 'face' || a.kind === 'placa') && (
-          <Note type="warning" title={a.kind === 'face' ? `Match ${a.score}% · ${a.list}` : `Leitura ${a.score}% · ${a.list}`}>
-            {a.kind === 'face' ? 'Um match pede revisão humana e não confirma identidade.' : 'Confira a placa no clipe antes de agir.'}
+          <Note type="warning" title={a.kind === 'face' ? `Match ${a.score}%` : `Leitura ${a.score}% · ${a.list}`}>
+            {a.kind === 'face' ? `Lista “${a.list}”.` : 'Confira a placa no clipe antes de agir.'}
           </Note>
         )}
 

@@ -112,7 +112,7 @@ export function WatchlistsPage({ screen }: { screen: Screen }) {
       <div className="dv-main">
         <PageHeader
           title={screen.label}
-          description="Acompanhamento supervisionado de pessoas e veículos. Um match pede revisão humana e não confirma identidade."
+          description="Acompanhamento supervisionado de pessoas e veículos."
           icon="eye"
           actions={
             <>
@@ -311,7 +311,7 @@ export function WatchlistsPage({ screen }: { screen: Screen }) {
           <ConfirmDialog type={on ? 'information' : 'warning'}
             title={one ? `${on ? 'Ativar' : 'Pausar'} “${one.name}”?` : `${on ? 'Ativar' : 'Pausar'} ${toggle.ids.length} listas?`}
             text={on
-              ? 'Novas detecções das pessoas e veículos desta lista passam a gerar matches. Cada match pede revisão humana e não confirma identidade.'
+              ? 'Novas detecções das pessoas e veículos desta lista passam a gerar matches.'
               : 'Os vínculos permanecem cadastrados, mas não geram novos matches por esta lista até ela ser ativada de novo.'}
             confirm={on ? 'Ativar lista' : 'Pausar lista'} onConfirm={() => applyToggle(toggle.ids, toggle.to)} onCancel={() => setToggle(null)} />
         );
