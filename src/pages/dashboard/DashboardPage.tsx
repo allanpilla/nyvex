@@ -6,8 +6,8 @@ import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import { sceneUrl } from '../mural/scene';
 import { ENGINES, STATE_LABEL as ENG_LABEL, STATE_RANK, stateOf as engState } from '../engines/data';
-import { KIND, ago, subtitle, title } from '../alerts/data';
-import { PRIO_LABEL, PRIO_RANK, STAGE_LABEL, late } from '../occurrences/data';
+import { KIND, ago, title } from '../alerts/data';
+import { KIND_ICON as OCC_ICON, PRIO_LABEL, PRIO_RANK, STAGE_LABEL, late } from '../occurrences/data';
 import { CampusMap, type View } from './CampusMap';
 import {
   HOT, NOW, OCCS, PENDING, STATE_LABEL, alertCamName, buildCams, byKind, camByLooseName, camOfAlert, hourly, loadPos, savePos,
@@ -22,6 +22,7 @@ const clock = (t: number) => { const d = new Date(t); return `${pad(d.getHours()
 const hb = (s: number | null) => (s == null ? '—' : s < 60 ? `${s} s` : s < 3600 ? `${Math.round(s / 60)} min` : `${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min`);
 const isOn = (s: CamState) => s === 'on' || s === 'instavel';
 const fmt = (n: number) => n.toLocaleString('pt-BR');
+const short = (t: string) => t.replace(/^há /, '');
 
 /* ───────────── KPIs ───────────── */
 function Kpi({ icon, label, value, sub, tone, viz, hero, onClick }: { icon: IconName; label: string; value: string; sub: ReactNode; tone?: 'ok' | 'bad' | 'warn'; viz?: ReactNode; hero?: boolean; onClick: () => void }) {
@@ -334,31 +335,37 @@ export function DashboardPage({ screen }: { screen: Screen }) {
                 { value: 'alert', label: 'Alertas prioritários', count: HOT.length },
               ]} />
               {feed === 'occ' ? (
-                <ul className="pd-list">
+                <ul className="pd-feedlist">
                   {openOcc.slice(0, 5).map((o) => {
                     const cam = camByLooseName(o.cam);
                     const isLate = late(o, now);
                     return (
-                      <li key={o.id} className={`pd-row is-click${isLate ? ' is-late' : ''}`} onClick={() => locate(cam?.id)}>
-                        <span className="pd-row__main">
-                          <b>{o.title}</b>
-                          <small><span className={`pd-prio is-${o.prio}`}>{PRIO_LABEL[o.prio]}</span> · {STAGE_LABEL[o.stage]}{o.team ? ` · ${o.team}` : ''} · {o.local}</small>
+                      <li key={o.id} className="pd-item" onClick={() => locate(cam?.id)}>
+                        <span className={`pd-item__ic${o.prio === 'critica' ? ' is-crit' : ''}`}><Icon name={OCC_ICON[o.kind]} size={16} /></span>
+                        <span className="pd-item__body">
+                          <span className="pd-item__l1"><b>{o.title}</b><time>{short(ago(o.at, now))}</time></span>
+                          <span className="pd-item__l2">
+                            <em className={`pd-pill${o.prio === 'critica' ? ' is-crit' : ''}`}>{PRIO_LABEL[o.prio]}</em>
+                            <span>{STAGE_LABEL[o.stage]} · {o.local}</span>
+                            {isLate && <span className="pd-item__late"><Icon name="clock" size={12} />Atrasada</span>}
+                          </span>
                         </span>
-                        <span className={`pd-time${isLate ? ' is-late' : ''}`}>{isLate && <Icon name="clock" size={12} />}{ago(o.at, now)}</span>
                       </li>
                     );
                   })}
                 </ul>
               ) : (
-                <ul className="pd-list">
+                <ul className="pd-feedlist">
                   {HOT.slice(0, 5).map((a) => (
-                    <li key={a.id} className="pd-row is-click" onClick={() => locate(camOfAlert(a)?.id)}>
-                      <span className="pd-ic"><Icon name={KIND[a.kind].icon} size={14} /></span>
-                      <span className="pd-row__main">
-                        <b>{title(a)}</b>
-                        <small>{subtitle(a)} · {alertCamName(a)}</small>
+                    <li key={a.id} className="pd-item" onClick={() => locate(camOfAlert(a)?.id)}>
+                      <span className="pd-item__ic"><Icon name={KIND[a.kind].icon} size={16} /></span>
+                      <span className="pd-item__body">
+                        <span className="pd-item__l1"><b>{title(a)}</b><time>{short(ago(a.at, now))}</time></span>
+                        <span className="pd-item__l2">
+                          <em className="pd-pill">{KIND[a.kind].short}{a.score ? ` ${a.score}%` : ''}</em>
+                          <span>{alertCamName(a)}</span>
+                        </span>
                       </span>
-                      <span className="pd-time">{ago(a.at, now)}</span>
                     </li>
                   ))}
                 </ul>
