@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Icon, PageHeader, Segmented, Tabs } from '../../ds/components';
 import type { IconName } from '../../ds/icons/icons';
@@ -10,7 +10,7 @@ import { KIND, ago, subtitle, title } from '../alerts/data';
 import { PRIO_LABEL, PRIO_RANK, STAGE_LABEL, late } from '../occurrences/data';
 import { CampusMap, type View } from './CampusMap';
 import {
-  H, HOT, NOW, OCCS, PENDING, STATE_LABEL, alertCamName, buildCams, byKind, camByLooseName, camOfAlert, hourly, loadPos, savePos,
+  HOT, NOW, OCCS, PENDING, STATE_LABEL, alertCamName, buildCams, byKind, camByLooseName, camOfAlert, hourly, loadPos, savePos,
   type CamState, type MapCam,
 } from './data';
 import './dashboard.css';
@@ -24,14 +24,51 @@ const isOn = (s: CamState) => s === 'on' || s === 'instavel';
 const fmt = (n: number) => n.toLocaleString('pt-BR');
 
 /* ───────────── KPIs ───────────── */
-function Kpi({ icon, label, value, sub, tone, onClick }: { icon: IconName; label: string; value: string; sub: string; tone?: 'ok' | 'bad' | 'warn'; onClick: () => void }) {
+function Kpi({ icon, label, value, sub, tone, viz, hero, onClick }: { icon: IconName; label: string; value: string; sub: ReactNode; tone?: 'ok' | 'bad' | 'warn'; viz?: ReactNode; hero?: boolean; onClick: () => void }) {
   return (
-    <button type="button" className={`pd-kpi${tone ? ` is-${tone}` : ''}`} onClick={onClick}>
+    <button type="button" className={`pd-kpi${tone ? ` is-${tone}` : ''}${hero ? ' is-hero' : ''}`} onClick={onClick}>
       <span className="pd-kpi__top"><Icon name={icon} size={16} />{label}</span>
-      <b>{value}</b>
+      <span className="pd-kpi__row">
+        <b>{value}</b>
+        {viz && <span className="pd-kpi__viz">{viz}</span>}
+      </span>
       <span className="pd-kpi__sub">{sub}</span>
     </button>
   );
+}
+
+/** Linha de tendência com área em degradê (24 pontos). */
+function Spark({ data, w = 96, h = 32, id }: { data: number[]; w?: number; h?: number; id: string }) {
+  const max = Math.max(...data, 1), min = Math.min(...data, 0);
+  const x = (i: number) => (i / (data.length - 1)) * w;
+  const y = (v: number) => h - 2 - ((v - min) / (max - min || 1)) * (h - 4);
+  const line = data.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  return (
+    <svg className="pd-spark" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+      <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="currentColor" stopOpacity=".35" /><stop offset="1" stopColor="currentColor" stopOpacity="0" /></linearGradient></defs>
+      <path d={`${line}L${w},${h}L0,${h}Z`} fill={`url(#${id})`} />
+      <path d={line} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={x(data.length - 1)} cy={y(data[data.length - 1])} r="3" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Anel de porcentagem. */
+function Ring({ pct }: { pct: number }) {
+  const r = 15, c = 2 * Math.PI * r;
+  return (
+    <svg className="pd-ring" width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="20" r={r} fill="none" stroke="var(--nx-bg-hover)" strokeWidth="4" />
+      <circle cx="20" cy="20" r={r} fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(pct / 100) * c} ${c}`} transform="rotate(-90 20 20)" />
+    </svg>
+  );
+}
+
+/** Trend chip: variação contra a média. */
+function Trend({ v, goodWhenDown = true }: { v: number; goodWhenDown?: boolean }) {
+  const up = v > 0;
+  const bad = goodWhenDown ? up : !up;
+  return <span className={`pd-trend${v === 0 ? '' : bad ? ' is-bad' : ' is-good'}`}>{up ? '▲' : v < 0 ? '▼' : '•'} {Math.abs(v)}%</span>;
 }
 
 /* ───────────── Ritmo de alertas (24 h) ───────────── */
@@ -155,9 +192,14 @@ export function DashboardPage({ screen }: { screen: Screen }) {
   const openOcc = OCCS.filter((o) => o.stage === 'nova' || o.stage === 'despachada' || o.stage === 'no_local')
     .sort((a, b) => PRIO_RANK[a.prio] - PRIO_RANK[b.prio] || b.at - a.at);
   const lateN = openOcc.filter((o) => late(o, NOW)).length;
-  const pend1h = PENDING.filter((a) => a.at > NOW - H).length;
   const engs = ENGINES.filter((e) => engState(e) !== 'unconfigured');
   const engUp = engs.filter((e) => engState(e) === 'up').length;
+  const sAll = useMemo(() => hourly().map((d) => d.n), []);
+  const sHot = useMemo(() => hourly((a) => KIND[a.kind].prio === 'alta').map((d) => d.n), []);
+  const hot24 = sHot.reduce((a, b) => a + b, 0);
+  const avgAll = sAll.reduce((a, b) => a + b, 0) / sAll.length;
+  const trendAll = Math.round(((sAll[sAll.length - 1] - avgAll) / Math.max(avgAll, 1)) * 100);
+  const stages: [string, number][] = (['nova', 'despachada', 'no_local'] as const).map((k) => [STAGE_LABEL[k], openOcc.filter((o) => o.stage === k).length]);
 
   const popup = (c: MapCam) => (
     <div className="pm-card">
@@ -189,17 +231,26 @@ export function DashboardPage({ screen }: { screen: Screen }) {
         description={`UniBrasil · Campus Tarumã · atualizado às ${clock(now)}`}
         actions={<>
           <Button icon="tv" onClick={() => nav('/mural-de-video')}>Mural de vídeo</Button>
-          <Button variant="primary" icon="alert" onClick={() => nav('/alertas')}>Triar alertas</Button>
+          <Button variant="primary" icon="alert" onClick={() => nav('/alertas')}>Abrir fila de alertas</Button>
         </>}
       />
       <div className="nx-page pd">
         <div className="pd-kpis">
-          <Kpi icon="alert" label="Alertas pendentes" value={fmt(PENDING.length)} sub={`+${pend1h} na última hora`} onClick={() => nav('/alertas')} />
-          <Kpi icon="flash" label="Prioridade alta" value={fmt(HOT.length)} sub="watchlist, placa e objeto" tone={HOT.length ? 'bad' : undefined} onClick={() => nav('/alertas')} />
-          <Kpi icon="ocor" label="Ocorrências em aberto" value={String(openOcc.length)} sub={lateN ? `${lateN} fora do prazo` : 'todas no prazo'} tone={lateN ? 'warn' : undefined} onClick={() => nav('/alertas')} />
-          <Kpi icon="camera" label="Câmeras no ar" value={`${onCount}/${cams.length}`} sub={`${Math.round((onCount / cams.length) * 100)}% do parque`} tone="ok" onClick={() => { setTab('mapa'); setFilter('on'); }} />
-          <Kpi icon="nosignal" label="Câmeras fora do ar" value={String(offCams.length)} sub={offCams[0] ? `mais antiga: ${hb(offCams[0].dev.hb)}` : 'nenhuma'} tone={offCams.length ? 'bad' : undefined} onClick={() => { setTab('mapa'); setFilter('off'); }} />
-          <Kpi icon="server" label="Engines no ar" value={`${engUp}/${engs.length}`} sub={`${engs.length - engUp} com problema`} tone={engs.length - engUp ? 'warn' : 'ok'} onClick={() => nav('/engines')} />
+          <Kpi hero icon="alert" label="Alertas pendentes" value={fmt(PENDING.length)}
+            sub={<><Trend v={trendAll} /> nesta hora vs. média 24 h</>}
+            viz={<Spark id="sp-all" data={sAll} w={140} h={44} />} onClick={() => nav('/alertas')} />
+          <Kpi icon="flash" label="Prioridade alta" value={fmt(HOT.length)} tone={HOT.length ? 'bad' : undefined}
+            sub={`${hot24} nas últimas 24 h`} viz={<Spark id="sp-hot" data={sHot} />} onClick={() => { setFeed('alert'); nav('/alertas'); }} />
+          <Kpi icon="ocor" label="Ocorrências em aberto" value={String(openOcc.length)} tone={lateN ? 'warn' : undefined}
+            sub={lateN ? `${lateN} fora do prazo` : 'todas no prazo'}
+            viz={<span className="pd-stack" title={stages.map(([l, n]) => `${l}: ${n}`).join(' · ')}>{stages.map(([l, n]) => <i key={l} style={{ flexGrow: n }} />)}</span>}
+            onClick={() => setFeed('occ')} />
+          <Kpi icon="camera" label="Câmeras no ar" value={`${onCount}/${cams.length}`} tone="ok"
+            sub={offCams.length ? `${offCams.length} fora do ar · mais antiga ${hb(offCams[0].dev.hb)}` : 'todas no ar'}
+            viz={<Ring pct={Math.round((onCount / cams.length) * 100)} />} onClick={() => { setTab('mapa'); setFilter(offCams.length ? 'off' : 'on'); }} />
+          <Kpi icon="server" label="Engines no ar" value={`${engUp}/${engs.length}`} tone={engs.length - engUp ? 'warn' : 'ok'}
+            sub={`${engs.length - engUp} com problema`}
+            viz={<span className="pd-pips">{engs.map((e) => <i key={e.slug} className={`is-${engState(e)}`} />)}</span>} onClick={() => nav('/engines')} />
         </div>
 
         <div className="pd-grid">

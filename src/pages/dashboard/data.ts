@@ -74,11 +74,11 @@ export function buildCams(saved: Record<string, [number, number]>): MapCam[] {
 export const OCCS: Occ[] = buildOcc(NOW);
 
 /** Alertas por hora nas últimas 24 h (índice 0 = há 23 h, 23 = hora atual). */
-export function hourly(): { t: number; n: number }[] {
+export function hourly(pred: (a: Alert) => boolean = () => true): { t: number; n: number }[] {
   const end = Math.floor(NOW / H) * H + H;
   return Array.from({ length: 24 }, (_, i) => {
     const t0 = end - (24 - i) * H;
-    return { t: t0, n: LAST24.filter((a) => a.at >= t0 && a.at < t0 + H).length };
+    return { t: t0, n: LAST24.filter((a) => a.at >= t0 && a.at < t0 + H && pred(a)).length };
   });
 }
 

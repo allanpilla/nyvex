@@ -279,3 +279,48 @@
 .pm-pin.is-sel { box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(0, 0, 0, .45); }
 .pm-pin.is-on::before { display: none; }
 .pm-legend i.is-on { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .6); }
+
+/* ── mais vida: tendência nos KPIs, um destaque e acento azul pontual ── */
+.pd-kpis { grid-template-columns: 2fr repeat(4, minmax(0, 1fr)); gap: 12px; }
+.pd-kpi { padding: 14px 16px; gap: 4px; min-height: 112px; justify-content: space-between; }
+.pd-kpi__row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; min-width: 0; }
+.pd-kpi b { font-size: 28px; line-height: 34px; letter-spacing: -0.02em; }
+.pd-kpi__viz { flex: none; display: flex; align-items: flex-end; color: var(--nx-primary); }
+.pd-kpi__sub { display: inline-flex; align-items: center; gap: 6px; }
+.pd-kpi.is-hero { background: linear-gradient(135deg, color-mix(in srgb, var(--nx-primary) 16%, var(--nx-bg-surface)) 0%, var(--nx-bg-surface) 70%); border-color: color-mix(in srgb, var(--nx-primary) 30%, var(--nx-stroke)); }
+.pd-kpi.is-hero b { font-size: 36px; line-height: 42px; }
+.pd-kpi.is-hero .pd-kpi__top .nx-icon { color: var(--nx-tonal-fg); }
+.pd-kpi.is-hero:hover { border-color: color-mix(in srgb, var(--nx-primary) 50%, var(--nx-stroke)); }
+.pd-kpi.is-bad .pd-kpi__viz { color: #f2556f; }
+.pd-spark { display: block; overflow: visible; }
+.pd-ring { display: block; color: var(--pd-on); }
+.pd-trend { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 99px; font-size: 11px; font-weight: 600; background: var(--nx-bg-hover); color: var(--nx-text-sub); font-variant-numeric: tabular-nums; }
+.pd-trend.is-bad { background: color-mix(in srgb, #f2556f 14%, transparent); color: #f2556f; }
+.pd-trend.is-good { background: color-mix(in srgb, var(--pd-on) 14%, transparent); color: var(--pd-on); }
+.pd-stack { width: 72px; height: 8px; margin-bottom: 8px; display: flex; gap: 2px; }
+.pd-stack i { border-radius: 2px; background: var(--nx-primary); min-width: 4px; }
+.pd-stack i:nth-child(2) { background: color-mix(in srgb, var(--nx-primary) 60%, transparent); }
+.pd-stack i:nth-child(3) { background: color-mix(in srgb, var(--nx-primary) 30%, transparent); }
+.pd-pips { display: grid; grid-template-columns: repeat(7, 7px); gap: 3px; margin-bottom: 6px; }
+.pd-pips i { width: 7px; height: 7px; border-radius: 2px; background: var(--pd-on); }
+.pd-pips i.is-degraded { background: var(--pd-warn); }
+.pd-pips i.is-down { background: #f2556f; }
+
+/* gráficos com o acento */
+.pd-bars__col i { background: color-mix(in srgb, var(--nx-primary) 32%, transparent); }
+.pd-bars__col.is-now i { background: var(--nx-primary); }
+.pd-bars__col.is-hover i { background: #6b88ff; }
+.pd-hbars__track i { background: linear-gradient(90deg, color-mix(in srgb, var(--nx-primary) 55%, transparent), var(--nx-primary)); }
+.pd-hbars li:not(:first-child) .pd-hbars__track i { background: color-mix(in srgb, var(--nx-primary) 45%, transparent); }
+
+/* cards com mais respiro e títulos mais fortes */
+.pd-card { padding: 16px 18px; }
+.pd-card__head h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+
+/* pins no ar com borda verde discreta */
+.pm-pin.is-on { --c: color-mix(in srgb, #38c793 70%, transparent); }
+
+@media (max-width: 1400px) { .pd-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .pd-kpi.is-hero { grid-column: span 3; } }
+@media (max-width: 720px) { .pd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pd-kpi.is-hero { grid-column: span 2; } }
+.pd-card.pd-feed { padding-top: 0; }
+.pm-legend i.is-on { box-shadow: inset 0 0 0 1.5px #38c793; }
