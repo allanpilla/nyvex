@@ -27,9 +27,14 @@
 
 .pd-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 12px; height: 620px; flex: none; }
 .pd-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-.pd-grow { flex: 1; }
-.pd-scroll { overflow: auto; margin: 0 -8px; padding: 0 8px; }
-.pd-bottom { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 12px; flex: none; }
+.pd-side > .pd-card { overflow: hidden; }
+.pd-feed { padding-top: 0; gap: 8px; }
+.pd-tabs { height: 44px; margin: 0 -16px; padding: 0 16px; gap: 16px; }
+.pd-tabs .nx-tab { font-size: 13px; }
+.pd-more { margin-top: auto; height: 32px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: var(--nx-radius-md); border: 1px solid var(--nx-stroke); font-size: 13px; font-weight: 500; color: var(--nx-text-sub); transition: background .12s, color .12s; }
+.pd-more:hover { background: var(--nx-bg-hover); color: var(--nx-text-main); }
+.pd-row { min-height: 44px; }
+.pd-bottom { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 12px; flex: none; }
 
 /* listas */
 .pd-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
@@ -213,7 +218,6 @@
   .pd-grid { grid-template-columns: minmax(0, 1fr); height: auto; }
   .pd-mapcard { height: 560px; }
   .pd-side { display: grid; grid-template-columns: 1fr 1fr; }
-  .pd-scroll { max-height: 320px; }
 }
 @media (max-width: 720px) {
   .pd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }

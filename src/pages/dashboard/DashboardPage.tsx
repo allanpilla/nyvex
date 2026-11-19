@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Icon, PageHeader, Segmented } from '../../ds/components';
+import { Button, Icon, PageHeader, Segmented, Tabs } from '../../ds/components';
 import type { IconName } from '../../ds/icons/icons';
 import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
@@ -143,6 +143,7 @@ export function DashboardPage({ screen }: { screen: Screen }) {
   const [heat, setHeat] = useState(false);
   const [sel, setSel] = useState<string | null>(null);
   const [focus, setFocus] = useState<{ id: string; n: number } | null>(null);
+  const [feed, setFeed] = useState<'occ' | 'alert'>('occ');
 
   const onCount = cams.filter((c) => isOn(c.state)).length;
   const offCams = cams.filter((c) => !isOn(c.state)).sort((a, b) => (b.dev.hb ?? 0) - (a.dev.hb ?? 0));
@@ -278,47 +279,48 @@ export function DashboardPage({ screen }: { screen: Screen }) {
           </section>
 
           <div className="pd-side">
-            <section className="pd-card">
-              <header className="pd-card__head">
-                <h2>Ocorrências em aberto</h2><span className="pd-card__hint">{openOcc.length}</span>
-                <button type="button" className="pd-link" onClick={() => nav('/alertas')}>Todas<Icon name="chevron" size={14} /></button>
-              </header>
-              <ul className="pd-list">
-                {openOcc.slice(0, 5).map((o) => {
-                  const cam = camByLooseName(o.cam);
-                  const isLate = late(o, now);
-                  return (
-                    <li key={o.id} className={`pd-row is-click${isLate ? ' is-late' : ''}`} onClick={() => locate(cam?.id)}>
-                      <span className={`pd-prio is-${o.prio}`} title={`Prioridade ${PRIO_LABEL[o.prio]}`} />
+            <section className="pd-card pd-feed">
+              <Tabs label="Pede ação agora" className="pd-tabs" value={feed} onChange={setFeed} options={[
+                { value: 'occ', label: 'Ocorrências', count: openOcc.length },
+                { value: 'alert', label: 'Alertas prioritários', count: HOT.length },
+              ]} />
+              {feed === 'occ' ? (
+                <ul className="pd-list">
+                  {openOcc.slice(0, 5).map((o) => {
+                    const cam = camByLooseName(o.cam);
+                    const isLate = late(o, now);
+                    return (
+                      <li key={o.id} className={`pd-row is-click${isLate ? ' is-late' : ''}`} onClick={() => locate(cam?.id)}>
+                        <span className={`pd-prio is-${o.prio}`} title={`Prioridade ${PRIO_LABEL[o.prio]}`} />
+                        <span className="pd-row__main">
+                          <b>{o.title}</b>
+                          <small>{STAGE_LABEL[o.stage]}{o.team ? ` · ${o.team}` : ''} · {o.local}</small>
+                        </span>
+                        <span className={`pd-time${isLate ? ' is-late' : ''}`}>{isLate && <Icon name="clock" size={12} />}{ago(o.at, now)}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <ul className="pd-list">
+                  {HOT.slice(0, 5).map((a) => (
+                    <li key={a.id} className="pd-row is-click" onClick={() => locate(camOfAlert(a)?.id)}>
+                      <span className={`pd-ic is-${REASON[a.kind].tone}`}><Icon name={KIND[a.kind].icon} size={14} /></span>
                       <span className="pd-row__main">
-                        <b>{o.title}</b>
-                        <small>{STAGE_LABEL[o.stage]}{o.team ? ` · ${o.team}` : ''} · {o.local}</small>
+                        <b>{title(a)}</b>
+                        <small>{subtitle(a)} · {alertCamName(a)}</small>
                       </span>
-                      <span className={`pd-time${isLate ? ' is-late' : ''}`}>{isLate && <Icon name="clock" size={12} />}{ago(o.at, now)}</span>
+                      <span className="pd-time">{ago(a.at, now)}</span>
                     </li>
-                  );
-                })}
-              </ul>
+                  ))}
+                </ul>
+              )}
+              <button type="button" className="pd-more" onClick={() => nav('/alertas')}>
+                {feed === 'occ' ? `Ver todas as ocorrências (${openOcc.length})` : `Ver todos os alertas (${fmt(HOT.length)})`}
+                <Icon name="arrowRight" size={14} />
+              </button>
             </section>
-
-            <section className="pd-card pd-grow">
-              <header className="pd-card__head">
-                <h2>Alertas de alta prioridade</h2><span className="pd-card__hint">pendentes</span>
-                <button type="button" className="pd-link" onClick={() => nav('/alertas')}>Triar<Icon name="chevron" size={14} /></button>
-              </header>
-              <ul className="pd-list pd-scroll">
-                {HOT.slice(0, 12).map((a) => (
-                  <li key={a.id} className="pd-row is-click" onClick={() => locate(camOfAlert(a)?.id)}>
-                    <span className={`pd-ic is-${REASON[a.kind].tone}`}><Icon name={KIND[a.kind].icon} size={14} /></span>
-                    <span className="pd-row__main">
-                      <b>{title(a)}</b>
-                      <small>{subtitle(a)} · {alertCamName(a)}</small>
-                    </span>
-                    <span className="pd-time">{ago(a.at, now)}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <Systems onOpen={() => nav('/engines')} />
           </div>
         </div>
 
@@ -341,7 +343,6 @@ export function DashboardPage({ screen }: { screen: Screen }) {
               {offCams.length === 0 && <li className="pd-row is-quiet"><span className="pd-dot is-on" />Todas as câmeras estão no ar</li>}
             </ul>
           </section>
-          <Systems onOpen={() => nav('/engines')} />
         </div>
       </div>
     </>
