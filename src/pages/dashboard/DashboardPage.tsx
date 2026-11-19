@@ -25,12 +25,12 @@ const fmt = (n: number) => n.toLocaleString('pt-BR');
 const short = (t: string) => t.replace(/^há /, '');
 
 /* ───────────── KPIs ───────────── */
-function Kpi({ icon, label, value, sub, tone, viz, hero, onClick }: { icon: IconName; label: string; value: string; sub: ReactNode; tone?: 'ok' | 'bad' | 'warn'; viz?: ReactNode; hero?: boolean; onClick: () => void }) {
+function Kpi({ icon, label, value, sub, tone, viz, hero, className, onClick }: { icon: IconName; label: string; value: string; sub: ReactNode; tone?: 'ok' | 'bad' | 'warn'; viz?: ReactNode; hero?: boolean; className?: string; onClick: () => void }) {
   return (
-    <button type="button" className={`pd-kpi${tone ? ` is-${tone}` : ''}${hero ? ' is-hero' : ''}`} onClick={onClick}>
+    <button type="button" className={`pd-kpi${tone ? ` is-${tone}` : ''}${hero ? ' is-hero' : ''}${className ? ` ${className}` : ''}`} onClick={onClick}>
       <span className="pd-kpi__top"><Icon name={icon} size={16} />{label}</span>
       <span className="pd-kpi__row">
-        <b>{value}</b>
+        {value && <b>{value}</b>}
         {viz && <span className="pd-kpi__viz">{viz}</span>}
       </span>
       <span className="pd-kpi__sub">{sub}</span>
@@ -55,14 +55,30 @@ function Spark({ data, w = 96, h = 32, id }: { data: number[]; w?: number; h?: n
   );
 }
 
-/** Anel de porcentagem. */
-function Ring({ pct }: { pct: number }) {
-  const r = 15, c = 2 * Math.PI * r;
+/** Medidor semicircular de tracinhos: preenchido conforme a %, cor pela saúde. */
+function Gauge({ value, total, caption }: { value: number; total: number; caption: string }) {
+  const pct = total ? value / total : 0;
+  const N = 34, W = 132, H = 74, cx = W / 2, cy = H - 4, r1 = 48, r2 = 62;
+  const on = Math.round(pct * N);
+  // verde quando ≥ 90%, âmbar entre 75 e 90%, vermelho abaixo
+  const [a, b] = pct >= 0.9 ? ['#3bb8d6', '#38c793'] : pct >= 0.75 ? ['#f2c94c', '#f2994a'] : ['#f2994a', '#f2556f'];
+  const mix = (t: number) => {
+    const h = (x: string) => [1, 3, 5].map((i) => parseInt(x.slice(i, i + 2), 16));
+    const [p, q] = [h(a), h(b)];
+    return `rgb(${p.map((v, i) => Math.round(v + (q[i] - v) * t)).join(',')})`;
+  };
   return (
-    <svg className="pd-ring" width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
-      <circle cx="20" cy="20" r={r} fill="none" stroke="var(--nx-bg-hover)" strokeWidth="4" />
-      <circle cx="20" cy="20" r={r} fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(pct / 100) * c} ${c}`} transform="rotate(-90 20 20)" />
-    </svg>
+    <span className={`pd-gauge${pct >= 0.9 ? ' is-ok' : pct >= 0.75 ? ' is-warn' : ' is-bad'}`} style={{ ['--g' as string]: b }}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+        {Array.from({ length: N }, (_, i) => {
+          const ang = Math.PI - (i / (N - 1)) * Math.PI;
+          const cos = Math.cos(ang), sin = Math.sin(ang);
+          return <line key={i} x1={cx + cos * r1} y1={cy - sin * r1} x2={cx + cos * r2} y2={cy - sin * r2}
+            stroke={i < on ? mix(i / Math.max(on - 1, 1)) : 'var(--nx-bg-badge)'} strokeWidth="2.6" strokeLinecap="round" />;
+        })}
+      </svg>
+      <span className="pd-gauge__v"><strong>{value}<small>/{total}</small></strong><em>{caption}</em></span>
+    </span>
   );
 }
 
@@ -201,7 +217,7 @@ export function DashboardPage({ screen }: { screen: Screen }) {
   const hot24 = sHot.reduce((a, b) => a + b, 0);
   const avgAll = sAll.reduce((a, b) => a + b, 0) / sAll.length;
   const trendAll = Math.round(((sAll[sAll.length - 1] - avgAll) / Math.max(avgAll, 1)) * 100);
-  const stages: [string, number][] = (['nova', 'despachada', 'no_local'] as const).map((k) => [STAGE_LABEL[k], openOcc.filter((o) => o.stage === k).length]);
+  const stages: [string, number][] = ([['nova', 'Novas'], ['despachada', 'A caminho'], ['no_local', 'No local']] as const).map(([k, l]) => [l, openOcc.filter((o) => o.stage === k).length]);
 
   const popup = (c: MapCam) => (
     <div className="pm-card">
@@ -245,11 +261,11 @@ export function DashboardPage({ screen }: { screen: Screen }) {
             sub={`${hot24} nas últimas 24 h`} viz={<Spark id="sp-hot" data={sHot} />} onClick={() => nav('/alertas')} />
           <Kpi icon="ocor" label="Ocorrências em aberto" value={String(openOcc.length)} tone={lateN ? 'warn' : undefined}
             sub={lateN ? `${lateN} fora do prazo` : 'todas no prazo'}
-            viz={<span className="pd-stack" title={stages.map(([l, n]) => `${l}: ${n}`).join(' · ')}>{stages.map(([l, n]) => <i key={l} style={{ flexGrow: n }} />)}</span>}
+            viz={<span className="pd-stages">{stages.map(([l, n]) => <span key={l}><strong>{n}</strong><small>{l}</small></span>)}</span>}
             onClick={() => nav('/alertas')} />
-          <Kpi icon="camera" label="Câmeras no ar" value={`${onCount}/${cams.length}`} tone="ok"
-            sub={offCams.length ? `${offCams.length} fora do ar · mais antiga ${hb(offCams[0].dev.hb)}` : 'todas no ar'}
-            viz={<Ring pct={Math.round((onCount / cams.length) * 100)} />} onClick={() => nav('/dispositivos')} />
+          <Kpi icon="camera" label="Câmeras no ar" value="" className="is-gauge"
+            sub={offCams.length ? <>{offCams.length} fora do ar<br />mais antiga há {hb(offCams[0].dev.hb)}</> : 'todas no ar'}
+            viz={<Gauge value={onCount} total={cams.length} caption={`${Math.round((onCount / cams.length) * 100)}% no ar`} />} onClick={() => nav('/dispositivos')} />
           <Kpi icon="server" label="Engines no ar" value={`${engUp}/${engs.length}`} tone={engs.length - engUp ? 'warn' : 'ok'}
             sub={`${engs.length - engUp} com problema`}
             viz={<span className="pd-pips">{engs.map((e) => <i key={e.slug} className={`is-${engState(e)}`} />)}</span>} onClick={() => nav('/engines')} />

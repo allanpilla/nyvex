@@ -351,3 +351,29 @@
 .pd-mapcard { min-height: 680px; }
 .pd-side > .pd-card { flex: none; overflow: visible; }
 .pd-side > .pd-card:last-child { flex: 1; }
+
+/* Ocorrências: contagem por etapa com rótulo */
+.pd-stages { display: flex; gap: 14px; color: var(--nx-text-main); }
+.pd-stages > span { display: flex; flex-direction: column; align-items: flex-start; }
+.pd-stages strong { font-size: 16px; line-height: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pd-stages small { font-size: 11px; line-height: 14px; color: var(--nx-text-soft); white-space: nowrap; }
+
+/* Câmeras no ar: medidor semicircular */
+.pd-kpi.is-gauge { overflow: hidden; }
+.pd-kpi.is-gauge .pd-kpi__row { position: absolute; right: 10px; bottom: 6px; }
+.pd-kpi.is-gauge .pd-kpi__sub { padding-right: 140px; line-height: 16px; }
+.pd-kpi.is-gauge .pd-kpi__go { right: auto; left: 12px; bottom: auto; top: 10px; display: none; }
+.pd-gauge { position: relative; display: block; width: 132px; height: 74px; }
+.pd-gauge svg { position: relative; z-index: 1; display: block; }
+.pd-gauge::after { content: ''; position: absolute; left: 6px; right: 6px; bottom: -22px; height: 56px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--g) 32%, transparent), transparent); filter: blur(6px); pointer-events: none; }
+.pd-gauge__v { position: absolute; z-index: 2; left: 0; right: 0; bottom: 2px; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.pd-gauge__v strong { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--nx-text-main); font-variant-numeric: tabular-nums; }
+.pd-gauge__v strong small { font-size: 12px; font-weight: 500; color: var(--nx-text-soft); margin-left: 1px; }
+.pd-gauge__v em { font-style: normal; font-size: 10.5px; color: var(--nx-text-soft); margin-top: 3px; }
+.pd-kpis { grid-template-columns: 1.6fr 1fr 1.25fr 1.4fr 1fr; }
+.pd-kpi.is-gauge .pd-kpi__go { display: grid; left: auto; right: 10px; top: 10px; bottom: auto; }
+@media (max-width: 1400px) {
+  .pd-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pd-kpi.is-hero { grid-column: span 2; }
+}
+@media (max-width: 720px) { .pd-kpis { grid-template-columns: minmax(0, 1fr); } .pd-kpi.is-hero { grid-column: auto; } }
