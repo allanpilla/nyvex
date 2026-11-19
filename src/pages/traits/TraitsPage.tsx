@@ -47,15 +47,15 @@ export function TraitsPage({ screen }: { screen: Screen }) {
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rowMenu, setRowMenu] = useState<{ el: HTMLElement; id: string } | null>(null);
   const [spin, setSpin] = useState(false);
-  const [wizard, setWizard] = useState<{ initial?: Filters; initialV?: VFilters } | null>(null);
-  const redo = (s: Search) => setWizard(s.vf ? { initialV: s.vf } : { initial: s.f });
+  const [wizard, setWizard] = useState<{ initial?: Filters; initialV?: VFilters; photo?: string; startPhoto?: boolean } | null>(null);
+  const redo = (s: Search) => setWizard(s.vf ? { initialV: s.vf, photo: s.photo } : { initial: s.f, photo: s.photo });
   const [openSearch, setOpenSearch] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const create = (f: Filters, purpose: string, vf?: VFilters) => {
+  const create = (f: Filters, purpose: string, vf?: VFilters, photo?: string) => {
     const at = Date.now();
     const r = vf ? (({ exact, vehicles }) => ({ exact, people: vehicles }))(runVehicleSearch(allV, vf, at)) : runSearch(all, f, at);
-    const s: Search = { id: `n${at}`, code: nextCode(), f: vf ? { ...EMPTY, locais: vf.locais, period: vf.period, from: vf.from, to: vf.to } : f, vf, purpose, by: ME, me: true, at, n: r.exact.length, people: r.people };
+    const s: Search = { id: `n${at}`, code: nextCode(), f: vf ? { ...EMPTY, locais: vf.locais, period: vf.period, from: vf.from, to: vf.to } : f, vf, photo, purpose, by: ME, me: true, at, n: r.exact.length, people: r.people };
     setWizard(null);
     setList((l) => [s, ...l]);
     setOpenSearch(s.id);
@@ -96,7 +96,7 @@ export function TraitsPage({ screen }: { screen: Screen }) {
           title={screen.label}
           icon="search"
           description="Encontre pessoas vistas pelas câmeras pela aparência. Descreve, não identifica."
-          actions={<Button variant="primary" icon="plus" onClick={() => setWizard({})}>Nova busca</Button>}
+          actions={<><Button icon="camera" onClick={() => setWizard({ startPhoto: true })}>Buscar por foto</Button><Button variant="primary" icon="plus" onClick={() => setWizard({})}>Nova busca</Button></>}
         />
 
         {cur ? (
@@ -162,7 +162,7 @@ export function TraitsPage({ screen }: { screen: Screen }) {
                         <Checkbox label={`Selecionar ${s.code}`} checked={sel.has(s.id)} onChange={(v) => setSel((x) => { const n = new Set(x); if (v) n.add(s.id); else n.delete(s.id); return n; })} />
                       </span>
                       <span className="dv-c dv-c--name" role="cell">
-                        {s.vf ? <span className="dv-kind tr-kind is-veh"><Vehicle size="sm" type={s.vf.types[0]} colors={s.vf.colors} /></span> : <span className="dv-kind tr-kind"><Figure size="sm" upper={s.f.upper} lower={s.f.lower} gender={s.f.gender} hat={s.f.hat === 'sim'} glasses={s.f.glasses === 'sim'} backpack={s.f.backpack === 'sim'} extras={s.f.extras} top={s.f.tops[0]} bottom={s.f.bottoms[0]} /></span>}
+                        {s.photo ? <span className="dv-kind tr-kind is-photo"><img src={s.photo} alt="" /><i><Icon name="camera" size={10} /></i></span> : s.vf ? <span className="dv-kind tr-kind is-veh"><Vehicle size="sm" type={s.vf.types[0]} colors={s.vf.colors} /></span> : <span className="dv-kind tr-kind"><Figure size="sm" upper={s.f.upper} lower={s.f.lower} gender={s.f.gender} hat={s.f.hat === 'sim'} glasses={s.f.glasses === 'sim'} backpack={s.f.backpack === 'sim'} extras={s.f.extras} top={s.f.tops[0]} bottom={s.f.bottoms[0]} /></span>}
                         <span className="dv-name"><b>{s.vf ? vDescribe(s.vf) : describe(s.f)}</b><span className="tr-code">{s.code}</span></span>
                       </span>
                       <span className="dv-c tr-c-purp" role="cell">{s.purpose}</span>
@@ -240,7 +240,7 @@ export function TraitsPage({ screen }: { screen: Screen }) {
         );
       })()}
 
-      {wizard && <NewSearch initial={wizard.initial} initialV={wizard.initialV} all={all} allV={allV} onClose={() => setWizard(null)} onSearch={create} />}
+      {wizard && <NewSearch initial={wizard.initial} initialV={wizard.initialV} initialPhoto={wizard.photo} startPhoto={wizard.startPhoto} all={all} allV={allV} onClose={() => setWizard(null)} onSearch={create} />}
     </div>
   );
 }
@@ -293,9 +293,10 @@ function Results({ s, all, busy, onBack, onEdit, onLike, toast }: { s: Search; a
     <div className="tr-res">
       <div className="tr-rhead">
         <IconButton icon="arrowLeft" label="Voltar para as buscas" onClick={onBack} tipPlace="bottom" />
+        {s.photo && <img className="tr-rhead__img" src={s.photo} alt="Foto usada na busca" />}
         <div className="tr-rhead__t">
           <b>{describe(f)}</b>
-          <p><span className="tr-code">{s.code}</span><span>·</span>{s.by}<span>·</span>{when(s.at, now)}<span>·</span><Icon name="lock" size={12} /><span className="tr-rhead__p" title={s.purpose}>{s.purpose}</span></p>
+          <p>{s.photo && <span className="tr-rhead__photo">Busca por foto</span>}<span className="tr-code">{s.code}</span><span>·</span>{s.by}<span>·</span>{when(s.at, now)}<span>·</span><Icon name="lock" size={12} /><span className="tr-rhead__p" title={s.purpose}>{s.purpose}</span></p>
         </div>
         <span className="dv-tools__sp" />
         <Button icon="edit" onClick={onEdit}>Editar busca</Button>

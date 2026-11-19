@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button, DateTimePicker, Icon, IconButton, Segmented } from '../../ds/components';
 import { storage } from '../../lib/storage';
 import { Figure } from './Figure';
 import { Vehicle } from './Vehicle';
-import { brandsOf, hasPlate, modelsOf, runVehicleSearch, VCOLORS, vDescribe, VEMPTY, vIsSet, vLabel, vTraits, VTYPES, type VFilters, type VKey, type VObs } from './vehicles';
+import { PHOTO_TYPES, readPhoto, type PhotoRead } from './photo';
+import { brandsOf, hasPlate, modelsOf, runVehicleSearch, VCOLOR, VCOLORS, vDescribe, VEMPTY, vIsSet, vLabel, vTraits, VTYPES, type VFilters, type VKey, type VObs } from './vehicles';
 import { Chip, describe, Field, isoLocal, PERIOD_LABEL, Swatch, Swatches, toggle, TriRow } from './parts';
 import {
-  AGES, BOTTOMS, EMPTY, TOPS, EXTRAS, GENDER_LABEL, isSet, LOCAIS, MOODS, nTraits, runSearch, traitLabel,
+  AGES, BOTTOMS, COLOR, colorBg, EMPTY, TOPS, EXTRAS, GENDER_LABEL, isSet, LOCAIS, MOODS, nTraits, runSearch, traitLabel,
   type Filters, type Obs, type TraitKey,
 } from './data';
 
@@ -16,13 +17,13 @@ const STEPS_V = ['Veículo', 'Cor e placa', 'Onde e quando', 'Finalidade'];
 export type Kind = 'pessoa' | 'veiculo';
 const readPurposes = (): string[] => { try { return JSON.parse(storage.get('nx-traits-purposes') ?? '[]'); } catch { return []; } };
 
-type Props = { initial?: Filters; initialV?: VFilters; startKind?: Kind; all: Obs[]; allV: VObs[]; onClose: () => void; onSearch: (f: Filters, purpose: string, vf?: VFilters) => void };
+type Props = { initial?: Filters; initialV?: VFilters; initialPhoto?: string; startKind?: Kind; startPhoto?: boolean; all: Obs[]; allV: VObs[]; onClose: () => void; onSearch: (f: Filters, purpose: string, vf?: VFilters, photo?: string) => void };
 
 /**
  * Nova busca em etapas, de pessoa ou de veículo, com o retrato ao lado e uma prévia de quantos registros batem.
  * Onde e quando ficam em `f` nos dois modos; no veículo, são copiados para `vf` ao pesquisar.
  */
-export function NewSearch({ initial, initialV, startKind, all, allV, onClose, onSearch }: Props) {
+export function NewSearch({ initial, initialV, initialPhoto, startKind, startPhoto, all, allV, onClose, onSearch }: Props) {
   const editing = !!(initial || initialV);
   const [kind, setKind] = useState<Kind>(initialV ? 'veiculo' : startKind ?? 'pessoa');
   const STEPS = kind === 'veiculo' ? STEPS_V : STEPS_P;
@@ -32,6 +33,9 @@ export function NewSearch({ initial, initialV, startKind, all, allV, onClose, on
   const [seen, setSeen] = useState(editing ? STEPS.length - 1 : 0);
   const [purpose, setPurpose] = useState('');
   const [tried, setTried] = useState(false);
+  // Foto anexada: o motor lê e preenche as características; a pessoa só confere.
+  const [photo, setPhoto] = useState<{ url: string; name: string; read?: PhotoRead; busy: boolean; err?: string } | null>(initialPhoto ? { url: initialPhoto, name: 'Foto da busca', busy: false } : null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const now = useMemo(() => Date.now(), []);
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setF((x) => ({ ...x, [k]: v }));
   const vq = useMemo<VFilters>(() => ({ ...vf, locais: f.locais, period: f.period, from: f.from, to: f.to }), [vf, f.locais, f.period, f.from, f.to]);
@@ -40,7 +44,31 @@ export function NewSearch({ initial, initialV, startKind, all, allV, onClose, on
   // Trocar tipo ou marca descarta marcas e modelos que deixaram de existir.
   const setTypes = (types: VFilters['types']) => setVf((x) => { const bs = brandsOf(types); const brands = x.brands.filter((b) => bs.includes(b)); const ms = modelsOf(types, brands); return { ...x, types, brands, models: x.models.filter((m) => ms.includes(m)), plate: types.length && types.every((t) => !hasPlate(t)) ? '' : x.plate }; });
   const setBrands = (brands: string[]) => setVf((x) => { const ms = modelsOf(x.types, brands); return { ...x, brands, models: x.models.filter((m) => ms.includes(m)) }; });
-  const switchKind = (k: Kind) => { setKind(k); setStep(0); setSeen(0); setTried(false); };
+  const applyPhoto = (r: PhotoRead, k: Kind) => {
+    if (k === 'veiculo') setVf((x) => ({ ...x, colors: [r.vcolor] }));
+    else setF((x) => ({ ...x, upper: [r.upper], lower: x.tops.includes('vestido') ? [] : [r.lower] }));
+  };
+  const attach = async (file: File | undefined) => {
+    if (!file) return;
+    const local = URL.createObjectURL(file);
+    setPhoto({ url: local, name: file.name, busy: true });
+    try {
+      const [r] = await Promise.all([readPhoto(file), new Promise((ok) => setTimeout(ok, 1600))]);
+      URL.revokeObjectURL(local);
+      setPhoto({ url: r.url, name: r.name, read: r, busy: false });
+      applyPhoto(r, kind);
+    } catch (e) {
+      URL.revokeObjectURL(local);
+      setPhoto({ url: '', name: file.name, busy: false, err: (e as Error).message });
+    }
+  };
+  const switchKind = (k: Kind) => { setKind(k); setStep(0); setSeen(0); setTried(false); if (photo?.read) applyPhoto(photo.read, k); };
+  useEffect(() => { if (startPhoto) fileRef.current?.click(); }, [startPhoto]);
+  useEffect(() => {
+    const paste = (e: ClipboardEvent) => { const it = [...(e.clipboardData?.files ?? [])].find((x) => PHOTO_TYPES.includes(x.type)); if (it) { e.preventDefault(); attach(it); } };
+    document.addEventListener('paste', paste);
+    return () => document.removeEventListener('paste', paste);
+  });
   const recent = useMemo(readPurposes, []);
 
   const badPeriod = f.period === 'custom' && !!f.from && !!f.to && new Date(f.from) > new Date(f.to);
@@ -57,7 +85,7 @@ export function NewSearch({ initial, initialV, startKind, all, allV, onClose, on
     if (pErr) { setTried(true); return; }
     const p = purpose.trim();
     storage.set('nx-traits-purposes', JSON.stringify([p, ...recent.filter((x) => x !== p)].slice(0, 4)));
-    onSearch(f, p, kind === 'veiculo' ? vq : undefined);
+    onSearch(f, p, kind === 'veiculo' ? vq : undefined, photo?.url && !photo.err ? photo.url : undefined);
   };
 
   useEffect(() => {
@@ -87,6 +115,7 @@ export function NewSearch({ initial, initialV, startKind, all, allV, onClose, on
     ['Acessórios', group(['hat', 'glasses', 'backpack', 'extras', 'moods']) || 'Tanto faz', 2],
     where,
   ];
+  if (photo?.url && !photo.err) review.unshift(['Foto', photo.name, 0]);
   const nT = kind === 'veiculo' ? vTraits(vf) : nTraits(f);
 
   return createPortal(
@@ -116,6 +145,7 @@ export function NewSearch({ initial, initialV, startKind, all, allV, onClose, on
         <div className="tr-wiz__main">
           <aside className="tr-wiz__side" aria-label="Retrato da busca">
             <div className="tr-wiz__stage">
+              {photo?.url && !photo.busy && <span className="tr-wiz__ph" title="Foto anexada"><img src={photo.url} alt="Foto anexada" /></span>}
               {kind === 'veiculo' ? <Vehicle type={vf.types[0]} colors={vf.colors} /> : <Figure upper={f.upper} lower={f.lower} gender={f.gender} hat={f.hat === 'sim'} glasses={f.glasses === 'sim'} backpack={f.backpack === 'sim'} extras={f.extras} top={f.tops[0]} bottom={f.bottoms[0]}
                 onPart={(p) => go(p === 'head' ? 0 : 1)} />}
             </div>
@@ -128,9 +158,11 @@ export function NewSearch({ initial, initialV, startKind, all, allV, onClose, on
             {nT > 0 && <Button icon="eraser" className="tr-clear" onClick={() => (kind === 'veiculo' ? setVf(VEMPTY) : setF({ ...EMPTY, period: f.period, from: f.from, to: f.to, locais: f.locais }))}>Limpar características<span className="tr-clear__n">{nT}</span></Button>}
           </aside>
 
+          <input ref={fileRef} type="file" accept={PHOTO_TYPES.join(',')} hidden onChange={(e) => { attach(e.target.files?.[0]); e.target.value = ''; }} />
           <div className="tr-wiz__body" key={kind + step}>
             {kind === 'veiculo' && step === 0 && (
               <>
+                <PhotoBox photo={photo} kind={kind} onPick={() => fileRef.current?.click()} onDrop={attach} onRemove={() => setPhoto(null)} onNext={() => go(WHERE)} />
                 <Field label="Tipo" count={vf.types.length} onClear={() => setTypes([])}>
                   <div className="tr-chips">{VTYPES.map((t) => <Chip key={t.id} on={vf.types.includes(t.id)} onClick={() => setTypes(toggle(vf.types, t.id))}>{t.label}</Chip>)}</div>
                 </Field>
@@ -166,6 +198,7 @@ export function NewSearch({ initial, initialV, startKind, all, allV, onClose, on
             )}
             {kind === 'pessoa' && step === 0 && (
               <>
+                <PhotoBox photo={photo} kind={kind} onPick={() => fileRef.current?.click()} onDrop={attach} onRemove={() => setPhoto(null)} onNext={() => go(WHERE)} />
                 <Field label="Gênero" hint="como reportado pelo motor">
                   <Segmented<'' | 'M' | 'F'> label="Gênero" value={f.gender} onChange={(v) => set('gender', v)}
                     options={[{ value: '', label: 'Tanto faz' }, { value: 'M', label: GENDER_LABEL.M }, { value: 'F', label: GENDER_LABEL.F }]} />
@@ -257,5 +290,54 @@ export function NewSearch({ initial, initialV, startKind, all, allV, onClose, on
       </div>
     </div>,
     document.body,
+  );
+}
+
+/** Anexar foto: arrastar, colar ou escolher. Depois de ler, mostra o que foi preenchido. */
+function PhotoBox({ photo, kind, onPick, onDrop, onRemove, onNext }: {
+  photo: { url: string; name: string; read?: PhotoRead; busy: boolean; err?: string } | null; kind: Kind;
+  onPick: () => void; onDrop: (f: File | undefined) => void; onRemove: () => void; onNext: () => void;
+}) {
+  const [over, setOver] = useState(false);
+  const dnd = {
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); setOver(true); },
+    onDragLeave: () => setOver(false),
+    onDrop: (e: React.DragEvent) => { e.preventDefault(); setOver(false); onDrop(e.dataTransfer.files[0]); },
+  };
+  if (!photo || photo.err) {
+    return (
+      <div className={`tr-photo is-empty${over ? ' is-over' : ''}`} {...dnd}>
+        <span className="tr-photo__ic"><Icon name="camera" size={20} /></span>
+        <div className="tr-photo__t">
+          <b>Buscar por foto</b>
+          <span>{photo?.err ?? `Anexe uma foto ${kind === 'veiculo' ? 'do veículo' : 'da pessoa'} e o motor preenche as características. Arraste, cole (Ctrl+V) ou escolha.`}</span>
+        </div>
+        <Button icon="upload" onClick={onPick}>Escolher foto</Button>
+      </div>
+    );
+  }
+  const r = photo.read;
+  const found = !r ? [] : kind === 'veiculo'
+    ? [<><i style={{ background: VCOLOR[r.vcolor].hex }} />Cor {VCOLOR[r.vcolor].label.toLowerCase()}</>]
+    : [<><i style={{ background: colorBg(r.upper) }} />Em cima {COLOR[r.upper].label.toLowerCase()}</>, <><i style={{ background: colorBg(r.lower) }} />Embaixo {COLOR[r.lower].label.toLowerCase()}</>];
+  return (
+    <div className={`tr-photo${photo.busy ? ' is-busy' : ''}${over ? ' is-over' : ''}`} {...dnd}>
+      <span className="tr-photo__img"><img src={photo.url} alt="" />{photo.busy && <i className="tr-photo__scan" />}</span>
+      <div className="tr-photo__t">
+        {photo.busy ? <><b>Lendo a foto…</b><span>{photo.name}</span></> : r ? (
+          <>
+            <b><Icon name="check" size={14} />Preenchido pela foto</b>
+            <span className="tr-photo__found">{found.map((x, i) => <em key={i}>{x}</em>)}</span>
+            <span>{kind === 'veiculo' ? 'Confira tipo, marca, modelo e placa, se souber.' : 'Confira gênero, idade e acessórios, se souber.'} O resto pode ficar como está.</span>
+          </>
+        ) : <><b>Foto da busca</b><span>Anexada quando a busca foi feita.</span></>}
+      </div>
+      {!photo.busy && (
+        <div className="tr-photo__acts">
+          {r && <Button variant="primary" icon="arrowRight" onClick={onNext}>Seguir com a foto</Button>}
+          <IconButton icon="trash" label="Remover foto" onClick={onRemove} tipPlace="top" />
+        </div>
+      )}
+    </div>
   );
 }

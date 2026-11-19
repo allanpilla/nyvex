@@ -50,9 +50,10 @@ export function VehicleResults({ s, all, busy, onBack, onEdit, onLike, toast }: 
     <div className="tr-res">
       <div className="tr-rhead">
         <IconButton icon="arrowLeft" label="Voltar para as buscas" onClick={onBack} tipPlace="bottom" />
+        {s.photo && <img className="tr-rhead__img" src={s.photo} alt="Foto usada na busca" />}
         <div className="tr-rhead__t">
           <b>{vDescribe(vf)}</b>
-          <p><span className="tr-code">{s.code}</span><span>·</span>{s.by}<span>·</span>{when(s.at, now)}<span>·</span><Icon name="lock" size={12} /><span className="tr-rhead__p" title={s.purpose}>{s.purpose}</span></p>
+          <p>{s.photo && <span className="tr-rhead__photo">Busca por foto</span>}<span className="tr-code">{s.code}</span><span>·</span>{s.by}<span>·</span>{when(s.at, now)}<span>·</span><Icon name="lock" size={12} /><span className="tr-rhead__p" title={s.purpose}>{s.purpose}</span></p>
         </div>
         <span className="dv-tools__sp" />
         <Button icon="edit" onClick={onEdit}>Editar busca</Button>

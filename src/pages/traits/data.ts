@@ -7,6 +7,7 @@
  */
 import { SOURCES, srcName, type Source } from '../faces/data';
 import type { VFilters } from './vehicles';
+import { photoUrl } from '../faces/faceArt';
 
 export type Gender = 'M' | 'F';
 export type Age = '18-24' | '25-34' | '35-44' | '45-59' | '60+';
@@ -384,7 +385,7 @@ export function runSearch(all: Obs[], f: Filters, at: number): Result {
 }
 
 /** Busca feita. Com `vf`, é de veículo: `f` guarda só onde e quando, e `people` conta veículos. */
-export type Search = { id: string; code: string; f: Filters; vf?: VFilters; purpose: string; by: string; me: boolean; at: number; n: number; people: number };
+export type Search = { id: string; code: string; f: Filters; vf?: VFilters; photo?: string; purpose: string; by: string; me: boolean; at: number; n: number; people: number };
 export const ME = 'Você';
 let codeN = 418;
 export const nextCode = () => `BC-${String(++codeN).padStart(4, '0')}`;
@@ -405,6 +406,8 @@ export function seedSearches(all: Obs[], now: number): Search[] {
     const f = { ...EMPTY, ...p };
     const at = now - h * H;
     const r = runSearch(all, f, at);
-    return { id: `s${i}`, code: `BC-${String(418 - i).padStart(4, '0')}`, f, purpose, by, me: by === ME, at, n: r.exact.length, people: r.people };
+    // A busca da aluna foi feita com a foto enviada pela família (uma das pessoas encontradas).
+    const photo = purpose.startsWith('Aluna') && r.exact[0] ? photoUrl(r.exact[0].seed) : undefined;
+    return { id: `s${i}`, code: `BC-${String(418 - i).padStart(4, '0')}`, f, photo, purpose, by, me: by === ME, at, n: r.exact.length, people: r.people };
   });
 }
