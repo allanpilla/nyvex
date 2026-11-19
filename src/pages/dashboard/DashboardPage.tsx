@@ -6,7 +6,7 @@ import type { Screen } from '../../navigation';
 import { useUi } from '../../lib/useUi';
 import { sceneUrl } from '../mural/scene';
 import { ENGINES, STATE_LABEL as ENG_LABEL, STATE_RANK, stateOf as engState } from '../engines/data';
-import { KIND, REASON, ago, subtitle, title } from '../alerts/data';
+import { KIND, ago, subtitle, title } from '../alerts/data';
 import { PRIO_LABEL, PRIO_RANK, STAGE_LABEL, late } from '../occurrences/data';
 import { CampusMap, type View } from './CampusMap';
 import {
@@ -107,15 +107,12 @@ function Systems({ onOpen }: { onOpen: () => void }) {
         <h2>Saúde dos sistemas</h2><span className="pd-card__hint">{up} de {list.length} no ar</span>
         <button type="button" className="pd-link" onClick={onOpen}>Engines<Icon name="chevron" size={14} /></button>
       </header>
-      <div className="pd-sys__strip" aria-hidden="true">
-        {list.map((e) => <i key={e.slug} className={`is-${engState(e)}`} />)}
-      </div>
       <ul className="pd-list">
         {list.filter((e) => engState(e) !== 'up').map((e) => (
           <li key={e.slug} className="pd-row">
             <span className={`pd-dot is-${engState(e)}`} />
             <span className="pd-row__main"><b>{e.name}</b><small>{e.payload && 'error' in e.payload ? String(e.payload.error) : e.status_code ? `HTTP ${e.status_code}` : `Latência ${e.latency_ms} ms`}</small></span>
-            <span className={`pd-tag is-${engState(e)}`}>{ENG_LABEL[engState(e)]}</span>
+            <span className={`pd-state is-${engState(e)}`}>{ENG_LABEL[engState(e)]}</span>
           </li>
         ))}
         <li className="pd-row is-quiet">
@@ -267,7 +264,7 @@ export function DashboardPage({ screen }: { screen: Screen }) {
                   {[...shown].sort((a, b) => Number(isOn(a.state)) - Number(isOn(b.state)) || b.alerts24 - a.alerts24).map((c) => (
                     <div key={c.id} className="pd-tr">
                       <span className="pd-row__main"><b>{c.name}</b><small>{c.area} · {c.dev.camType}</small></span>
-                      <span className={`pd-tag is-${c.state}`}><span className={`pd-dot is-${c.state}`} />{STATE_LABEL[c.state]}</span>
+                      <span className={`pd-state is-${c.state}`}><span className={`pd-dot is-${c.state}`} />{STATE_LABEL[c.state]}</span>
                       <span className="pd-num">{hb(c.dev.hb)}</span>
                       <span className="pd-num">{c.alerts24}</span>
                       <button type="button" className="pd-link" onClick={() => locate(c.id)}><Icon name="pin" size={14} />Mapa</button>
@@ -291,10 +288,9 @@ export function DashboardPage({ screen }: { screen: Screen }) {
                     const isLate = late(o, now);
                     return (
                       <li key={o.id} className={`pd-row is-click${isLate ? ' is-late' : ''}`} onClick={() => locate(cam?.id)}>
-                        <span className={`pd-prio is-${o.prio}`} title={`Prioridade ${PRIO_LABEL[o.prio]}`} />
                         <span className="pd-row__main">
                           <b>{o.title}</b>
-                          <small>{STAGE_LABEL[o.stage]}{o.team ? ` · ${o.team}` : ''} · {o.local}</small>
+                          <small><span className={`pd-prio is-${o.prio}`}>{PRIO_LABEL[o.prio]}</span> · {STAGE_LABEL[o.stage]}{o.team ? ` · ${o.team}` : ''} · {o.local}</small>
                         </span>
                         <span className={`pd-time${isLate ? ' is-late' : ''}`}>{isLate && <Icon name="clock" size={12} />}{ago(o.at, now)}</span>
                       </li>
@@ -305,7 +301,7 @@ export function DashboardPage({ screen }: { screen: Screen }) {
                 <ul className="pd-list">
                   {HOT.slice(0, 5).map((a) => (
                     <li key={a.id} className="pd-row is-click" onClick={() => locate(camOfAlert(a)?.id)}>
-                      <span className={`pd-ic is-${REASON[a.kind].tone}`}><Icon name={KIND[a.kind].icon} size={14} /></span>
+                      <span className="pd-ic"><Icon name={KIND[a.kind].icon} size={14} /></span>
                       <span className="pd-row__main">
                         <b>{title(a)}</b>
                         <small>{subtitle(a)} · {alertCamName(a)}</small>
