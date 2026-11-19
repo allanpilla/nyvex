@@ -111,6 +111,7 @@ export function Sidebar() {
   const { pathname } = useLocation();
   const { hide } = useTooltipApi();
   const [userOpen, setUserOpen] = useState(false);
+  const userBtn = useRef<HTMLButtonElement>(null);
   // Accordeon: grupos abertos (começa pelo padrão de cada grupo; o grupo da tela atual sempre abre).
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(NAV.filter((g) => g.defaultOpen).map((g) => g.id)));
   const [flyout, setFlyout] = useState<string | null>(null);
@@ -158,6 +159,7 @@ export function Sidebar() {
         <div className="nx-sb__user-wrap">
           <button
             type="button"
+            ref={userBtn}
             className="nx-sb__user"
             aria-haspopup="menu"
             aria-expanded={userOpen}
@@ -171,7 +173,7 @@ export function Sidebar() {
             </span>
             <Icon name="updown" className="nx-sb__updown" />
           </button>
-          {userOpen && <UserMenu onClose={() => setUserOpen(false)} />}
+          {userOpen && <UserMenu anchor={userBtn} onClose={() => setUserOpen(false)} />}
         </div>
       </div>
     </aside>
