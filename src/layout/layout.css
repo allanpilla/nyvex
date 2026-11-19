@@ -72,9 +72,12 @@
 
 /* ---------- Menu do usuário ---------- */
 .nx-pop {
-  position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 15; width: 220px; padding: 6px;
+  position: fixed; z-index: 60; width: 220px; padding: 6px;
   background: var(--nx-bg-surface); border: 1px solid var(--nx-stroke); border-radius: 10px; box-shadow: var(--nx-shadow);
+  animation: nx-pop-up 0.12s var(--nx-ease);
 }
+.nx-pop.is-side { animation-name: nx-flyout-in; }
+@keyframes nx-pop-up { from { opacity: 0; transform: translateY(4px); } }
 .nx-pop__meta { padding: 6px 8px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--nx-stroke); display: flex; flex-direction: column; gap: 2px; }
 .nx-pop__meta b { font-weight: 500; }
 .nx-pop__meta span:not(.nx-badge) { font-size: 12px; color: var(--nx-text-soft); }
