@@ -18,14 +18,15 @@ const STYLE: StyleSpecification = {
   },
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#0d111b' } },
-    { id: 'sat', type: 'raster', source: 'sat', paint: { 'raster-saturation': -0.55, 'raster-brightness-max': 0.7, 'raster-contrast': 0 } },
+    { id: 'sat', type: 'raster', source: 'sat', paint: { 'raster-saturation': -0.3, 'raster-brightness-max': 0.88, 'raster-contrast': 0.05 } },
     {
       id: 'bld', type: 'fill-extrusion', source: 'omt', 'source-layer': 'building', minzoom: 14,
       paint: {
-        'fill-extrusion-color': '#2a2f3d',
+        'fill-extrusion-color': '#5b6478',
         'fill-extrusion-height': ['max', ['coalesce', ['get', 'render_height'], 0], 9],
         'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-        'fill-extrusion-opacity': 0.7,
+        'fill-extrusion-vertical-gradient': true,
+        'fill-extrusion-opacity': 0.9,
       },
     },
   ],
