@@ -13,6 +13,7 @@ import { MatrixPage } from './matrix/MatrixPage';
 import { AuditPage } from './audit/AuditPage';
 import { EnginesPage } from './engines/EnginesPage';
 import { AnalyticsPage } from './analytics/AnalyticsPage';
+import { DashboardPage } from './dashboard/DashboardPage';
 
 /**
  * Telas já desenhadas, por id do menu. Ao criar uma tela nova:
@@ -21,6 +22,7 @@ import { AnalyticsPage } from './analytics/AnalyticsPage';
  * Itens sem entrada aqui usam a tela provisória.
  */
 export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> = {
+  painel: DashboardPage,
   mural: MuralPage,
   disp: DevicesPage,
   locais: LocationsPage,
