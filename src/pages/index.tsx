@@ -14,6 +14,8 @@ import { AuditPage } from './audit/AuditPage';
 import { EnginesPage } from './engines/EnginesPage';
 import { AnalyticsPage } from './analytics/AnalyticsPage';
 import { DashboardPage } from './dashboard/DashboardPage';
+import { PeoplePage } from './identity/PeoplePage';
+import { VehiclesPage } from './identity/VehiclesPage';
 
 /**
  * Telas já desenhadas, por id do menu. Ao criar uma tela nova:
@@ -36,4 +38,6 @@ export const PAGES: Partial<Record<string, ComponentType<{ screen: Screen }>>> =
   auditoria: AuditPage,
   engines: EnginesPage,
   analiticos: AnalyticsPage,
+  pessoas: PeoplePage,
+  veic: VehiclesPage,
 };

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Alert, Badge, Button, Checkbox, Combobox, ConfirmDialog, DateTimePicker, Icon, IconButton, Menu, NavItem, Tabs } from '../../ds/components';
 import { useUi } from '../../lib/useUi';
 import { copy } from '../devices/parts';
@@ -16,6 +17,7 @@ type Props = { w: Watchlist; onClose: () => void; onEdit: () => void; onToggle: 
  */
 export function WatchlistDrawer({ w, onClose, onEdit, onToggle, onExport, onChange }: Props) {
   const { toast } = useUi();
+  const nav = useNavigate();
   const [tab, setTab] = useState<Tab>('pessoas');
   const [more, setMore] = useState<HTMLElement | null>(null);
   const [adding, setAdding] = useState(false);
@@ -148,7 +150,7 @@ export function WatchlistDrawer({ w, onClose, onEdit, onToggle, onExport, onChan
                 })}
               </ul>
             )}
-            <Button icon="external" onClick={() => toast('Cadastro de veículos · ainda não desenhado no protótipo')}>Abrir cadastro de veículos</Button>
+            <Button icon="external" onClick={() => nav('/veiculos')}>Abrir cadastro de veículos</Button>
           </section>
         )}
 

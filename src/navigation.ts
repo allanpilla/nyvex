@@ -53,8 +53,8 @@ export const NAV: NavGroup[] = [
     { id: 'engines', path: '/engines', label: 'Engines', icon: 'stack', description: 'Saúde dos serviços especialistas (face, placas, vídeo e rotas), sondada agora.' },
   ]),
   s('identidade', 'Identidade', 'idcard', false, [
-    { id: 'pessoas', actions: ['Importar', 'Cadastrar pessoa'], path: '/pessoas', label: 'Pessoas', icon: 'people', description: 'Cadastro único de pessoas.' },
-    { id: 'veic', actions: ['Importar', 'Cadastrar veículo'], path: '/veiculos', label: 'Veículos', icon: 'car', description: 'Cadastro único de veículos.' },
+    { id: 'pessoas', actions: ['Cadastrar pessoa', 'Buscar por foto'], path: '/pessoas', label: 'Pessoas', icon: 'people', description: 'Cadastro único de pessoas, com ficha de análise (movimentação, alertas, relações e acesso).' },
+    { id: 'veic', actions: ['Cadastrar veículo'], path: '/veiculos', label: 'Veículos', icon: 'car', description: 'Cadastro único de veículos, com passagens pelas câmeras de placa e rota.' },
     { id: 'recursos', path: '/recursos', label: 'Recursos', icon: 'door', description: 'Portas, catracas e demais recursos do controle de acesso.' },
   ]),
   s('inteligencia', 'Inteligência', 'flash', false, [

@@ -30,18 +30,18 @@ export const KINDS: Record<Kind, { label: string; plural: string; icon: IconName
 // Dados fictícios para o protótipo.
 export const ENTRIES: Entry[] = [
   // Pessoas
-  { id: 'p1', kind: 'pessoa', title: 'Mariana Duarte Lopes', subtitle: 'Aluna · Engenharia Civil · RA 2023014', keywords: 'estudante', tag: { label: 'Lista de observação', tone: 'warning' }, path: '/pessoas' },
-  { id: 'p2', kind: 'pessoa', title: 'Ricardo Almeida Prado', subtitle: 'Funcionário · Manutenção · Matrícula 8841', keywords: 'colaborador', path: '/pessoas' },
-  { id: 'p3', kind: 'pessoa', title: 'Ana Beatriz Moreira', subtitle: 'Visitante · Último acesso hoje 08:12 · Portaria principal', keywords: 'visita', path: '/pessoas' },
+  { id: 'p1', kind: 'pessoa', title: 'Mariana Duarte Lopes', subtitle: 'Aluna · Engenharia Civil · RA 2023014', keywords: 'estudante', tag: { label: 'Lista de observação', tone: 'warning' }, path: '/pessoas?id=p-mariana' },
+  { id: 'p2', kind: 'pessoa', title: 'Ricardo Almeida Prado', subtitle: 'Funcionário · Manutenção · Matrícula 8841', keywords: 'colaborador', path: '/pessoas?id=p-ricardo' },
+  { id: 'p3', kind: 'pessoa', title: 'Ana Beatriz Moreira', subtitle: 'Visitante · Último acesso hoje 08:12 · Portaria principal', keywords: 'visita', path: '/pessoas?id=p-ana' },
   { id: 'p4', kind: 'pessoa', title: 'Desconhecido #4471', subtitle: 'Face não identificada · 6 aparições em 7 dias', keywords: 'face sem cadastro desconhecida', tag: { label: 'Recorrente', tone: 'danger' }, path: '/faces-ao-vivo' },
-  { id: 'p5', kind: 'pessoa', title: 'Carlos Eduardo Lima', subtitle: 'Professor · Direito · Matrícula 2207', keywords: 'docente', path: '/pessoas' },
-  { id: 'p6', kind: 'pessoa', title: 'Juliana Pires Costa', subtitle: 'Aluna · Medicina Veterinária · RA 2022877', keywords: 'estudante', tag: { label: 'Acesso bloqueado', tone: 'danger' }, path: '/pessoas' },
+  { id: 'p5', kind: 'pessoa', title: 'Carlos Eduardo Lima', subtitle: 'Professor · Direito · Matrícula 2207', keywords: 'docente', path: '/pessoas?id=p-carlos' },
+  { id: 'p6', kind: 'pessoa', title: 'Juliana Pires Costa', subtitle: 'Aluna · Medicina Veterinária · RA 2022877', keywords: 'estudante', tag: { label: 'Acesso bloqueado', tone: 'danger' }, path: '/pessoas?id=p-juliana-pc' },
   // Veículos
-  { id: 'v1', kind: 'veiculo', title: 'BRA2E19', subtitle: 'Fiat Argo prata · Mariana Duarte Lopes', keywords: 'placa carro argo', tag: { label: 'Lista de observação', tone: 'warning' }, path: '/veiculos' },
-  { id: 'v2', kind: 'veiculo', title: 'RTX4C82', subtitle: 'Honda CG 160 preta · sem cadastro', keywords: 'placa moto', tag: { label: 'Sem cadastro', tone: 'neutral' }, path: '/veiculos' },
-  { id: 'v3', kind: 'veiculo', title: 'QWE1A23', subtitle: 'VW Saveiro branca · Frota manutenção', keywords: 'placa carro frota', tag: { label: 'Frota', tone: 'info' }, path: '/veiculos' },
-  { id: 'v4', kind: 'veiculo', title: 'AYK7J05', subtitle: 'Jeep Compass cinza · Carlos Eduardo Lima', keywords: 'placa carro', path: '/veiculos' },
-  { id: 'v5', kind: 'veiculo', title: 'MKP3H41', subtitle: 'Chevrolet Onix vermelho · alerta de furto', keywords: 'placa carro roubado furto', tag: { label: 'Restrição', tone: 'danger' }, path: '/veiculos' },
+  { id: 'v1', kind: 'veiculo', title: 'BRA2E19', subtitle: 'Fiat Argo prata · Mariana Duarte Lopes', keywords: 'placa carro argo', tag: { label: 'Lista de observação', tone: 'warning' }, path: '/veiculos?placa=BRA2E19' },
+  { id: 'v2', kind: 'veiculo', title: 'RTX4C82', subtitle: 'Honda CG 160 preta · sem cadastro', keywords: 'placa moto', tag: { label: 'Sem cadastro', tone: 'neutral' }, path: '/veiculos?placa=RTX4C82' },
+  { id: 'v3', kind: 'veiculo', title: 'QWE1A23', subtitle: 'VW Saveiro branca · Frota manutenção', keywords: 'placa carro frota', tag: { label: 'Frota', tone: 'info' }, path: '/veiculos?placa=QWE1A23' },
+  { id: 'v4', kind: 'veiculo', title: 'AYK7J05', subtitle: 'Jeep Compass cinza · Carlos Eduardo Lima', keywords: 'placa carro', path: '/veiculos?placa=AYK7J05' },
+  { id: 'v5', kind: 'veiculo', title: 'MKP3H41', subtitle: 'Chevrolet Onix vermelho · alerta de furto', keywords: 'placa carro roubado furto', tag: { label: 'Restrição', tone: 'danger' }, path: '/veiculos?placa=MKP3H41' },
   // Câmeras e dispositivos
   { id: 'c1', kind: 'camera', title: 'CAM-014 · Portaria principal', subtitle: 'Reconhecimento facial · 4K', keywords: 'entrada camera face', tag: { label: 'Online', tone: 'success' }, path: '/dispositivos' },
   { id: 'c2', kind: 'camera', title: 'LPR-03 · Cancela estacionamento A', subtitle: 'Leitura de placas', keywords: 'lpr placa estacionamento camera', tag: { label: 'Online', tone: 'success' }, path: '/dispositivos' },
